@@ -74,6 +74,7 @@ model Order {
   paymentMethod    String?     // "QRIS" | "VA"
   xenditInvoiceId  String?
   xenditPaymentUrl String?
+  cancelReason     String?
   subtotal         Int         // IDR integer
   tax              Int         // IDR integer
   total            Int         // IDR integer

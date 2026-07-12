@@ -30,6 +30,19 @@ export async function PATCH(
     return NextResponse.json({ success: true })
   }
 
+  if (body.action === "cancel") {
+    const order = await db.order.findUnique({ where: { id } })
+    if (!order) return NextResponse.json({ error: "Not found" }, { status: 404 })
+    if (["FULFILLED", "FAILED"].includes(order.status)) {
+      return NextResponse.json({ error: "Order sudah terminal" }, { status: 400 })
+    }
+    await db.order.update({
+      where: { id },
+      data: { status: "FAILED", cancelReason: body.reason ?? "Dibatalkan admin" },
+    })
+    return NextResponse.json({ success: true })
+  }
+
   const order = await db.order.update({ where: { id }, data: { status: body.status } })
   return NextResponse.json({ success: true, data: order })
 }

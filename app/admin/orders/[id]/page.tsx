@@ -1,18 +1,22 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { formatPrice } from "@/lib/utils"
-import { ArrowLeft, CheckCircle2, ExternalLink, Loader2, RefreshCw } from "lucide-react"
+import { ArrowLeft, CheckCircle2, ExternalLink, Loader2, RefreshCw, XCircle } from "lucide-react"
 import Link from "next/link"
+import { useEffect } from "react"
+import { toast } from "sonner"
 
 const STATUS_LABEL: Record<string, string> = {
   PENDING: "Pending", AWAITING_PAYMENT: "Menunggu Bayar", PAID: "Dibayar",
-  FULFILLED: "Selesai", FAILED: "Gagal", PENDING_STOCK: "Menunggu Stok",
+  FULFILLED: "Selesai", FAILED: "Gagal/Batal", PENDING_STOCK: "Menunggu Stok",
 }
 const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
   FULFILLED: "default", PAID: "secondary", PENDING: "outline",
@@ -25,7 +29,9 @@ export default function AdminOrderDetailPage() {
   const [order, setOrder] = useState<Record<string, any> | null>(null)
   const [loading, setLoading] = useState(true)
   const [fulfilling, setFulfilling] = useState(false)
-  const [fulfilled, setFulfilled] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
+  const [showCancel, setShowCancel] = useState(false)
+  const [cancelReason, setCancelReason] = useState("")
 
   async function loadOrder() {
     const res = await fetch(`/api/admin/orders/${id}`)
@@ -33,9 +39,7 @@ export default function AdminOrderDetailPage() {
     if (data.success) setOrder(data.data)
   }
 
-  useEffect(() => {
-    loadOrder().finally(() => setLoading(false))
-  }, [id])
+  useEffect(() => { loadOrder().finally(() => setLoading(false)) }, [id])
 
   async function handleFulfill() {
     if (!confirm("Manual fulfill order ini?")) return
@@ -47,10 +51,31 @@ export default function AdminOrderDetailPage() {
     })
     const data = await res.json()
     if (data.success) {
-      setFulfilled(true)
+      toast.success("Order berhasil di-fulfill")
       await loadOrder()
+    } else {
+      toast.error("Gagal fulfill order")
     }
     setFulfilling(false)
+  }
+
+  async function handleCancel() {
+    if (!cancelReason.trim()) { toast.error("Isi alasan pembatalan"); return }
+    setCancelling(true)
+    const res = await fetch(`/api/admin/orders/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "cancel", reason: cancelReason }),
+    })
+    const data = await res.json()
+    if (data.success) {
+      toast.success("Order dibatalkan")
+      setShowCancel(false)
+      await loadOrder()
+    } else {
+      toast.error(data.error ?? "Gagal membatalkan order")
+    }
+    setCancelling(false)
   }
 
   if (loading) return (
@@ -70,6 +95,7 @@ export default function AdminOrderDetailPage() {
 
   const items = order.items as Array<{ id: string; variant: { name: string }; quantity: number; price: number }>
   const stocks = order.stocks as Array<{ id: string; credentials: string; status: string }>
+  const isTerminal = ["FULFILLED", "FAILED"].includes(order.status as string)
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -88,14 +114,15 @@ export default function AdminOrderDetailPage() {
 
       {/* Actions */}
       <div className="flex gap-2 flex-wrap">
-        {order.status !== "FULFILLED" && order.status !== "FAILED" && (
+        {!isTerminal && (
           <Button onClick={handleFulfill} disabled={fulfilling} className="gap-2">
-            {fulfilling
-              ? <Loader2 className="h-4 w-4 animate-spin" />
-              : fulfilled
-              ? <CheckCircle2 className="h-4 w-4" />
-              : <CheckCircle2 className="h-4 w-4" />}
+            {fulfilling ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
             {fulfilling ? "Memproses..." : "Manual Fulfill"}
+          </Button>
+        )}
+        {!isTerminal && !showCancel && (
+          <Button variant="destructive" onClick={() => setShowCancel(true)} className="gap-2">
+            <XCircle className="h-4 w-4" /> Batalkan Order
           </Button>
         )}
         {(order.xenditPaymentUrl as string | undefined) && (
@@ -110,7 +137,36 @@ export default function AdminOrderDetailPage() {
         </Button>
       </div>
 
-      {/* Order items */}
+      {/* Cancel form */}
+      {showCancel && (
+        <Card className="border-destructive/40">
+          <CardContent className="p-4 space-y-3">
+            <Label>Alasan Pembatalan</Label>
+            <Input
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="Misal: Stok habis, permintaan pembeli, dll"
+            />
+            <div className="flex gap-2">
+              <Button variant="destructive" onClick={handleCancel} disabled={cancelling} className="gap-2">
+                {cancelling ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                Konfirmasi Batalkan
+              </Button>
+              <Button variant="outline" onClick={() => setShowCancel(false)}>Batal</Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Cancel reason display */}
+      {order.cancelReason && (
+        <div className="p-3 bg-destructive/5 border border-destructive/20 rounded-lg text-sm">
+          <span className="font-medium text-destructive">Alasan Pembatalan:</span>{" "}
+          {order.cancelReason as string}
+        </div>
+      )}
+
+      {/* Order detail */}
       <Card>
         <CardHeader><CardTitle className="text-base">Detail Pesanan</CardTitle></CardHeader>
         <CardContent className="space-y-3">

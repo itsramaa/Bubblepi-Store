@@ -7,16 +7,32 @@ import { Badge } from "@/components/ui/badge"
 import { ExternalLink, CheckCircle2, Clock, RefreshCw } from "lucide-react"
 import Link from "next/link"
 
+const XENDIT_EXPIRY_HOURS = 24
+
 interface Props {
   orderId: string
   paymentUrl: string | null
+  createdAt: string
 }
 
-export default function CheckoutStep3({ orderId, paymentUrl }: Props) {
+export default function CheckoutStep3({ orderId, paymentUrl, createdAt }: Props) {
   const [status, setStatus] = useState("AWAITING_PAYMENT")
   const [polling, setPolling] = useState(true)
-  const router = useRouter()
+  const [secondsLeft, setSecondsLeft] = useState(0)
 
+  // Countdown
+  useEffect(() => {
+    const expiry = new Date(createdAt).getTime() + XENDIT_EXPIRY_HOURS * 60 * 60 * 1000
+    function tick() {
+      const diff = Math.max(0, Math.floor((expiry - Date.now()) / 1000))
+      setSecondsLeft(diff)
+    }
+    tick()
+    const t = setInterval(tick, 1000)
+    return () => clearInterval(t)
+  }, [createdAt])
+
+  // Polling
   useEffect(() => {
     if (!polling) return
     const interval = setInterval(async () => {
@@ -33,6 +49,10 @@ export default function CheckoutStep3({ orderId, paymentUrl }: Props) {
   }, [orderId, polling])
 
   const isFulfilled = status === "FULFILLED"
+  const hours = Math.floor(secondsLeft / 3600)
+  const mins = Math.floor((secondsLeft % 3600) / 60)
+  const secs = secondsLeft % 60
+  const expired = secondsLeft === 0 && !isFulfilled
 
   return (
     <div className="text-center space-y-6 py-6">
@@ -51,20 +71,30 @@ export default function CheckoutStep3({ orderId, paymentUrl }: Props) {
           </div>
           <h2 className="text-xl font-bold">Menunggu Pembayaran</h2>
           <p className="text-muted-foreground text-sm">Selesaikan pembayaran untuk mendapatkan akun.</p>
+
+          {/* Countdown */}
+          {!expired ? (
+            <div className="flex items-center gap-1.5 text-sm">
+              <span className="text-muted-foreground">Kedaluwarsa dalam</span>
+              <span className="font-mono font-bold tabular-nums text-amber-600">
+                {String(hours).padStart(2, "0")}:{String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}
+              </span>
+            </div>
+          ) : (
+            <p className="text-sm text-destructive font-medium">Invoice sudah kedaluwarsa</p>
+          )}
         </div>
       )}
 
-      {/* Status badge */}
       <div className="flex items-center justify-center gap-2">
         <Badge variant="outline" className="gap-1.5">
           {polling && <RefreshCw className="h-3 w-3 animate-spin" />}
-          {isFulfilled ? "Lunas" : "Menunggu Pembayaran"}
+          {isFulfilled ? "Lunas" : expired ? "Kedaluwarsa" : "Menunggu Pembayaran"}
         </Badge>
       </div>
 
-      {/* CTA */}
       <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-        {paymentUrl && !isFulfilled && (
+        {paymentUrl && !isFulfilled && !expired && (
           <a href={paymentUrl} target="_blank" rel="noopener noreferrer">
             <Button className="gap-2 w-full sm:w-auto">
               <ExternalLink className="h-4 w-4" />

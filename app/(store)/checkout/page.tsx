@@ -16,6 +16,7 @@ export default function CheckoutPage() {
   const [formData, setFormData] = useState<CheckoutFormData | null>(null)
   const [orderId, setOrderId] = useState<string | null>(null)
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null)
+  const [orderCreatedAt, setOrderCreatedAt] = useState<string>(new Date().toISOString())
   const [submitting, setSubmitting] = useState(false)
   const { items, clearCart } = useCart()
   const router = useRouter()
@@ -61,6 +62,7 @@ export default function CheckoutPage() {
 
       setOrderId(orderData.data.orderId)
       setPaymentUrl(payData.data.paymentUrl)
+      setOrderCreatedAt(new Date().toISOString())
       clearCart()
       setStep(3)
     } catch (err) {
@@ -86,7 +88,7 @@ export default function CheckoutPage() {
             />
           )}
           {step === 3 && orderId && (
-            <CheckoutStep3 orderId={orderId} paymentUrl={paymentUrl} />
+            <CheckoutStep3 orderId={orderId} paymentUrl={paymentUrl} createdAt={orderCreatedAt} />
           )}
         </CardContent>
       </Card>
