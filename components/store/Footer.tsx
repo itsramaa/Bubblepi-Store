@@ -1,5 +1,6 @@
 import Link from "next/link"
-import { Heart, ShoppingBag, Shield, MessageCircle } from "lucide-react"
+import Image from "next/image"
+import { MessageCircle, ShoppingBag } from "lucide-react"
 
 export default function Footer() {
   return (
@@ -9,9 +10,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="md:col-span-1">
             <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#F4ABC4] to-[#595B83] flex items-center justify-center text-white font-bold text-sm">
-                B
-              </div>
+              <Image src="/logo.png" alt="Bubblepi" width={32} height={32} className="rounded-full" />
               <span className="font-bold text-lg">Bubblepi</span>
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed">
@@ -38,7 +37,6 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Contact */}
           <div>
             <h3 className="font-semibold text-sm mb-4">Kontak</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">

@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { useCart } from "@/context/CartContext"
 import { useTheme } from "@/context/ThemeContext"
@@ -27,9 +28,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto flex items-center justify-between h-16 px-4">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#F4ABC4] to-[#595B83] flex items-center justify-center text-white font-bold text-sm">
-            B
-          </div>
+          <Image src="/logo.png" alt="Bubblepi" width={36} height={36} className="rounded-full" />
           <span className="font-bold text-lg hidden sm:block">Bubblepi</span>
         </Link>
 
@@ -53,12 +52,10 @@ export default function Navbar() {
 
         {/* Actions */}
         <div className="flex items-center gap-1">
-          {/* Theme toggle */}
           <Button variant="ghost" size="icon" onClick={toggleTheme} className="text-muted-foreground">
             {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
 
-          {/* Cart */}
           <Link href="/cart">
             <Button variant="ghost" size="icon" className="relative text-muted-foreground">
               <ShoppingCart className="h-5 w-5" />
@@ -70,14 +67,12 @@ export default function Navbar() {
             </Button>
           </Link>
 
-          {/* Mobile toggle */}
           <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
         </div>
       </div>
 
-      {/* Mobile nav */}
       {mobileOpen && (
         <div className="md:hidden border-t bg-background p-4 space-y-2">
           {navLinks.map((link) => (

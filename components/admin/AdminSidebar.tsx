@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { LayoutDashboard, Package, Archive, ShoppingBag, LogOut, Menu, X, Store } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -18,9 +19,7 @@ function SidebarContent({ pathname, onLogout }: { pathname: string; onLogout: ()
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="p-5 border-b flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#F4ABC4] to-[#595B83] flex items-center justify-center text-white font-bold text-sm">
-          B
-        </div>
+        <Image src="/logo.png" alt="Bubblepi" width={32} height={32} className="rounded-lg" />
         <div>
           <p className="font-bold text-sm">Bubblepi</p>
           <p className="text-xs text-muted-foreground">Admin Panel</p>
@@ -86,9 +85,7 @@ export default function AdminSidebar() {
       {/* Mobile top bar */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-card border-b h-14 flex items-center justify-between px-4">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#F4ABC4] to-[#595B83] flex items-center justify-center text-white font-bold text-xs">
-            B
-          </div>
+          <Image src="/logo.png" alt="Bubblepi" width={28} height={28} className="rounded-lg" />
           <span className="font-bold text-sm">Bubblepi Admin</span>
         </div>
         <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2">
