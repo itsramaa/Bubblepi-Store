@@ -1,0 +1,59 @@
+import { NextRequest, NextResponse } from "next/server"
+import { db } from "@/lib/db"
+import { generateOrderId } from "@/lib/utils"
+
+const TAX_RATE = 0.11 // 11% PPN Indonesia
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { customerName, customerEmail, items } = body
+
+    if (!customerName || !customerEmail || !items?.length) {
+      return NextResponse.json({ error: "Data tidak lengkap" }, { status: 400 })
+    }
+
+    const variantIds = items.map((i: { variantId: string }) => i.variantId)
+    const variants = await db.variant.findMany({
+      where: { id: { in: variantIds } },
+    })
+
+    let subtotal = 0
+    const orderItems = items.map((item: { variantId: string; quantity: number }) => {
+      const variant = variants.find((v: { id: string }) => v.id === item.variantId)
+      if (!variant) throw new Error(`Variant ${item.variantId} not found`)
+      subtotal += variant.price * item.quantity
+      return {
+        variantId: item.variantId,
+        quantity: item.quantity,
+        price: variant.price,
+      }
+    })
+
+    const tax = Math.round(subtotal * TAX_RATE)
+    const total = subtotal + tax
+
+    const orderNumber = generateOrderId()
+    const order = await db.order.create({
+      data: {
+        orderNumber,
+        customerName,
+        customerEmail,
+        subtotal,
+        tax,
+        total,
+        status: "PENDING",
+        items: { create: orderItems },
+      },
+      include: { items: true },
+    })
+
+    return NextResponse.json({
+      success: true,
+      data: { orderId: order.id, orderNumber: order.orderNumber, total: order.total },
+    })
+  } catch (error) {
+    console.error("Create order error:", error)
+    return NextResponse.json({ error: "Gagal membuat pesanan" }, { status: 500 })
+  }
+}
