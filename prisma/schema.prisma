@@ -83,11 +83,15 @@ model Order {
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
   paidAt           DateTime?
+  voucherId        String?
+  discountAmount   Int         @default(0)
+  resendCount      Int         @default(0)
   items            OrderItem[]
   stocks           AccountStock[]
   review           Review?
   referrals        Referral[]
   warrantyClaims   WarrantyClaim[]
+  voucher          Voucher?    @relation(fields: [voucherId], references: [id], onDelete: SetNull)
 }
 
 model OrderItem {
@@ -160,4 +164,20 @@ model AbandonedCart {
   createdAt DateTime @default(now())
 
   @@index([email, recovered])
+}
+
+model Voucher {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  type      String    // PERCENT | FIXED
+  value     Int
+  minOrder  Int       @default(0)
+  maxUses   Int?
+  usedCount Int       @default(0)
+  expiresAt DateTime?
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  orders    Order[]
+
+  @@index([code])
 }
