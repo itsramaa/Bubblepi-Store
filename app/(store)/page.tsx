@@ -3,6 +3,7 @@ import { db } from "@/lib/db"
 export const dynamic = "force-dynamic"
 import HeroSection from "@/components/store/HeroSection"
 import FeaturedProducts from "@/components/store/FeaturedProducts"
+import HowItWorks from "@/components/store/HowItWorks"
 import CategorySection from "@/components/store/CategorySection"
 import TestimonialsSection from "@/components/store/TestimonialsSection"
 import FAQSection from "@/components/store/FAQSection"
@@ -18,6 +19,7 @@ export default async function HomePage() {
     <div>
       <HeroSection />
       <FeaturedProducts products={products} />
+      <HowItWorks />
       <CategorySection />
       <TestimonialsSection />
       <FAQSection />
