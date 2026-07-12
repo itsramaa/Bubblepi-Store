@@ -14,7 +14,13 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const parsed = stockItemSchema.parse(body)
-    const item = await db.accountStock.create({ data: parsed })
+    const item = await db.accountStock.create({
+      data: {
+        variantId: parsed.variantId,
+        credentials: parsed.credentials,
+        ...(parsed.expiresAt ? { expiresAt: new Date(parsed.expiresAt) } : {}),
+      },
+    })
     return NextResponse.json({ success: true, data: item }, { status: 201 })
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 400 })

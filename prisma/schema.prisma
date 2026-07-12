@@ -57,6 +57,7 @@ model AccountStock {
   status      StockStatus @default(AVAILABLE)
   orderId     String?
   assignedAt  DateTime?
+  expiresAt   DateTime?   // optional expiry date for credentials
   createdAt   DateTime    @default(now())
   variant     Variant     @relation(fields: [variantId], references: [id], onDelete: Cascade)
   order       Order?      @relation(fields: [orderId], references: [id], onDelete: SetNull)

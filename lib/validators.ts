@@ -29,4 +29,5 @@ export const variantSchema = z.object({
 export const stockItemSchema = z.object({
   variantId: z.string().cuid(),
   credentials: z.string().min(1, "Credentials tidak boleh kosong"),
+  expiresAt: z.string().datetime().optional().nullable(),
 })
