@@ -40,7 +40,7 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
   const [orders, total] = await Promise.all([
     db.order.findMany({
       where,
-      include: { items: true },
+      include: { items: { include: { variant: { include: { product: true } } } } },
       orderBy: { createdAt: "desc" },
       take: PAGE_SIZE,
       skip,

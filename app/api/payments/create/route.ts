@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
 
     const order = await db.order.findUnique({
       where: { id: orderId },
-      include: { items: { include: { variant: true } } },
+      items: { include: { variant: { include: { product: true } } } },
     })
     if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 })
     if (order.status !== "PENDING") {

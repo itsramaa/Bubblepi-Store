@@ -5,7 +5,6 @@ import HowItWorks from "@/components/store/HowItWorks"
 import CategorySection from "@/components/store/CategorySection"
 import FAQSection from "@/components/store/FAQSection"
 import SocialProofBanner from "@/components/store/SocialProofBanner"
-import TestimonialCarousel from "@/components/store/TestimonialCarousel"
 
 export const dynamic = "force-dynamic"
 
@@ -16,12 +15,6 @@ export default async function HomePage() {
     take: 6,
   })
 
-  const pinnedReviews = await db.review.findMany({
-    where: { isPinned: true, isVisible: true },
-    orderBy: { createdAt: "desc" },
-    take: 6,
-  })
-
   return (
     <div>
       <HeroSection />
@@ -29,7 +22,6 @@ export default async function HomePage() {
       <FeaturedProducts products={products} />
       <HowItWorks />
       <CategorySection />
-      {pinnedReviews.length > 0 && <TestimonialCarousel reviews={JSON.parse(JSON.stringify(pinnedReviews))} />}
       <FAQSection />
     </div>
   )

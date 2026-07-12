@@ -19,7 +19,7 @@ export type ProductWithVariants = Prisma.ProductGetPayload<{
 // Order with items (for detail page)
 export type OrderWithItems = Prisma.OrderGetPayload<{
   include: {
-    items: { include: { variant: true } }
+    items: { include: { variant: { include: { product: true } } } }
     stocks: true
   }
 }>

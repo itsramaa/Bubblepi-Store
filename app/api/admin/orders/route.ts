@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
 
   const orders = await db.order.findMany({
     where,
-    include: { items: { include: { variant: true } } },
+    include: { items: { include: { variant: { include: { product: true } } } } },
     orderBy: { createdAt: "desc" },
   })
   return NextResponse.json({ success: true, data: orders })

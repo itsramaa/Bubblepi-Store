@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       data: {
         variantId: parsed.variantId,
         credentials: parsed.credentials,
-        ...(parsed.expiresAt ? { expiresAt: new Date(parsed.expiresAt) } : {}),
+        expiresAt: "expiresAt" in parsed && parsed.expiresAt ? new Date(parsed.expiresAt) : null,
       },
     })
     return NextResponse.json({ success: true, data: item }, { status: 201 })
