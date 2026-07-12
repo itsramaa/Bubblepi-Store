@@ -1,87 +1,36 @@
-# BubblePi - Premium Accounts Marketplace
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-A modern, responsive frontend for a premium accounts selling website built with React, Vite, and TailwindCSS.
+## Getting Started
 
-## 🚀 Features
+First, run the development server:
 
-- **Fully Responsive Design**: Works seamlessly on desktop, tablet, and mobile devices
-- **Modern UI/UX**: Cheerful, modern design with pink, purple, navy, and dark blue colors
-- **Dark Mode Support**: Toggle between light and dark themes
-- **Product Catalog**: Browse products by category with filtering capabilities
-- **Shopping Cart**: Add products to cart and proceed to checkout
-- **User Authentication**: Login and registration functionality
-- **Admin Dashboard**: Manage products, orders, and users
-- **Animations**: Smooth animations and transitions using Framer Motion
-- **SEO Optimized**: Meta tags and structured data for better search engine visibility
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
 
-## 🛠️ Tech Stack
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-- **React**: Frontend library for building user interfaces
-- **Vite**: Next generation frontend tooling
-- **TailwindCSS**: Utility-first CSS framework
-- **DaisyUI**: Component library for Tailwind CSS
-- **React Router**: Routing and navigation
-- **Framer Motion**: Animation library
-- **React Icons**: Icon library
-- **Context API**: State management
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-## 📋 Pages
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-- **Home**: Featured products, exclusive offers, and categories
-- **Product Details**: Product information, variants, pricing, and reviews
-- **Category**: Browse products by category
-- **Cart**: View and manage cart items
-- **Checkout**: Complete purchase with payment options
-- **Testimonials**: Customer reviews and feedback
-- **FAQ**: Frequently asked questions
-- **Admin Dashboard**: Manage products, orders, and users
+## Learn More
 
-## 🏗️ Components
+To learn more about Next.js, take a look at the following resources:
 
-- **Reusable UI Components**: Button, Card, Input, Badge, etc.
-- **Layout Components**: Navbar, Footer, MainLayout
-- **Feature Components**: ProductCard, TestimonialCard, HeroCarousel, etc.
-- **Utility Components**: LoadingSpinner, ErrorBoundary, SEO, etc.
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-## 🚀 Getting Started
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-### Prerequisites
+## Deploy on Vercel
 
-- Node.js (v16+)
-- npm or yarn
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-### Installation
-
-1. Clone the repository
-   ```bash
-   git clone https://github.com/yourusername/bubblepi.git
-   cd bubblepi
-   ```
-
-2. Install dependencies
-   ```bash
-   npm install
-   ```
-
-3. Start the development server
-   ```bash
-   npm run dev
-   ```
-
-4. Build for production
-   ```bash
-   npm run build
-   ```
-
-## 📝 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🙏 Acknowledgements
-
-- [React](https://reactjs.org/)
-- [Vite](https://vitejs.dev/)
-- [TailwindCSS](https://tailwindcss.com/)
-- [DaisyUI](https://daisyui.com/)
-- [Framer Motion](https://www.framer.com/motion/)
-- [React Icons](https://react-icons.github.io/react-icons/)
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
