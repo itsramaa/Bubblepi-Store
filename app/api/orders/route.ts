@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { generateOrderId } from "@/lib/utils"
+import { sendTelegramNotification } from "@/lib/telegram"
 
 const TAX_RATE = 0.11 // 11% PPN Indonesia
 
@@ -47,6 +48,14 @@ export async function POST(request: NextRequest) {
       },
       include: { items: true },
     })
+
+    // fire-and-forget — don't await
+    sendTelegramNotification(
+      `🛒 <b>Pesanan Baru!</b>\n` +
+      `Order: <code>${orderNumber}</code>\n` +
+      `Pembeli: ${customerName} (${customerEmail})\n` +
+      `Total: Rp ${total.toLocaleString("id-ID")}`
+    )
 
     return NextResponse.json({
       success: true,

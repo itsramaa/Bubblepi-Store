@@ -1,5 +1,6 @@
 import { db } from "@/lib/db"
 import { sendAccountDelivery } from "@/lib/mailer"
+import { sendTelegramNotification } from "@/lib/telegram"
 
 export async function fulfillOrder(orderId: string) {
   const order = await db.order.findUnique({
@@ -41,6 +42,12 @@ export async function fulfillOrder(orderId: string) {
           where: { id: orderId },
           data: { status: "PENDING_STOCK" },
         })
+        sendTelegramNotification(
+          `⚠️ <b>Stok Kosong!</b>\n` +
+          `Order: <code>${order.orderNumber}</code>\n` +
+          `Variant: ${item.variant.product.name} - ${item.variant.name}\n` +
+          `Menunggu stok untuk fulfillment.`
+        )
         continue
       }
 
@@ -86,5 +93,11 @@ export async function fulfillOrder(orderId: string) {
       items: deliveredItems,
       orderId: order.id,
     })
+
+    sendTelegramNotification(
+      `✅ <b>Order Fulfilled!</b>\n` +
+      `Order: <code>${order.orderNumber}</code>\n` +
+      `Akun dikirim ke ${order.customerEmail}`
+    )
   }
 }
