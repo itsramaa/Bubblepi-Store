@@ -1,28 +1,26 @@
 import { NextRequest, NextResponse } from "next/server"
-import { verifyAdminToken } from "@/lib/auth"
 
-export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
+export function middleware(request: NextRequest) {
+  const response = NextResponse.next()
+  const { searchParams } = request.nextUrl
 
-  // Protect admin routes except login
-  if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
-    const token = request.cookies.get("admin-token")?.value
-    if (!token || !(await verifyAdminToken(token))) {
-      return NextResponse.redirect(new URL("/admin/login", request.url))
-    }
+  const utmSource = searchParams.get("utm_source")
+  const utmMedium = searchParams.get("utm_medium")
+  const utmCampaign = searchParams.get("utm_campaign")
+  const ref = searchParams.get("ref")
+
+  if (utmSource || utmMedium || utmCampaign) {
+    const utmData = JSON.stringify({ utmSource, utmMedium, utmCampaign })
+    response.cookies.set("utm_data", utmData, { maxAge: 60 * 60 * 24 * 30, path: "/" })
   }
 
-  // Protect admin API routes
-  if (pathname.startsWith("/api/admin") && pathname !== "/api/admin/auth") {
-    const token = request.cookies.get("admin-token")?.value
-    if (!token || !(await verifyAdminToken(token))) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+  if (ref) {
+    response.cookies.set("ref_code", ref, { maxAge: 60 * 60 * 24 * 30, path: "/" })
   }
 
-  return NextResponse.next()
+  return response
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/admin/:path*"],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 }

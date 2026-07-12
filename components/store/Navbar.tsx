@@ -14,6 +14,8 @@ const navLinks = [
   { href: "/", label: "Beranda" },
   { href: "/products", label: "Produk" },
   { href: "/orders", label: "Lacak Pesanan" },
+  { href: "/kategori/streaming", label: "Streaming" },
+  { href: "/kategori/ai", label: "AI Tools" },
 ]
 
 export default function Navbar() {

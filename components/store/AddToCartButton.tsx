@@ -3,21 +3,35 @@
 import { useState } from "react"
 import { useCart } from "@/context/CartContext"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Check, ShoppingCart } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { formatPrice } from "@/lib/utils"
+import { cn, formatPrice } from "@/lib/utils"
+import { parseDurationDays } from "@/lib/duration"
 
-interface Props {
-  variant: { id: string; name: string; duration: string; price: number }
-  product: { id: string; name: string }
+interface VariantWithStock {
+  id: string
+  name: string
+  duration: string
+  price: number
+  hasWarranty?: boolean
+  warrantyDays?: number | null
   stockCount?: number
 }
 
-export default function AddToCartButton({ variant, product, stockCount }: Props) {
+interface Props {
+  variant: VariantWithStock
+  product: { id: string; name: string }
+  stockCount?: number
+  isBestValue?: boolean
+}
+
+export default function AddToCartButton({ variant, product, stockCount, isBestValue }: Props) {
   const { addItem } = useCart()
   const [added, setAdded] = useState(false)
 
-  const isOutOfStock = stockCount === 0
+  const isOutOfStock = (stockCount ?? variant.stockCount ?? 1) === 0
+  const days = parseDurationDays(variant.duration)
+  const pricePerDay = days > 0 ? Math.round(variant.price / days) : variant.price
 
   function handleAdd() {
     if (isOutOfStock) return
@@ -34,13 +48,21 @@ export default function AddToCartButton({ variant, product, stockCount }: Props)
   }
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-1 relative">
+      {isBestValue && (
+        <div className="absolute -top-2 -right-2 z-10">
+          <Badge className="text-xs bg-amber-500 hover:bg-amber-500 text-white border-0 px-1.5 py-0.5">
+            ✨ Paling Worth
+          </Badge>
+        </div>
+      )}
       <Button
         variant="outline"
         className={cn(
           "w-full justify-between",
           added && "border-green-500 text-green-600",
-          isOutOfStock && "opacity-50 cursor-not-allowed"
+          isOutOfStock && "opacity-50 cursor-not-allowed",
+          isBestValue && "border-amber-300 dark:border-amber-700"
         )}
         onClick={handleAdd}
         disabled={isOutOfStock}
@@ -59,9 +81,12 @@ export default function AddToCartButton({ variant, product, stockCount }: Props)
           )}
         </span>
       </Button>
-      {!isOutOfStock && stockCount !== undefined && stockCount <= 5 && (
-        <p className="text-xs text-destructive text-center">Sisa {stockCount}</p>
-      )}
+      <div className="flex items-center justify-between px-1">
+        <span className="text-xs text-muted-foreground">= {formatPrice(pricePerDay)}/hari</span>
+        {!isOutOfStock && stockCount !== undefined && stockCount <= 5 && (
+          <span className="text-xs text-destructive">Sisa {stockCount}</span>
+        )}
+      </div>
     </div>
   )
 }

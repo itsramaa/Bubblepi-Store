@@ -3,7 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Package, Archive, ShoppingBag, LogOut, Menu, X, Store } from "lucide-react"
+import { LayoutDashboard, Package, Archive, ShoppingBag, LogOut, Menu, X, Store, Tags, ShieldCheck, Star } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
 
@@ -12,6 +12,9 @@ const links = [
   { href: "/admin/products", label: "Produk", icon: Package },
   { href: "/admin/stock", label: "Stok", icon: Archive },
   { href: "/admin/orders", label: "Pesanan", icon: ShoppingBag, badgeKey: "pending" },
+  { href: "/admin/vouchers", label: "Voucher", icon: Tags },
+  { href: "/admin/warranty", label: "Klaim", icon: ShieldCheck },
+  { href: "/admin/reviews", label: "Ulasan", icon: Star },
 ]
 
 function SidebarContent({

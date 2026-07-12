@@ -1,9 +1,23 @@
 import { db } from "@/lib/db"
+import type { Metadata } from "next"
 import ProductCard from "@/components/store/ProductCard"
 import FilterSidebar from "@/components/store/FilterSidebar"
 import type { ProductWithVariants } from "@/types"
 
 export const dynamic = "force-dynamic"
+
+export const metadata: Metadata = {
+  title: "Produk Digital Murah - Bubblepi Store",
+  description: "Beli akun streaming, AI tools, dan software premium dengan harga terjangkau. Instant delivery, bergaransi.",
+  openGraph: {
+    title: "Produk Digital Murah - Bubblepi Store",
+    description: "Akun streaming & software premium, harga terjangkau, instant delivery.",
+    url: "https://bubblepi-store.vercel.app/products",
+    siteName: "Bubblepi Store",
+    type: "website",
+  },
+  twitter: { card: "summary_large_image" },
+}
 
 interface ProductsPageProps {
   searchParams: Promise<{ category?: string; search?: string }>
@@ -27,20 +41,29 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     orderBy: { createdAt: "desc" },
   })
 
+  // Attach sold count per product
+  const soldCounts = await db.orderItem.groupBy({
+    by: ["variantId"],
+    where: { order: { status: "FULFILLED" } },
+    _sum: { quantity: true },
+  })
+  const variantSoldMap = new Map(soldCounts.map((s) => [s.variantId, s._sum.quantity ?? 0]))
+
+  const productsWithSold = products.map((p) => ({
+    ...p,
+    totalSold: p.variants.reduce((acc, v) => acc + (variantSoldMap.get(v.id) ?? 0), 0),
+  }))
+
   const categoryLabel = category ? category.charAt(0).toUpperCase() + category.slice(1) : "Semua"
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl md:text-4xl font-bold">
           {search ? `Hasil: "${search}"` : `${categoryLabel} Produk`}
         </h1>
-        <p className="text-muted-foreground mt-1">
-          {products.length} produk ditemukan
-        </p>
+        <p className="text-muted-foreground mt-1">{products.length} produk ditemukan</p>
       </div>
-
       <div className="flex flex-col md:flex-row gap-8">
         <FilterSidebar />
         <div className="flex-1">
@@ -48,11 +71,10 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
             <div className="text-center py-20">
               <p className="text-4xl mb-4">🔍</p>
               <p className="text-lg text-muted-foreground">Produk tidak ditemukan</p>
-              <p className="text-sm text-muted-foreground mt-1">Coba kata kunci lain atau kategori berbeda</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {products.map((product) => (
+              {productsWithSold.map((product) => (
                 <ProductCard key={product.id} product={product as unknown as ProductWithVariants} />
               ))}
             </div>

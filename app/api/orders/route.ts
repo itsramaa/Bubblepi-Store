@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { cookies } from "next/headers"
 import { db } from "@/lib/db"
 import { generateOrderId } from "@/lib/utils"
 import { sendTelegramNotification } from "@/lib/telegram"
@@ -35,7 +36,23 @@ export async function POST(request: NextRequest) {
     const total = subtotal + tax
 
     const orderNumber = generateOrderId()
-    const order = await db.order.create({
+  
+  // UTM tracking
+  let utmSource: string | null = null
+  let utmMedium: string | null = null
+  let utmCampaign: string | null = null
+  try {
+    const cookieStore = await cookies()
+    const utmRaw = cookieStore.get("utm_data")?.value
+    if (utmRaw) {
+      const utm = JSON.parse(utmRaw)
+      utmSource = utm.utmSource || null
+      utmMedium = utm.utmMedium || null
+      utmCampaign = utm.utmCampaign || null
+    }
+  } catch {}
+
+  const order = await db.order.create({
       data: {
         orderNumber,
         customerName,

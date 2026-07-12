@@ -4,22 +4,32 @@ import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import OrderTimeline from "@/components/store/OrderTimeline"
 import CredentialsCard from "@/components/store/CredentialsCard"
+import WarrantyTimer from "@/components/store/WarrantyTimer"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
 import { formatPrice } from "@/lib/utils"
 import type { OrderWithItems } from "@/types"
 import { Skeleton } from "@/components/ui/skeleton"
 import Link from "next/link"
-import { ArrowLeft, RefreshCw } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { ArrowLeft, RefreshCw, Copy, Check, Share2, Mail, ShoppingCart } from "lucide-react"
+import { toast } from "sonner"
+import { useCart } from "@/context/CartContext"
 
 const TERMINAL_STATUSES = ["FULFILLED", "FAILED"]
 
 export default function OrderStatusPage() {
   const { id } = useParams<{ id: string }>()
+  const { addItem } = useCart()
   const [order, setOrder] = useState<OrderWithItems | null>(null)
   const [loading, setLoading] = useState(true)
   const [polling, setPolling] = useState(true)
+  const [resending, setResending] = useState(false)
+  const [claimForm, setClaimForm] = useState({ orderItemId: "", description: "" })
+  const [claims, setClaims] = useState<any[]>([])
+  const [submittingClaim, setSubmittingClaim] = useState(false)
+  const [copiedOrderNum, setCopiedOrderNum] = useState(false)
 
   async function fetchOrder() {
     try {
@@ -34,6 +44,14 @@ export default function OrderStatusPage() {
     }
   }
 
+  async function fetchClaims() {
+    try {
+      const res = await fetch(`/api/warranty?orderId=${id}`)
+      const data = await res.json()
+      if (data.claims) setClaims(data.claims)
+    } catch {}
+  }
+
   useEffect(() => {
     fetchOrder()
     if (!polling) return
@@ -41,11 +59,78 @@ export default function OrderStatusPage() {
     return () => clearInterval(interval)
   }, [id, polling])
 
+  useEffect(() => { fetchClaims() }, [id])
+
+  async function handleResend() {
+    setResending(true)
+    try {
+      const res = await fetch(`/api/orders/${id}/resend-email`, { method: "POST" })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      toast.success("Email berhasil dikirim ulang!")
+      fetchOrder()
+    } catch (e: any) {
+      toast.error(e.message)
+    } finally {
+      setResending(false)
+    }
+  }
+
+  async function handleClaimSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setSubmittingClaim(true)
+    try {
+      const res = await fetch("/api/warranty", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: id, ...claimForm }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      toast.success("Klaim garansi berhasil diajukan!")
+      setClaimForm({ orderItemId: "", description: "" })
+      fetchClaims()
+    } catch (e: any) {
+      toast.error(e.message)
+    } finally {
+      setSubmittingClaim(false)
+    }
+  }
+
+  function handleReorder() {
+    if (!order) return
+    let added = 0
+    order.items.forEach((item) => {
+      addItem({
+        variantId: item.variantId,
+        productId: item.variant.productId,
+        productName: item.variant.product.name,
+        variantName: item.variant.name,
+        price: item.price,
+        duration: item.variant.duration,
+      })
+      added++
+    })
+    toast.success(`${added} item ditambahkan ke keranjang!`)
+  }
+
+  function handleShareWA() {
+    if (!order) return
+    const text = `Saya baru beli ${order.items.map(i => i.variant.product.name).join(", ")} di Bubblepi Store! Cek pesananku: ${window.location.href}`
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank")
+  }
+
+  function copyOrderNumber() {
+    if (!order) return
+    navigator.clipboard.writeText(order.orderNumber)
+    setCopiedOrderNum(true)
+    setTimeout(() => setCopiedOrderNum(false), 2000)
+  }
+
   if (loading) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
         <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-4 w-32" />
         <Card><CardContent className="p-6 space-y-4">
           {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
         </CardContent></Card>
@@ -58,11 +143,12 @@ export default function OrderStatusPage() {
       <div className="max-w-2xl mx-auto px-4 py-24 text-center space-y-4">
         <p className="text-4xl">🔍</p>
         <p className="text-lg font-semibold">Pesanan tidak ditemukan</p>
-        <p className="text-muted-foreground text-sm">Pastikan order ID benar.</p>
         <Link href="/"><Button variant="outline">Kembali ke Beranda</Button></Link>
       </div>
     )
   }
+
+  const warrantyItems = order.items.filter((i: any) => i.variant?.hasWarranty)
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -71,14 +157,19 @@ export default function OrderStatusPage() {
       </Link>
 
       <div className="flex items-start justify-between mb-2">
-        <h1 className="text-2xl font-bold">Status Pesanan</h1>
-        {polling && (
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <RefreshCw className="h-3 w-3 animate-spin" /> Auto-refresh
+        <div>
+          <h1 className="text-2xl font-bold">Status Pesanan</h1>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-muted-foreground text-sm">Order #{order.orderNumber}</p>
+            <button onClick={copyOrderNumber} className="text-muted-foreground hover:text-foreground" title="Salin nomor order">
+              {copiedOrderNum ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+            </button>
           </div>
-        )}
+        </div>
+        <div className="flex items-center gap-2">
+          {polling && <RefreshCw className="h-3 w-3 animate-spin text-muted-foreground" />}
+        </div>
       </div>
-      <p className="text-muted-foreground text-sm mb-8">Order #{order.orderNumber}</p>
 
       {/* Timeline */}
       <Card className="mb-6">
@@ -87,20 +178,36 @@ export default function OrderStatusPage() {
         </CardContent>
       </Card>
 
+      {/* Actions */}
+      {order.status === "FULFILLED" && (
+        <div className="flex flex-wrap gap-2 mb-6">
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={handleReorder}>
+            <ShoppingCart className="h-4 w-4" /> Beli Lagi
+          </Button>
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={handleResend} disabled={resending}>
+            <Mail className="h-4 w-4" /> {resending ? "Mengirim..." : "Kirim Ulang Email"}
+          </Button>
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={handleShareWA}>
+            <Share2 className="h-4 w-4" /> Bagikan ke WA
+          </Button>
+        </div>
+      )}
+
       {/* Order detail */}
       <Card className="mb-6">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Detail Pesanan</CardTitle>
-        </CardHeader>
+        <CardHeader className="pb-3"><CardTitle className="text-base">Detail Pesanan</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           <div className="space-y-1 text-sm text-muted-foreground">
             <div className="flex justify-between"><span>Nama</span><span className="text-foreground font-medium">{order.customerName}</span></div>
             <div className="flex justify-between"><span>Email</span><span className="text-foreground font-medium">{order.customerEmail}</span></div>
+            {order.status === "FAILED" && order.cancelReason && (
+              <div className="flex justify-between"><span>Alasan</span><span className="text-destructive font-medium">{order.cancelReason}</span></div>
+            )}
           </div>
           <div className="border-t pt-3 space-y-1.5">
-            {order.items.map((item) => (
+            {order.items.map((item: any) => (
               <div key={item.id} className="flex justify-between text-sm">
-                <span className="text-muted-foreground">{item.variant.name} ×{item.quantity}</span>
+                <span className="text-muted-foreground">{item.variant.product.name} ({item.variant.name}) ×{item.quantity}</span>
                 <span className="font-medium">{formatPrice(item.price * item.quantity)}</span>
               </div>
             ))}
@@ -113,39 +220,75 @@ export default function OrderStatusPage() {
       </Card>
 
       {/* Credentials */}
-      {order.status === "FULFILLED" && order.stocks.length > 0 && (
+      {order.status === "FULFILLED" && order.stocks?.length > 0 && (
         <CredentialsCard stocks={order.stocks} />
       )}
 
-      {/* Warranty claim */}
-      {order.status === "FULFILLED" && (() => {
-        const warrantyItems = order.items.filter((i) => (i.variant as any)?.hasWarranty)
-        if (warrantyItems.length === 0) return null
-        const maxDays = Math.max(...warrantyItems.map((i) => (i.variant as any)?.warrantyDays ?? 0))
-        const supportUrl = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP ?? "https://wa.me/"
-        return (
-          <Card className="mt-6 border-amber-200 dark:border-amber-800">
-            <CardContent className="p-6">
-              <h3 className="font-semibold flex items-center gap-2 mb-2">
-                🛡️ Klaim Garansi
-              </h3>
-              <p className="text-sm text-muted-foreground mb-3">
-                Garansi aktif selama {maxDays} hari sejak pembelian.
-                Jika akun bermasalah, hubungi kami untuk penggantian.
-              </p>
-              <a
-                href={`${supportUrl}?text=${encodeURIComponent(`Halo, saya ingin klaim garansi untuk order #${order.orderNumber}`)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button variant="outline" className="gap-2">
-                  💬 Hubungi Support via WhatsApp
+      {/* Garansi Timer */}
+      {order.status === "FULFILLED" && warrantyItems.length > 0 && order.paidAt && (
+        <WarrantyTimer paidAt={order.paidAt} items={warrantyItems} />
+      )}
+
+      {/* Warranty Claims */}
+      {order.status === "FULFILLED" && warrantyItems.length > 0 && (
+        <Card className="mt-6 border-amber-200 dark:border-amber-800">
+          <CardContent className="p-6">
+            <h3 className="font-semibold flex items-center gap-2 mb-3">🛡️ Klaim Garansi</h3>
+            {claims.length > 0 && (
+              <div className="mb-4 space-y-2">
+                <p className="text-sm font-medium">Riwayat Klaim:</p>
+                {claims.map((c: any) => (
+                  <div key={c.id} className="text-sm p-3 rounded-lg bg-muted/30">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge variant={c.status === "APPROVED" ? "default" : c.status === "REJECTED" ? "destructive" : "secondary"} className="text-xs">
+                        {c.status === "PENDING" ? "Diproses" : c.status === "APPROVED" ? "Disetujui" : "Ditolak"}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">{new Date(c.createdAt).toLocaleDateString("id-ID")}</span>
+                    </div>
+                    <p className="text-muted-foreground">{c.description}</p>
+                    {c.resolveNote && <p className="text-xs text-muted-foreground mt-1">Catatan: {c.resolveNote}</p>}
+                  </div>
+                ))}
+              </div>
+            )}
+            {claims.some((c: any) => c.status === "PENDING") ? (
+              <p className="text-sm text-muted-foreground">Klaimmu sedang diproses.</p>
+            ) : (
+              <form onSubmit={handleClaimSubmit} className="space-y-3">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Pilih Item</label>
+                  <select
+                    className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
+                    value={claimForm.orderItemId}
+                    onChange={(e) => setClaimForm({ ...claimForm, orderItemId: e.target.value })}
+                    required
+                  >
+                    <option value="">Pilih item bermasalah</option>
+                    {warrantyItems.map((i: any) => (
+                      <option key={i.id} value={i.id}>
+                        {i.variant.product.name} ({i.variant.name})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Deskripsi Masalah</label>
+                  <Textarea
+                    value={claimForm.description}
+                    onChange={(e) => setClaimForm({ ...claimForm, description: e.target.value })}
+                    placeholder="Jelaskan masalah yang kamu alami..."
+                    required
+                    rows={3}
+                  />
+                </div>
+                <Button type="submit" disabled={submittingClaim}>
+                  {submittingClaim ? "Mengirim..." : "Ajukan Klaim"}
                 </Button>
-              </a>
-            </CardContent>
-          </Card>
-        )
-      })()}
+              </form>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }
