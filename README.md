@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Bubblepi Store
 
-## Getting Started
+Premium digital accounts marketplace — Netflix, Spotify, Canva, ChatGPT, dan lainnya.
 
-First, run the development server:
+## Tech Stack
+
+- Next.js 16 (App Router, TypeScript strict)
+- shadcn/ui + Tailwind CSS 4 (CSS-based config)
+- Prisma 6 + PostgreSQL
+- Xendit (QRIS + Virtual Account, sandbox)
+- Resend + React Email
+
+## Setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+# 1. Install deps
+pnpm install
+
+# 2. Setup env
+cp .env.example .env.local
+# Fill in: DATABASE_URL, XENDIT_SECRET_KEY, XENDIT_WEBHOOK_TOKEN,
+#          NEXT_PUBLIC_XENDIT_PUBLIC_KEY, RESEND_API_KEY, RESEND_FROM_EMAIL,
+#          ADMIN_PASSWORD, ADMIN_SECRET, NEXT_PUBLIC_APP_URL
+
+# 3. Setup DB
+npx prisma migrate dev
+
+# 4. Seed
+npx tsx prisma/seed.ts
+
+# 5. Dev
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Deployment (Vercel)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Connect repo `holycann/Bubblepi-Store`
+2. Framework: Next.js
+3. Build command: `prisma generate && next build`
+4. Install command: `pnpm install`
+5. Set all env vars from `.env.local` on Vercel dashboard
+6. Use Vercel Postgres / Neon / Supabase for `DATABASE_URL`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Routes
 
-## Learn More
+### Storefront
+- `/` — Homepage (hero, featured products, testimonials, FAQ)
+- `/products` — Product listing with category/search filter
+- `/products/[slug]` — Product detail + variant picker
+- `/cart` — Cart page
+- `/checkout` — 3-step checkout (data → konfirmasi → pembayaran)
+- `/orders/[id]` — Order status + credential reveal
 
-To learn more about Next.js, take a look at the following resources:
+### Admin
+- `/admin/login` — Admin login (single password)
+- `/admin/dashboard` — Stats + recent orders
+- `/admin/products` — Product list + CRUD
+- `/admin/orders` — Order list + detail + manual fulfill
+- `/admin/stock` — Stock management per variant (bulk add)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Notes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Credentials stored plaintext (`ponytail:` AES-256 encryption post-MVP)
+- No rate limiting on API routes (`ponytail:` add post-MVP)
+- Admin: single password, httpOnly JWT cookie 8h
