@@ -1,4 +1,6 @@
 import { db } from "@/lib/db"
+
+export const dynamic = "force-dynamic"
 import ProductCard from "@/components/store/ProductCard"
 import FilterSidebar from "@/components/store/FilterSidebar"
 import type { ProductWithVariants } from "@/types"

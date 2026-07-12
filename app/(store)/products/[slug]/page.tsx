@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation"
 import { db } from "@/lib/db"
+
+export const dynamic = "force-dynamic"
 import { Badge } from "@/components/ui/badge"
 import Image from "next/image"
 import AddToCartButton from "@/components/store/AddToCartButton"

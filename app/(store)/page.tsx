@@ -1,4 +1,6 @@
 import { db } from "@/lib/db"
+
+export const dynamic = "force-dynamic"
 import HeroCarousel from "@/components/store/HeroCarousel"
 import FeaturedProducts from "@/components/store/FeaturedProducts"
 import CategorySection from "@/components/store/CategorySection"
