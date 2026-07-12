@@ -22,6 +22,16 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
 
   if (!product) notFound()
 
+  // Query stock count per variant
+  const variantsWithStock = await Promise.all(
+    product.variants.map(async (v) => ({
+      ...v,
+      stockCount: await db.accountStock.count({
+        where: { variantId: v.id, status: "AVAILABLE" },
+      }),
+    }))
+  )
+
   const minPrice = Math.min(...product.variants.map((v) => v.price))
   const maxPrice = Math.max(...product.variants.map((v) => v.price))
 
@@ -81,11 +91,12 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
           <div className="mt-8">
             <h2 className="text-lg font-semibold mb-4">Pilih Varian:</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {product.variants.map((variant) => (
+              {variantsWithStock.map((variant) => (
                 <AddToCartButton
                   key={variant.id}
                   variant={variant}
                   product={{ id: product.id, name: product.name }}
+                  stockCount={variant.stockCount}
                 />
               ))}
             </div>
