@@ -3,6 +3,7 @@ import { Poppins } from "next/font/google"
 import { ThemeProvider } from "@/context/ThemeContext"
 import { CartProvider } from "@/context/CartContext"
 import LenisProvider from "@/components/LenisProvider"
+import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
 
 const poppins = Poppins({
@@ -23,6 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <CartProvider>
             <LenisProvider />
             {children}
+            <Toaster richColors position="top-center" />
           </CartProvider>
         </ThemeProvider>
       </body>

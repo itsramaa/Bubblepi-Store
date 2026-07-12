@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useCart } from "@/context/CartContext"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import CheckoutStep1 from "@/components/store/CheckoutStep1"
 import CheckoutStep2 from "@/components/store/CheckoutStep2"
 import CheckoutStep3 from "@/components/store/CheckoutStep3"
@@ -15,6 +16,7 @@ export default function CheckoutPage() {
   const [formData, setFormData] = useState<CheckoutFormData | null>(null)
   const [orderId, setOrderId] = useState<string | null>(null)
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
   const { items, clearCart } = useCart()
   const router = useRouter()
 
@@ -29,36 +31,43 @@ export default function CheckoutPage() {
   }
 
   async function handleStep2Submit() {
-    if (!formData) return
+    if (!formData || submitting) return
+    setSubmitting(true)
 
-    const orderRes = await fetch("/api/orders", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        customerName: formData.customerName,
-        customerEmail: formData.customerEmail,
-        items: items.map((i) => ({ variantId: i.variantId, quantity: i.quantity })),
-      }),
-    })
-    const orderData = await orderRes.json()
-    if (!orderData.success) { alert("Gagal membuat pesanan"); return }
+    try {
+      const orderRes = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerName: formData.customerName,
+          customerEmail: formData.customerEmail,
+          items: items.map((i) => ({ variantId: i.variantId, quantity: i.quantity })),
+        }),
+      })
+      const orderData = await orderRes.json()
+      if (!orderData.success) throw new Error(orderData.error ?? "Gagal membuat pesanan")
 
-    const payRes = await fetch("/api/payments/create", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        orderId: orderData.data.orderId,
-        paymentMethod: formData.paymentMethod,
-        bankCode: formData.bankCode,
-      }),
-    })
-    const payData = await payRes.json()
-    if (!payData.success) { alert("Gagal membuat pembayaran"); return }
+      const payRes = await fetch("/api/payments/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: orderData.data.orderId,
+          paymentMethod: formData.paymentMethod,
+          bankCode: formData.bankCode,
+        }),
+      })
+      const payData = await payRes.json()
+      if (!payData.success) throw new Error(payData.error ?? "Gagal membuat pembayaran")
 
-    setOrderId(orderData.data.orderId)
-    setPaymentUrl(payData.data.paymentUrl)
-    clearCart()
-    setStep(3)
+      setOrderId(orderData.data.orderId)
+      setPaymentUrl(payData.data.paymentUrl)
+      clearCart()
+      setStep(3)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Terjadi kesalahan")
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -73,6 +82,7 @@ export default function CheckoutPage() {
               formData={formData!}
               onSubmit={handleStep2Submit}
               onBack={() => setStep(1)}
+              submitting={submitting}
             />
           )}
           {step === 3 && orderId && (

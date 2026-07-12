@@ -67,7 +67,17 @@ export async function fulfillOrder(orderId: string) {
   if (allAssigned) {
     await db.order.update({
       where: { id: orderId },
-      data: { status: "FULFILLED", paidAt: new Date() },
+      data: {
+        status: "FULFILLED",
+        // Only set paidAt if not already set by webhook
+        ...(order.paidAt ? {} : { paidAt: new Date() }),
+      },
+    })
+
+    // Update stock from ASSIGNED → DELIVERED
+    await db.accountStock.updateMany({
+      where: { orderId: orderId, status: "ASSIGNED" },
+      data: { status: "DELIVERED" },
     })
 
     await sendAccountDelivery({

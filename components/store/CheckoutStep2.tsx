@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import { useCart } from "@/context/CartContext"
 import { formatPrice } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -12,17 +11,11 @@ interface Props {
   formData: CheckoutFormData
   onSubmit: () => void
   onBack: () => void
+  submitting?: boolean
 }
 
-export default function CheckoutStep2({ formData, onSubmit, onBack }: Props) {
+export default function CheckoutStep2({ formData, onSubmit, onBack, submitting = false }: Props) {
   const { items, getSubtotal, getTax, getTotal } = useCart()
-  const [loading, setLoading] = useState(false)
-
-  async function handleSubmit() {
-    setLoading(true)
-    await onSubmit()
-    setLoading(false)
-  }
 
   return (
     <div className="space-y-6">
@@ -82,11 +75,11 @@ export default function CheckoutStep2({ formData, onSubmit, onBack }: Props) {
       </div>
 
       <div className="flex gap-3 pt-2">
-        <Button variant="outline" className="flex-1" onClick={onBack} disabled={loading}>
+        <Button variant="outline" className="flex-1" onClick={onBack} disabled={submitting}>
           Kembali
         </Button>
-        <Button className="flex-1" onClick={handleSubmit} disabled={loading}>
-          {loading ? (
+        <Button className="flex-1" onClick={onSubmit} disabled={submitting}>
+          {submitting ? (
             <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Memproses...</>
           ) : (
             "Bayar Sekarang"
