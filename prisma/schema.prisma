@@ -35,6 +35,7 @@ model Product {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   variants    Variant[]
+  reviews     Review[]
 }
 
 model Variant {
@@ -84,6 +85,7 @@ model Order {
   paidAt           DateTime?
   items            OrderItem[]
   stocks           AccountStock[]
+  review           Review?
 }
 
 model OrderItem {
@@ -94,4 +96,19 @@ model OrderItem {
   price     Int     // price snapshot at time of order
   order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   variant   Variant @relation(fields: [variantId], references: [id])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  productId String
+  orderId   String   @unique
+  rating    Int
+  comment   String
+  isVisible Boolean  @default(true)
+  isPinned  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([productId, isVisible])
 }
