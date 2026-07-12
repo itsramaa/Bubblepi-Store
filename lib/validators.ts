@@ -11,7 +11,7 @@ export const productSchema = z.object({
   name: z.string().min(1),
   slug: z.string().min(1).regex(/^[a-z0-9-]+$/),
   description: z.string().min(1),
-  image: z.string().url(),
+  image: z.string().min(1, "URL gambar tidak boleh kosong"),
   category: z.string().min(1),
   isActive: z.boolean(),
 })

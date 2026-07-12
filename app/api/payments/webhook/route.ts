@@ -5,10 +5,9 @@ import { fulfillOrder } from "@/lib/order"
 export async function POST(request: NextRequest) {
   try {
     const token = request.headers.get("x-callback-token")
-    // ponytail: re-enable strict token check after webhook URL confirmed working
-    if (process.env.XENDIT_WEBHOOK_TOKEN && token !== process.env.XENDIT_WEBHOOK_TOKEN) {
-      console.warn("Webhook token mismatch:", token)
-      // return NextResponse.json({ error: "Invalid token" }, { status: 401 })
+    const webhookToken = process.env.XENDIT_WEBHOOK_TOKEN
+    if (webhookToken && token !== webhookToken) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 })
     }
 
     const body = await request.json()
