@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils"
 const navLinks = [
   { href: "/", label: "Beranda" },
   { href: "/products", label: "Produk" },
+  { href: "/orders", label: "Lacak Pesanan" },
 ]
 
 export default function Navbar() {
