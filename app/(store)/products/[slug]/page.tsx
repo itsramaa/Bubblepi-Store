@@ -58,6 +58,15 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
         {/* Info */}
         <div>
           <h1 className="text-3xl md:text-4xl font-bold">{product.name}</h1>
+
+          {/* Type badge */}
+          <div className="flex items-center gap-2 mt-3">
+            <Badge variant="outline">
+              {product.type === "private" ? "🔑 Private" : "🔗 Sharing"}
+            </Badge>
+            <Badge variant="outline">{product.category}</Badge>
+          </div>
+
           <p className="text-muted-foreground mt-4 leading-relaxed">{product.description}</p>
 
           <div className="mt-4 flex items-center gap-2">

@@ -30,6 +30,7 @@ model Product {
   description String
   image       String
   category    String
+  type        String    @default("sharing") // "sharing" | "private"
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -37,14 +38,16 @@ model Product {
 }
 
 model Variant {
-  id         String         @id @default(cuid())
-  productId  String
-  name       String
-  duration   String
-  price      Int            // IDR integer
-  product    Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
-  stock      AccountStock[]
-  orderItems OrderItem[]
+  id            String         @id @default(cuid())
+  productId     String
+  name          String
+  duration      String
+  price         Int            // IDR integer
+  hasWarranty   Boolean        @default(false)
+  warrantyDays  Int?
+  product       Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  stock         AccountStock[]
+  orderItems    OrderItem[]
 }
 
 model AccountStock {

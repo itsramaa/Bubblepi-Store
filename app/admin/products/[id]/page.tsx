@@ -13,8 +13,8 @@ import { ArrowLeft, Loader2, Plus, Trash2, Save } from "lucide-react"
 import Link from "next/link"
 import { Skeleton } from "@/components/ui/skeleton"
 
-interface Variant { id: string; name: string; duration: string; price: number }
-interface Product { id: string; name: string; slug: string; description: string; image: string; category: string; isActive: boolean; variants: Variant[] }
+interface Variant { id: string; name: string; duration: string; price: number; hasWarranty: boolean; warrantyDays: number | null }
+interface Product { id: string; name: string; slug: string; description: string; image: string; category: string; type: string; isActive: boolean; variants: Variant[] }
 
 export default function EditProductPage() {
   const { id } = useParams<{ id: string }>()
@@ -48,6 +48,7 @@ export default function EditProductPage() {
           description: product.description,
           image: product.image,
           category: product.category,
+          type: product.type,
           isActive: product.isActive,
         }),
       })
@@ -140,6 +141,17 @@ export default function EditProductPage() {
                 <Label>URL Gambar</Label>
                 <Input value={product.image} onChange={(e) => setProduct({ ...product, image: e.target.value })} />
               </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <Label>Tipe Akun</Label>
+              <select
+                className="border rounded-md px-3 py-2 text-sm bg-background"
+                value={product.type}
+                onChange={(e) => setProduct({ ...product, type: e.target.value })}
+              >
+                <option value="sharing">🔗 Sharing</option>
+                <option value="private">🔑 Private</option>
+              </select>
             </div>
             <div className="flex items-center justify-between">
               <Label>Produk Aktif</Label>

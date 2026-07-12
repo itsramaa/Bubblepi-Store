@@ -27,6 +27,7 @@ export default function NewProductPage() {
     description: "",
     image: "",
     category: "",
+    type: "sharing",
     isActive: true,
   })
   const [variants, setVariants] = useState<VariantForm[]>([
@@ -122,6 +123,17 @@ export default function NewProductPage() {
               <Textarea required value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} placeholder="Deskripsi produk..." />
             </div>
             <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Tipe Akun</Label>
+                <select
+                  className="w-full border rounded-md px-3 py-2 text-sm bg-background"
+                  value={form.type}
+                  onChange={(e) => setForm({ ...form, type: e.target.value })}
+                >
+                  <option value="sharing">🔗 Sharing</option>
+                  <option value="private">🔑 Private</option>
+                </select>
+              </div>
               <div className="space-y-1.5">
                 <Label>Kategori</Label>
                 <Input required value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="streaming" />
