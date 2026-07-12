@@ -1,81 +1,100 @@
 "use client"
 
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { useCart } from "@/context/CartContext"
 import { useTheme } from "@/context/ThemeContext"
 import { Button } from "@/components/ui/button"
-import { ShoppingCart, Sun, Moon, Menu } from "lucide-react"
+import { ShoppingCart, Moon, Sun, Menu, X } from "lucide-react"
 import { useState } from "react"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { cn } from "@/lib/utils"
+
+const navLinks = [
+  { href: "/", label: "Beranda" },
+  { href: "/products", label: "Produk" },
+]
 
 export default function Navbar() {
+  const pathname = usePathname()
   const { getItemCount } = useCart()
   const { theme, toggleTheme } = useTheme()
-  const [open, setOpen] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
 
-  const navLinks = [
-    { href: "/", label: "Home" },
-    { href: "/products", label: "Produk" },
-  ]
+  if (pathname.startsWith("/admin") || pathname.startsWith("/login")) return null
 
   return (
-    <nav className="sticky top-0 z-50 backdrop-blur-md bg-background/80 border-b">
-      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href="/" className="font-cal text-xl font-bold text-primary">
-          Bubblepi
+    <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md">
+      <div className="max-w-7xl mx-auto flex items-center justify-between h-16 px-4">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2">
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#F4ABC4] to-[#595B83] flex items-center justify-center text-white font-bold text-sm">
+            B
+          </div>
+          <span className="font-bold text-lg hidden sm:block">Bubblepi</span>
         </Link>
 
         {/* Desktop nav */}
-        <div className="hidden md:flex items-center gap-6">
+        <nav className="hidden md:flex items-center gap-1">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="hover:text-primary transition-colors"
+              className={cn(
+                "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                pathname === link.href
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              )}
             >
               {link.label}
             </Link>
           ))}
-        </div>
+        </nav>
 
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={toggleTheme}>
+        {/* Actions */}
+        <div className="flex items-center gap-1">
+          {/* Theme toggle */}
+          <Button variant="ghost" size="icon" onClick={toggleTheme} className="text-muted-foreground">
             {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
 
-          <Link href="/cart" className="relative">
-            <Button variant="ghost" size="icon">
+          {/* Cart */}
+          <Link href="/cart">
+            <Button variant="ghost" size="icon" className="relative text-muted-foreground">
               <ShoppingCart className="h-5 w-5" />
               {getItemCount() > 0 && (
-                <span className="absolute -top-1 -right-1 bg-primary text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">
                   {getItemCount()}
                 </span>
               )}
             </Button>
           </Link>
 
-          {/* Mobile menu */}
-          <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger className="md:hidden inline-flex items-center justify-center">
-              <Menu className="h-5 w-5" />
-            </SheetTrigger>
-            <SheetContent side="left">
-              <div className="flex flex-col gap-4 mt-8">
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className="text-lg"
-                    onClick={() => setOpen(false)}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </div>
-            </SheetContent>
-          </Sheet>
+          {/* Mobile toggle */}
+          <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
+            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
         </div>
       </div>
-    </nav>
+
+      {/* Mobile nav */}
+      {mobileOpen && (
+        <div className="md:hidden border-t bg-background p-4 space-y-2">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              onClick={() => setMobileOpen(false)}
+              className={cn(
+                "block px-4 py-2 rounded-lg text-sm font-medium",
+                pathname === link.href ? "bg-primary/10 text-primary" : "text-muted-foreground"
+              )}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </div>
+      )}
+    </header>
   )
 }

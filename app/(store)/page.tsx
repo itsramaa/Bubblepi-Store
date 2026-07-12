@@ -1,7 +1,7 @@
 import { db } from "@/lib/db"
 
 export const dynamic = "force-dynamic"
-import HeroCarousel from "@/components/store/HeroCarousel"
+import HeroSection from "@/components/store/HeroSection"
 import FeaturedProducts from "@/components/store/FeaturedProducts"
 import CategorySection from "@/components/store/CategorySection"
 import TestimonialsSection from "@/components/store/TestimonialsSection"
@@ -16,7 +16,7 @@ export default async function HomePage() {
 
   return (
     <div>
-      <HeroCarousel />
+      <HeroSection />
       <FeaturedProducts products={products} />
       <CategorySection />
       <TestimonialsSection />
