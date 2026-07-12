@@ -2,18 +2,74 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Package, Users, ShoppingBag, LogOut } from "lucide-react"
+import { LayoutDashboard, Package, Archive, ShoppingBag, LogOut, Menu, X, Store } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useState } from "react"
 
 const links = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/products", label: "Produk", icon: Package },
-  { href: "/admin/stock", label: "Stok", icon: Users },
+  { href: "/admin/stock", label: "Stok", icon: Archive },
   { href: "/admin/orders", label: "Pesanan", icon: ShoppingBag },
 ]
 
+function SidebarContent({ pathname, onLogout }: { pathname: string; onLogout: () => void }) {
+  return (
+    <div className="flex flex-col h-full">
+      {/* Logo */}
+      <div className="p-5 border-b flex items-center gap-2.5">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#F4ABC4] to-[#595B83] flex items-center justify-center text-white font-bold text-sm">
+          B
+        </div>
+        <div>
+          <p className="font-bold text-sm">Bubblepi</p>
+          <p className="text-xs text-muted-foreground">Admin Panel</p>
+        </div>
+      </div>
+
+      {/* Nav */}
+      <nav className="flex-1 p-3 space-y-1">
+        {links.map(({ href, label, icon: Icon }) => (
+          <Link
+            key={href}
+            href={href}
+            className={cn(
+              "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+              pathname.startsWith(href)
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            )}
+          >
+            <Icon className="h-4 w-4 shrink-0" />
+            {label}
+          </Link>
+        ))}
+      </nav>
+
+      {/* Footer */}
+      <div className="p-3 border-t space-y-1">
+        <Link
+          href="/"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        >
+          <Store className="h-4 w-4" />
+          Lihat Toko
+        </Link>
+        <button
+          onClick={onLogout}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm w-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+        >
+          <LogOut className="h-4 w-4" />
+          Logout
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminSidebar() {
   const pathname = usePathname()
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   async function handleLogout() {
     await fetch("/api/admin/logout", { method: "POST" })
@@ -21,36 +77,34 @@ export default function AdminSidebar() {
   }
 
   return (
-    <aside className="w-64 min-h-screen bg-card border-r flex flex-col">
-      <div className="p-6 border-b">
-        <span className="font-cal text-lg font-bold text-primary">Bubblepi Admin</span>
-      </div>
-      <nav className="flex-1 p-4 space-y-1">
-        {links.map(({ href, label, icon: Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            className={cn(
-              "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
-              pathname === href
-                ? "bg-primary text-primary-foreground"
-                : "hover:bg-accent hover:text-accent-foreground"
-            )}
-          >
-            <Icon className="h-4 w-4" />
-            {label}
-          </Link>
-        ))}
-      </nav>
-      <div className="p-4 border-t">
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-3 px-3 py-2 rounded-md text-sm w-full hover:bg-destructive hover:text-destructive-foreground transition-colors"
-        >
-          <LogOut className="h-4 w-4" />
-          Logout
+    <>
+      {/* Desktop sidebar */}
+      <aside className="hidden md:flex w-56 min-h-screen bg-card border-r flex-col shrink-0">
+        <SidebarContent pathname={pathname} onLogout={handleLogout} />
+      </aside>
+
+      {/* Mobile top bar */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-card border-b h-14 flex items-center justify-between px-4">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#F4ABC4] to-[#595B83] flex items-center justify-center text-white font-bold text-xs">
+            B
+          </div>
+          <span className="font-bold text-sm">Bubblepi Admin</span>
+        </div>
+        <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2">
+          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </div>
-    </aside>
+
+      {/* Mobile drawer */}
+      {mobileOpen && (
+        <div className="md:hidden fixed inset-0 z-40 flex">
+          <div className="w-64 bg-card border-r h-full pt-14">
+            <SidebarContent pathname={pathname} onLogout={handleLogout} />
+          </div>
+          <div className="flex-1 bg-black/50" onClick={() => setMobileOpen(false)} />
+        </div>
+      )}
+    </>
   )
 }
