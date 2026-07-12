@@ -116,6 +116,36 @@ export default function OrderStatusPage() {
       {order.status === "FULFILLED" && order.stocks.length > 0 && (
         <CredentialsCard stocks={order.stocks} />
       )}
+
+      {/* Warranty claim */}
+      {order.status === "FULFILLED" && (() => {
+        const warrantyItems = order.items.filter((i) => (i.variant as any)?.hasWarranty)
+        if (warrantyItems.length === 0) return null
+        const maxDays = Math.max(...warrantyItems.map((i) => (i.variant as any)?.warrantyDays ?? 0))
+        const supportUrl = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP ?? "https://wa.me/"
+        return (
+          <Card className="mt-6 border-amber-200 dark:border-amber-800">
+            <CardContent className="p-6">
+              <h3 className="font-semibold flex items-center gap-2 mb-2">
+                🛡️ Klaim Garansi
+              </h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                Garansi aktif selama {maxDays} hari sejak pembelian.
+                Jika akun bermasalah, hubungi kami untuk penggantian.
+              </p>
+              <a
+                href={`${supportUrl}?text=${encodeURIComponent(`Halo, saya ingin klaim garansi untuk order #${order.orderNumber}`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button variant="outline" className="gap-2">
+                  💬 Hubungi Support via WhatsApp
+                </Button>
+              </a>
+            </CardContent>
+          </Card>
+        )
+      })()}
     </div>
   )
 }

@@ -2,12 +2,23 @@ import { db } from "@/lib/db"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
 import { Archive, AlertTriangle } from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
-export default async function AdminStockPage() {
+interface Props { searchParams: Promise<{ search?: string }> }
+
+export default async function AdminStockPage({ searchParams }: Props) {
+  const { search } = await searchParams
+
   const variants = await db.variant.findMany({
+    where: search ? {
+      OR: [
+        { product: { name: { contains: search, mode: "insensitive" } } },
+        { name: { contains: search, mode: "insensitive" } },
+      ],
+    } : undefined,
     include: {
       product: { select: { name: true } },
       stock: true,
@@ -22,8 +33,24 @@ export default async function AdminStockPage() {
         <p className="text-muted-foreground mt-1">Kelola credentials per varian produk</p>
       </div>
 
+      {/* Search */}
+      <form className="flex gap-2">
+        <Input
+          name="search"
+          placeholder="Cari produk atau varian..."
+          defaultValue={search ?? ""}
+          className="max-w-sm"
+        />
+        <Button type="submit" size="sm">Cari</Button>
+      </form>
+
       <div className="space-y-2">
-        {variants.map((variant) => {
+        {variants.length === 0 ? (
+          <div className="text-center py-16 text-muted-foreground">
+            <Archive className="h-10 w-10 mx-auto mb-3 opacity-30" />
+            <p>Tidak ada varian ditemukan</p>
+          </div>
+        ) : variants.map((variant) => {
           const available = variant.stock.filter((s) => s.status === "AVAILABLE").length
           const assigned = variant.stock.filter((s) => s.status === "ASSIGNED").length
           const isCritical = available < 5

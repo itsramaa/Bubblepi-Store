@@ -1,10 +1,14 @@
 import { db } from "@/lib/db"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { formatPrice } from "@/lib/utils"
 import { ShoppingBag } from "lucide-react"
 
 export const dynamic = "force-dynamic"
+
+const PAGE_SIZE = 20
 
 const STATUS_LABEL: Record<string, string> = {
   PENDING: "Pending", AWAITING_PAYMENT: "Menunggu Bayar", PAID: "Dibayar",
@@ -16,32 +20,73 @@ const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "
 }
 const STATUSES = ["PENDING", "AWAITING_PAYMENT", "PAID", "FULFILLED", "FAILED", "PENDING_STOCK"]
 
-interface Props { searchParams: Promise<{ status?: string }> }
+interface Props { searchParams: Promise<{ status?: string; page?: string; search?: string }> }
 
 export default async function AdminOrdersPage({ searchParams }: Props) {
-  const { status } = await searchParams
-  const orders = await db.order.findMany({
-    where: status ? { status: status as never } : {},
-    include: { items: true },
-    orderBy: { createdAt: "desc" },
-  })
+  const { status, page: pageStr, search } = await searchParams
+  const page = Math.max(1, parseInt(pageStr ?? "1"))
+  const skip = (page - 1) * PAGE_SIZE
+
+  const where: Record<string, unknown> = {}
+  if (status) where.status = status
+  if (search) {
+    where.OR = [
+      { orderNumber: { contains: search, mode: "insensitive" } },
+      { customerEmail: { contains: search, mode: "insensitive" } },
+      { customerName: { contains: search, mode: "insensitive" } },
+    ]
+  }
+
+  const [orders, total] = await Promise.all([
+    db.order.findMany({
+      where,
+      include: { items: true },
+      orderBy: { createdAt: "desc" },
+      take: PAGE_SIZE,
+      skip,
+    }),
+    db.order.count({ where }),
+  ])
+
+  const totalPages = Math.ceil(total / PAGE_SIZE)
+
+  function buildUrl(params: Record<string, string | undefined>) {
+    const q = new URLSearchParams()
+    if (params.status) q.set("status", params.status)
+    if (params.search) q.set("search", params.search)
+    if (params.page && params.page !== "1") q.set("page", params.page)
+    const qs = q.toString()
+    return `/admin/orders${qs ? `?${qs}` : ""}`
+  }
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Pesanan</h1>
-        <p className="text-muted-foreground mt-1">{orders.length} pesanan ditemukan</p>
+        <p className="text-muted-foreground mt-1">{total} pesanan ditemukan</p>
       </div>
+
+      {/* Search */}
+      <form className="flex gap-2">
+        <Input
+          name="search"
+          placeholder="Cari order#, nama, atau email..."
+          defaultValue={search ?? ""}
+          className="max-w-sm"
+        />
+        {status && <input type="hidden" name="status" value={status} />}
+        <Button type="submit" size="sm">Cari</Button>
+      </form>
 
       {/* Filter tabs */}
       <div className="flex gap-2 flex-wrap">
-        <Link href="/admin/orders">
+        <Link href={buildUrl({ search })}>
           <Badge variant={!status ? "default" : "outline"} className="cursor-pointer px-3 py-1 text-sm">
             Semua
           </Badge>
         </Link>
         {STATUSES.map((s) => (
-          <Link key={s} href={`/admin/orders?status=${s}`}>
+          <Link key={s} href={buildUrl({ status: s, search })}>
             <Badge variant={status === s ? "default" : "outline"} className="cursor-pointer px-3 py-1 text-sm">
               {STATUS_LABEL[s]}
             </Badge>
@@ -80,6 +125,21 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
           </Link>
         ))}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-3 pt-4">
+          <Link href={buildUrl({ status, search, page: String(page - 1) })}>
+            <Button variant="outline" size="sm" disabled={page <= 1}>Sebelumnya</Button>
+          </Link>
+          <span className="text-sm text-muted-foreground">
+            Halaman {page} dari {totalPages}
+          </span>
+          <Link href={buildUrl({ status, search, page: String(page + 1) })}>
+            <Button variant="outline" size="sm" disabled={page >= totalPages}>Berikutnya</Button>
+          </Link>
+        </div>
+      )}
     </div>
   )
 }

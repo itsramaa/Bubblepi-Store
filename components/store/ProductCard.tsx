@@ -34,6 +34,11 @@ export default function ProductCard({ product }: ProductCardProps) {
           <Badge className="absolute top-3 left-3 bg-white/90 text-foreground backdrop-blur-sm border-0">
             {product.category}
           </Badge>
+          {"totalStock" in product && typeof product.totalStock === "number" && product.totalStock <= 10 && product.totalStock > 0 && (
+            <Badge variant="destructive" className="absolute top-3 right-3 text-xs">
+              Stok Terbatas
+            </Badge>
+          )}
         </div>
 
         <CardContent className="p-4">
