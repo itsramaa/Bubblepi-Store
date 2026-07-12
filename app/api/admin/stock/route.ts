@@ -14,11 +14,12 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const parsed = stockItemSchema.parse(body)
+    const expiresAt = (parsed as any).expiresAt
     const item = await db.accountStock.create({
       data: {
         variantId: parsed.variantId,
         credentials: parsed.credentials,
-        expiresAt: parsed.expiresAt ? new Date(parsed.expiresAt as string) : null,
+        expiresAt: expiresAt ? new Date(expiresAt as string) : null,
       },
     })
     return NextResponse.json({ success: true, data: item }, { status: 201 })

@@ -86,6 +86,8 @@ model Order {
   items            OrderItem[]
   stocks           AccountStock[]
   review           Review?
+  referrals        Referral[]
+  warrantyClaims   WarrantyClaim[]
 }
 
 model OrderItem {
@@ -96,6 +98,7 @@ model OrderItem {
   price     Int     // price snapshot at time of order
   order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   variant   Variant @relation(fields: [variantId], references: [id])
+  warrantyClaims WarrantyClaim[]
 }
 
 model Review {
@@ -111,4 +114,50 @@ model Review {
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([productId, isVisible])
+}
+
+model Referral {
+  id              String   @id @default(cuid())
+  referrerEmail   String
+  referredEmail   String
+  orderId         String   @unique
+  status          String   @default("PENDING") // PENDING, CONFIRMED, PAID_OUT
+  commissionValue Int      @default(0)
+  createdAt       DateTime @default(now())
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([referrerEmail])
+}
+
+enum WarrantyStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model WarrantyClaim {
+  id            String        @id @default(cuid())
+  orderId       String
+  orderItemId   String
+  description   String
+  status        WarrantyStatus @default(PENDING)
+  resolveNote   String?
+  resolvedAt    DateTime?
+  createdAt     DateTime      @default(now())
+  order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderItem     OrderItem     @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  @@unique([orderId, orderItemId])
+  @@index([orderId])
+}
+
+model AbandonedCart {
+  id        String   @id @default(cuid())
+  email     String
+  name      String?
+  items     String   // JSON array of cart items
+  recovered Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email, recovered])
 }
