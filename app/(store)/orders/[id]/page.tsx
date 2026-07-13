@@ -8,16 +8,18 @@ import { WarrantyTimer } from "@/components/store/WarrantyTimer"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { formatPrice } from "@/lib/utils"
 import type { OrderWithItems } from "@/types"
 import { Skeleton } from "@/components/ui/skeleton"
 import Link from "next/link"
-import { ArrowLeft, RefreshCw, Copy, Check, Share2, Mail, ShoppingCart } from "lucide-react"
+import { ArrowLeft, RefreshCw, Copy, Check, Share2, Mail, ShoppingCart, Lock } from "lucide-react"
 import { toast } from "sonner"
 import { useCart } from "@/context/CartContext"
 
 const TERMINAL_STATUSES = ["FULFILLED", "FAILED"]
+const EMAIL_VERIFIED_KEY = (id: string) => `order_verified_${id}`
 
 export default function OrderStatusPage() {
   const { id } = useParams<{ id: string }>()
@@ -30,6 +32,20 @@ export default function OrderStatusPage() {
   const [claims, setClaims] = useState<any[]>([])
   const [submittingClaim, setSubmittingClaim] = useState(false)
   const [copiedOrderNum, setCopiedOrderNum] = useState(false)
+
+  // Email verification gate
+  const [emailVerified, setEmailVerified] = useState(false)
+  const [emailInput, setEmailInput] = useState("")
+  const [emailError, setEmailError] = useState("")
+  const [verifying, setVerifying] = useState(false)
+
+  // Check sessionStorage for already-verified orders
+  useEffect(() => {
+    try {
+      const verified = sessionStorage.getItem(EMAIL_VERIFIED_KEY(id))
+      if (verified === "1") setEmailVerified(true)
+    } catch {}
+  }, [id])
 
   async function fetchOrder() {
     try {
@@ -60,6 +76,22 @@ export default function OrderStatusPage() {
   }, [id, polling])
 
   useEffect(() => { fetchClaims() }, [id])
+
+  function handleVerifyEmail(e: React.FormEvent) {
+    e.preventDefault()
+    if (!order) return
+    setVerifying(true)
+    setEmailError("")
+
+    // Case-insensitive compare, trim whitespace
+    if (emailInput.trim().toLowerCase() === order.customerEmail.toLowerCase()) {
+      setEmailVerified(true)
+      try { sessionStorage.setItem(EMAIL_VERIFIED_KEY(id), "1") } catch {}
+    } else {
+      setEmailError("Email tidak sesuai dengan pesanan ini.")
+    }
+    setVerifying(false)
+  }
 
   async function handleResend() {
     setResending(true)
@@ -148,6 +180,49 @@ export default function OrderStatusPage() {
     )
   }
 
+  // Email verification gate — hanya muncul untuk FULFILLED orders yang belum verified
+  if (order.status === "FULFILLED" && !emailVerified) {
+    return (
+      <div className="max-w-md mx-auto px-4 py-24">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#595B83]/10 mb-4">
+            <Lock className="h-8 w-8 text-[#595B83]" />
+          </div>
+          <h1 className="text-xl font-bold text-[#333456]">Verifikasi Email</h1>
+          <p className="text-sm text-muted-foreground mt-2">
+            Masukkan email yang kamu gunakan saat checkout untuk melihat akun.
+          </p>
+        </div>
+
+        <Card>
+          <CardContent className="p-6">
+            <form onSubmit={handleVerifyEmail} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Email Pesanan</label>
+                <Input
+                  type="email"
+                  placeholder="nama@email.com"
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
+                  required
+                  autoFocus
+                />
+                {emailError && <p className="text-xs text-destructive">{emailError}</p>}
+              </div>
+              <Button type="submit" className="w-full" disabled={verifying}>
+                {verifying ? "Memverifikasi..." : "Verifikasi & Lihat Pesanan"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        <p className="text-center text-xs text-muted-foreground mt-4">
+          Lupa email? <Link href="/cek-pesanan" className="underline">Cek pesanan lewat email</Link>
+        </p>
+      </div>
+    )
+  }
+
   const warrantyItems = order.items.filter((i: any) => i.variant?.hasWarranty)
 
   return (
@@ -219,8 +294,8 @@ export default function OrderStatusPage() {
         </CardContent>
       </Card>
 
-      {/* Credentials */}
-      {order.status === "FULFILLED" && order.stocks?.length > 0 && (
+      {/* Credentials — hanya tampil setelah email verified */}
+      {order.status === "FULFILLED" && emailVerified && order.stocks?.length > 0 && (
         <CredentialsCard stocks={order.stocks} />
       )}
 
@@ -230,7 +305,7 @@ export default function OrderStatusPage() {
       )}
 
       {/* Warranty Claims */}
-      {order.status === "FULFILLED" && warrantyItems.length > 0 && (
+      {order.status === "FULFILLED" && emailVerified && warrantyItems.length > 0 && (
         <Card className="mt-6 border-amber-200 dark:border-amber-800">
           <CardContent className="p-6">
             <h3 className="font-semibold flex items-center gap-2 mb-3">🛡️ Klaim Garansi</h3>
@@ -291,7 +366,7 @@ export default function OrderStatusPage() {
       )}
 
       {/* Referral Link */}
-      {order.status === "FULFILLED" && (
+      {order.status === "FULFILLED" && emailVerified && (
         <Card className="mt-6 border-[#F4ABC4]">
           <CardHeader>
             <CardTitle className="text-base text-[#333456]">🎁 Ajak Teman, Dapat Bonus</CardTitle>
