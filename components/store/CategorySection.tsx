@@ -1,38 +1,89 @@
-"use client"
-
-import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { Tv, Bot, Palette, BookOpen, Gamepad2, Globe } from "lucide-react"
 
 const categories = [
-  { name: "Streaming", slug: "streaming", emoji: "📺", desc: "Netflix, Spotify, Disney+", color: "from-red-500 to-red-700" },
-  { name: "AI", slug: "ai", emoji: "🤖", desc: "ChatGPT, Midjourney, Gemini", color: "from-emerald-500 to-emerald-700" },
-  { name: "Design", slug: "design", emoji: "🎨", desc: "Canva, Adobe CC, Figma", color: "from-violet-500 to-violet-700" },
+  {
+    name: "Streaming",
+    slug: "streaming",
+    icon: Tv,
+    desc: "Netflix, Spotify, Disney+",
+    gradient: "from-red-500 to-rose-600",
+    bg: "bg-red-50 dark:bg-red-950/30",
+  },
+  {
+    name: "AI Tools",
+    slug: "ai",
+    icon: Bot,
+    desc: "ChatGPT, Midjourney, Gemini",
+    gradient: "from-emerald-500 to-teal-600",
+    bg: "bg-emerald-50 dark:bg-emerald-950/30",
+  },
+  {
+    name: "Design",
+    slug: "design",
+    icon: Palette,
+    desc: "Canva, Adobe CC, Figma",
+    gradient: "from-violet-500 to-purple-600",
+    bg: "bg-violet-50 dark:bg-violet-950/30",
+  },
+  {
+    name: "Edukasi",
+    slug: "education",
+    icon: BookOpen,
+    desc: "Duolingo, Coursera, Skillshare",
+    gradient: "from-amber-500 to-orange-600",
+    bg: "bg-amber-50 dark:bg-amber-950/30",
+  },
+  {
+    name: "Gaming",
+    slug: "gaming",
+    icon: Gamepad2,
+    desc: "Xbox, PlayStation, Steam",
+    gradient: "from-blue-500 to-indigo-600",
+    bg: "bg-blue-50 dark:bg-blue-950/30",
+  },
+  {
+    name: "Lainnya",
+    slug: "",
+    icon: Globe,
+    desc: "VPN, Cloud Storage, dan lainnya",
+    gradient: "from-[#595B83] to-[#F4ABC4]",
+    bg: "bg-purple-50 dark:bg-purple-950/30",
+  },
 ]
 
 export default function CategorySection() {
   return (
-    <section className="max-w-7xl mx-auto px-4 py-16">
-      <div className="text-center mb-10">
-        <h2 className="text-3xl md:text-4xl font-bold">Kategori Produk</h2>
-        <p className="text-muted-foreground mt-2">Pilih kategori sesuai kebutuhan kamu</p>
+    <section className="max-w-7xl mx-auto px-4 py-20">
+      <div className="text-center mb-12">
+        <h2 className="text-3xl md:text-4xl font-bold mb-3">Jelajahi Kategori</h2>
+        <p className="text-muted-foreground max-w-md mx-auto">
+          Pilih kategori layanan yang kamu butuhkan
+        </p>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        {categories.map((cat) => (
-          <Link
-            key={cat.slug}
-            href={`/products?category=${cat.slug}`}
-            className="group relative overflow-hidden rounded-2xl p-6 bg-gradient-to-br text-white cursor-pointer transition-transform hover:scale-105 hover:shadow-xl"
-            style={{ background: `linear-gradient(135deg, var(--tw-gradient-stops))` }}
-          >
-            <div className={`absolute inset-0 bg-gradient-to-br ${cat.color} opacity-90`} />
-            <div className="relative z-10">
-              <span className="text-5xl block mb-4">{cat.emoji}</span>
-              <h3 className="text-xl font-bold mb-1">{cat.name}</h3>
-              <p className="text-white/70 text-sm">{cat.desc}</p>
-            </div>
-            <div className="absolute -bottom-4 -right-4 w-24 h-24 rounded-full bg-white/10 group-hover:scale-150 transition-transform duration-500" />
-          </Link>
-        ))}
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        {categories.map((cat) => {
+          const Icon = cat.icon
+          const href = cat.slug ? `/products?category=${cat.slug}` : "/products"
+          return (
+            <Link
+              key={cat.name}
+              href={href}
+              className="group flex flex-col items-center gap-3 p-5 rounded-2xl border bg-card hover:border-primary/30 hover:shadow-md transition-all duration-300 text-center"
+            >
+              <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${cat.gradient} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                <Icon className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <p className="font-semibold text-sm">{cat.name}</p>
+                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 leading-tight">
+                  {cat.desc}
+                </p>
+              </div>
+            </Link>
+          )
+        })}
       </div>
     </section>
   )
