@@ -4,12 +4,12 @@ import { db } from "@/lib/db"
 import { generateOrderId } from "@/lib/utils"
 import { sendTelegramNotification } from "@/lib/telegram"
 
-const TAX_RATE = 0.11 // 11% PPN Indonesia
+// No PPN/tax — Xendit fee (QRIS 0.7%, VA Rp 4.000) ditanggung Xendit, tidak ditambahkan ke total
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { customerName, customerEmail, items } = body
+    const { customerName, customerEmail, items, voucherId, discountAmount } = body
 
     if (!customerName || !customerEmail || !items?.length) {
       return NextResponse.json({ error: "Data tidak lengkap" }, { status: 400 })
@@ -32,41 +32,48 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    const tax = Math.round(subtotal * TAX_RATE)
-    const total = subtotal + tax
-
+    const discount = discountAmount ?? 0
+    const total = Math.max(subtotal - discount, 0)
     const orderNumber = generateOrderId()
-  
-  // UTM tracking
-  let utmSource: string | null = null
-  let utmMedium: string | null = null
-  let utmCampaign: string | null = null
-  try {
-    const cookieStore = await cookies()
-    const utmRaw = cookieStore.get("utm_data")?.value
-    if (utmRaw) {
-      const utm = JSON.parse(utmRaw)
-      utmSource = utm.utmSource || null
-      utmMedium = utm.utmMedium || null
-      utmCampaign = utm.utmCampaign || null
-    }
-  } catch {}
 
-  const order = await db.order.create({
+    // UTM tracking
+    let utmSource: string | null = null
+    let utmMedium: string | null = null
+    let utmCampaign: string | null = null
+    try {
+      const cookieStore = await cookies()
+      const utmRaw = cookieStore.get("utm_data")?.value
+      if (utmRaw) {
+        const utm = JSON.parse(utmRaw)
+        utmSource = utm.utmSource || null
+        utmMedium = utm.utmMedium || null
+        utmCampaign = utm.utmCampaign || null
+      }
+    } catch {}
+
+    const order = await db.order.create({
       data: {
         orderNumber,
         customerName,
         customerEmail,
         subtotal,
-        tax,
+        tax: 0,
         total,
+        discountAmount: discount,
+        ...(voucherId ? { voucherId } : {}),
         status: "PENDING",
         items: { create: orderItems },
       },
       include: { items: true },
     })
 
-    // fire-and-forget — don't await
+    if (voucherId) {
+      await db.voucher.update({
+        where: { id: voucherId },
+        data: { usedCount: { increment: 1 } },
+      }).catch(() => {})
+    }
+
     sendTelegramNotification(
       `🛒 <b>Pesanan Baru!</b>\n` +
       `Order: <code>${orderNumber}</code>\n` +

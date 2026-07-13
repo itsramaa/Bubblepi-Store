@@ -4,10 +4,11 @@ import { db } from "@/lib/db"
 import { Badge } from "@/components/ui/badge"
 import { formatPrice } from "@/lib/utils"
 import { parseDurationDays } from "@/lib/duration"
-import AddToCartButton from "@/components/store/AddToCartButton"
 import VariantCompareTable from "@/components/store/VariantCompareTable"
 import ReviewSection from "@/components/store/ReviewSection"
 import Link from "next/link"
+import Image from "next/image"
+import { Shield, Zap, MessageCircle, ChevronRight, Star, Users, Tv, Bot, Palette, BookOpen, Gamepad2, Globe, Lock } from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
@@ -28,6 +29,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
+function getCategoryIcon(category: string) {
+  const icons: Record<string, React.ElementType> = {
+    streaming: Tv,
+    ai: Bot,
+    design: Palette,
+    education: BookOpen,
+    gaming: Gamepad2,
+  }
+  return icons[category] ?? Globe
+}
+
+function getCategoryGradient(category: string) {
+  const gradients: Record<string, string> = {
+    streaming: "from-red-500 to-rose-600",
+    ai: "from-emerald-500 to-teal-600",
+    design: "from-violet-500 to-purple-600",
+    education: "from-amber-500 to-orange-600",
+    gaming: "from-blue-500 to-indigo-600",
+  }
+  return gradients[category] ?? "from-[#595B83] to-[#F4ABC4]"
+}
+
 export default async function ProductDetailPage({ params }: Props) {
   const { slug } = await params
   const product = await db.product.findUnique({ where: { slug }, include: { variants: true } })
@@ -40,7 +63,6 @@ export default async function ProductDetailPage({ params }: Props) {
     }))
   )
 
-  // sold count
   const soldData = await db.orderItem.groupBy({
     by: ["variantId"],
     where: { variantId: { in: product.variants.map((v) => v.id) }, order: { status: "FULFILLED" } },
@@ -49,8 +71,10 @@ export default async function ProductDetailPage({ params }: Props) {
   const soldMap = new Map(soldData.map((s) => [s.variantId, s._sum.quantity ?? 0]))
   const totalSold = soldData.reduce((a, s) => a + (s._sum.quantity ?? 0), 0)
 
-  // best value variant (lowest price/day)
-  const withPpd = variantsWithStock.map((v) => ({ ...v, pricePerDay: Math.round(v.price / parseDurationDays(v.duration)) }))
+  const withPpd = variantsWithStock.map((v) => ({
+    ...v,
+    pricePerDay: Math.round(v.price / parseDurationDays(v.duration)),
+  }))
   const minPpd = Math.min(...withPpd.map((v) => v.pricePerDay))
   const bestValueId = withPpd.length > 1 ? withPpd.find((v) => v.pricePerDay === minPpd)?.id : undefined
 
@@ -58,85 +82,170 @@ export default async function ProductDetailPage({ params }: Props) {
   const maxPrice = Math.max(...product.variants.map((v) => v.price))
   const totalStock = variantsWithStock.reduce((a, v) => a + v.stockCount, 0)
 
-  // reviews
-  const reviews = await db.review.findMany({ where: { productId: product.id, isVisible: true }, orderBy: { createdAt: "desc" }, take: 20 })
+  const reviews = await db.review.findMany({
+    where: { productId: product.id, isVisible: true },
+    orderBy: { createdAt: "desc" },
+    take: 20,
+    include: { order: { select: { customerName: true } } },
+  })
   const avgRating = reviews.length > 0 ? reviews.reduce((a, r) => a + r.rating, 0) / reviews.length : 0
+
+  const CategoryIcon = getCategoryIcon(product.category)
+  const gradient = getCategoryGradient(product.category)
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
+      {/* Breadcrumb */}
+      <nav className="flex items-center gap-1.5 text-sm text-muted-foreground mb-8">
+        <Link href="/" className="hover:text-foreground transition-colors">Beranda</Link>
+        <ChevronRight className="h-3.5 w-3.5" />
         <Link href="/products" className="hover:text-foreground transition-colors">Produk</Link>
-        <span>/</span>
-        <span className="text-foreground">{product.name}</span>
-      </div>
+        <ChevronRight className="h-3.5 w-3.5" />
+        <span className="text-foreground font-medium truncate max-w-[200px]">{product.name}</span>
+      </nav>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        <div className="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-muted to-muted/50">
-          {product.image ? (
-            <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-8xl opacity-30">{getCategoryEmoji(product.category)}</span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16">
+        {/* Left — Image */}
+        <div className="space-y-4">
+          <div className={`relative aspect-square rounded-3xl overflow-hidden bg-gradient-to-br ${gradient}`}>
+            {product.image ? (
+              <Image
+                src={product.image}
+                alt={product.name}
+                fill
+                className="object-cover"
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                priority
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <CategoryIcon className="h-32 w-32 text-white/30" />
+              </div>
+            )}
+            {/* Category badge */}
+            <div className="absolute top-4 left-4">
+              <Badge className="bg-white/20 backdrop-blur-sm text-white border-white/30 gap-1.5">
+                <CategoryIcon className="h-3 w-3" />
+                {product.category.charAt(0).toUpperCase() + product.category.slice(1)}
+              </Badge>
             </div>
-          )}
-          <div className="absolute top-4 left-4">
-            <Badge className="bg-white/90 text-foreground backdrop-blur-sm border-0 text-sm px-3 py-1">{product.category}</Badge>
+            {totalSold > 0 && (
+              <div className="absolute top-4 right-4">
+                <Badge className="bg-white/20 backdrop-blur-sm text-white border-white/30 gap-1.5">
+                  <Users className="h-3 w-3" />
+                  {totalSold}+ terjual
+                </Badge>
+              </div>
+            )}
+          </div>
+
+          {/* Trust badges */}
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { icon: Zap, label: "Instant Delivery", sub: "< 5 menit" },
+              { icon: Shield, label: "Bergaransi", sub: product.variants.some(v => v.hasWarranty) ? "Garansi resmi" : "Terpercaya" },
+              { icon: MessageCircle, label: "Support", sub: "Via WhatsApp" },
+            ].map(({ icon: Icon, label, sub }) => (
+              <div key={label} className="flex flex-col items-center text-center p-3 rounded-xl border bg-muted/30 gap-1">
+                <Icon className="h-5 w-5 text-primary" />
+                <p className="text-xs font-medium">{label}</p>
+                <p className="text-xs text-muted-foreground">{sub}</p>
+              </div>
+            ))}
           </div>
         </div>
 
-        <div>
-          <h1 className="text-3xl md:text-4xl font-bold">{product.name}</h1>
-          <div className="flex items-center gap-2 mt-3 flex-wrap">
-            <Badge variant="outline">{product.type === "private" ? "🔑 Private" : "🔗 Sharing"}</Badge>
-            <Badge variant="outline">{product.category}</Badge>
-            {totalSold > 0 && <Badge variant="secondary">🔥 {totalSold} terjual</Badge>}
-            {reviews.length > 0 && <Badge variant="secondary">⭐ {avgRating.toFixed(1)} ({reviews.length} ulasan)</Badge>}
+        {/* Right — Info */}
+        <div className="space-y-6">
+          {/* Title + badges */}
+          <div>
+            <div className="flex flex-wrap gap-2 mb-3">
+              <Badge variant="outline" className="gap-1">
+                {product.type === "private" ? <Lock className="h-3 w-3" /> : <Users className="h-3 w-3" />}
+                {product.type === "private" ? "Private" : "Sharing"}
+              </Badge>
+              {reviews.length > 0 && (
+                <Badge variant="secondary" className="gap-1">
+                  <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                  {avgRating.toFixed(1)} ({reviews.length} ulasan)
+                </Badge>
+              )}
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold leading-tight">{product.name}</h1>
+            <p className="text-muted-foreground mt-3 leading-relaxed">{product.description}</p>
           </div>
 
-          <p className="text-muted-foreground mt-4 leading-relaxed">{product.description}</p>
-
-          <div className="mt-4 flex items-center gap-2">
-            <span className="text-2xl font-bold text-primary">{formatPrice(minPrice)}</span>
-            {maxPrice !== minPrice && <span className="text-muted-foreground">— {formatPrice(maxPrice)}</span>}
+          {/* Price range */}
+          <div className="flex items-baseline gap-2">
+            <span className="text-xs text-muted-foreground">Mulai dari</span>
+            <span className="text-3xl font-bold text-primary">{formatPrice(minPrice)}</span>
+            {maxPrice !== minPrice && (
+              <span className="text-muted-foreground text-sm">— {formatPrice(maxPrice)}</span>
+            )}
           </div>
 
-          {/* Urgency banner */}
+          {/* Stock warning */}
           {totalStock === 0 && (
-            <div className="mt-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm font-medium">
-              ⚠️ Stok habis — coba lagi nanti
+            <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm font-medium">
+              Stok habis — coba lagi nanti atau hubungi admin.
             </div>
           )}
           {totalStock > 0 && totalStock <= 5 && (
-            <div className="mt-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 text-sm font-medium">
-              ⚡ Stok terbatas! Sisa {totalStock} unit tersedia
+            <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-sm font-medium">
+              Stok terbatas! Sisa {totalStock} unit tersedia.
             </div>
           )}
 
-          <div className="mt-8">
-            <VariantCompareTable variants={withPpd} product={{ id: product.id, name: product.name }} bestValueId={bestValueId} soldMap={Object.fromEntries(soldMap)} />
+          {/* Variant selector */}
+          <div>
+            <VariantCompareTable
+              variants={withPpd}
+              product={{ id: product.id, name: product.name }}
+              bestValueId={bestValueId}
+              soldMap={Object.fromEntries(soldMap)}
+            />
           </div>
 
-          <div className="mt-10 p-5 rounded-xl bg-muted/50 border">
-            <h3 className="font-semibold text-sm mb-3">Kenapa beli di Bubblepi?</h3>
+          {/* Why buy here */}
+          <div className="p-5 rounded-2xl bg-muted/30 border space-y-2.5">
+            <p className="font-semibold text-sm">Kenapa beli di Bubblepi?</p>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li className="flex items-center gap-2">⚡ Instant delivery — akun dikirim otomatis ke email</li>
-              <li className="flex items-center gap-2">🔒 Aman & terpercaya — sudah {totalSold > 0 ? `${totalSold}+` : "banyak"} pembeli</li>
-              <li className="flex items-center gap-2">💬 Support cepat via WhatsApp</li>
+              <li className="flex items-center gap-2.5">
+                <Zap className="h-4 w-4 text-amber-500 shrink-0" />
+                Akun dikirim otomatis ke email dalam hitungan menit
+              </li>
+              <li className="flex items-center gap-2.5">
+                <Shield className="h-4 w-4 text-green-500 shrink-0" />
+                Garansi penggantian jika ada masalah
+              </li>
+              <li className="flex items-center gap-2.5">
+                <MessageCircle className="h-4 w-4 text-blue-500 shrink-0" />
+                Support aktif via WhatsApp 08.00–22.00 WIB
+              </li>
+              <li className="flex items-center gap-2.5">
+                <Users className="h-4 w-4 text-[#595B83] shrink-0" />
+                {totalSold > 0 ? `${totalSold}+` : "Ratusan"} pembeli sudah puas
+              </li>
             </ul>
           </div>
+
+          {/* WA Support */}
+          <a
+            href="https://wa.me/6285179955480"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <MessageCircle className="h-4 w-4 text-green-500" />
+            Ada pertanyaan? Chat admin via WhatsApp
+          </a>
         </div>
       </div>
 
-      <ReviewSection productId={product.id} reviews={reviews} avgRating={avgRating} />
+      {/* Reviews */}
+      <div className="mt-16">
+        <ReviewSection productId={product.id} reviews={reviews as any} avgRating={avgRating} />
+      </div>
     </div>
   )
-}
-
-function getCategoryEmoji(category: string): string {
-  switch (category) {
-    case "streaming": return "📺"
-    case "ai": return "🤖"
-    case "design": return "🎨"
-    default: return "📦"
-  }
 }

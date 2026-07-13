@@ -31,7 +31,7 @@ export default function CheckoutPage() {
     setStep(2)
   }
 
-  async function handleStep2Submit() {
+  async function handleStep2Submit(voucherId?: string, discountAmount?: number) {
     if (!formData || submitting) return
     setSubmitting(true)
 
@@ -43,6 +43,8 @@ export default function CheckoutPage() {
           customerName: formData.customerName,
           customerEmail: formData.customerEmail,
           items: items.map((i) => ({ variantId: i.variantId, quantity: i.quantity })),
+          voucherId: voucherId ?? null,
+          discountAmount: discountAmount ?? 0,
         }),
       })
       const orderData = await orderRes.json()
@@ -73,11 +75,11 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
+    <div className="max-w-2xl mx-auto px-4 py-12">
       <h1 className="text-3xl font-bold mb-8 text-center">Checkout</h1>
       <StepIndicator currentStep={step} />
       <Card className="mt-8">
-        <CardContent className="p-6">
+        <CardContent className="p-6 md:p-8">
           {step === 1 && <CheckoutStep1 onSubmit={handleStep1Submit} />}
           {step === 2 && (
             <CheckoutStep2
