@@ -1,14 +1,16 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { useCart } from "@/context/CartContext"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Check, ShoppingCart } from "lucide-react"
+import { ShoppingCart, Zap, Check } from "lucide-react"
 import { cn, formatPrice } from "@/lib/utils"
 import { parseDurationDays } from "@/lib/duration"
+import { toast } from "sonner"
 
-interface VariantWithStock {
+interface Variant {
   id: string
   name: string
   duration: string
@@ -19,7 +21,7 @@ interface VariantWithStock {
 }
 
 interface Props {
-  variant: VariantWithStock
+  variant: Variant
   product: { id: string; name: string }
   stockCount?: number
   isBestValue?: boolean
@@ -27,9 +29,11 @@ interface Props {
 
 export default function AddToCartButton({ variant, product, stockCount, isBestValue }: Props) {
   const { addItem } = useCart()
+  const router = useRouter()
   const [added, setAdded] = useState(false)
 
-  const isOutOfStock = (stockCount ?? variant.stockCount ?? 1) === 0
+  const stock = stockCount ?? variant.stockCount ?? 0
+  const isOutOfStock = stock === 0
   const days = parseDurationDays(variant.duration)
   const pricePerDay = days > 0 ? Math.round(variant.price / days) : variant.price
 
@@ -44,7 +48,21 @@ export default function AddToCartButton({ variant, product, stockCount, isBestVa
       duration: variant.duration,
     })
     setAdded(true)
+    toast.success(`${variant.name} ditambahkan ke keranjang`)
     setTimeout(() => setAdded(false), 1500)
+  }
+
+  function handleBuyNow() {
+    if (isOutOfStock) return
+    addItem({
+      variantId: variant.id,
+      productId: product.id,
+      productName: product.name,
+      variantName: variant.name,
+      price: variant.price,
+      duration: variant.duration,
+    })
+    router.push("/checkout")
   }
 
   return (
@@ -67,9 +85,7 @@ export default function AddToCartButton({ variant, product, stockCount, isBestVa
         onClick={handleAdd}
         disabled={isOutOfStock}
       >
-        <span>
-          {variant.name} • {variant.duration}
-        </span>
+        <span>{variant.name} • {variant.duration}</span>
         <span className="flex items-center gap-2">
           {isOutOfStock ? (
             <span className="text-xs text-destructive font-medium">Habis</span>
@@ -83,8 +99,8 @@ export default function AddToCartButton({ variant, product, stockCount, isBestVa
       </Button>
       <div className="flex items-center justify-between px-1">
         <span className="text-xs text-muted-foreground">= {formatPrice(pricePerDay)}/hari</span>
-        {!isOutOfStock && stockCount !== undefined && stockCount <= 5 && (
-          <span className="text-xs text-destructive">Sisa {stockCount}</span>
+        {!isOutOfStock && stock <= 5 && (
+          <span className="text-xs text-destructive">Sisa {stock}</span>
         )}
       </div>
     </div>

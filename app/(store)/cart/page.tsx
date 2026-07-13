@@ -9,7 +9,7 @@ import { Trash2, Minus, Plus, ShoppingBag, ArrowRight } from "lucide-react"
 import Link from "next/link"
 
 export default function CartPage() {
-  const { items, removeItem, updateQuantity, getSubtotal, getTax, getTotal, getItemCount } = useCart()
+  const { items, removeItem, updateQuantity, getSubtotal, getTotal, getItemCount } = useCart()
 
   if (items.length === 0) {
     return (
@@ -104,9 +104,9 @@ export default function CartPage() {
                   <span>Subtotal ({getItemCount()} item)</span>
                   <span>{formatPrice(getSubtotal())}</span>
                 </div>
-                <div className="flex justify-between text-muted-foreground">
-                  <span>PPN 11%</span>
-                  <span>{formatPrice(getTax())}</span>
+                <div className="flex justify-between text-muted-foreground text-xs">
+                  <span>Biaya Xendit</span>
+                  <span>Dihitung saat checkout</span>
                 </div>
               </div>
               <Separator />

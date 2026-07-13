@@ -5,19 +5,16 @@ import type { CartItem } from "@/types"
 
 interface CartContextType {
   items: CartItem[]
-  addItem: (item: Omit<CartItem, "quantity">) => void
+  addItem: (item: Omit<CartItem, "quantity">, quantity?: number) => void
   removeItem: (variantId: string) => void
   updateQuantity: (variantId: string, quantity: number) => void
   clearCart: () => void
   getSubtotal: () => number
-  getTax: () => number
   getTotal: () => number
   getItemCount: () => number
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
-
-const TAX_RATE = 0.11
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
@@ -34,20 +31,20 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       localStorage.setItem("cart", JSON.stringify(items))
-    } catch {
-      // quota exceeded — ignore
-    }
+    } catch {}
   }, [items])
 
-  const addItem = useCallback((newItem: Omit<CartItem, "quantity">) => {
+  const addItem = useCallback((newItem: Omit<CartItem, "quantity">, quantity = 1) => {
     setItems((prev) => {
       const existing = prev.find((i) => i.variantId === newItem.variantId)
       if (existing) {
         return prev.map((i) =>
-          i.variantId === newItem.variantId ? { ...i, quantity: i.quantity + 1 } : i
+          i.variantId === newItem.variantId
+            ? { ...i, quantity: i.quantity + quantity }
+            : i
         )
       }
-      return [...prev, { ...newItem, quantity: 1 }]
+      return [...prev, { ...newItem, quantity }]
     })
   }, [])
 
@@ -71,14 +68,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     () => items.reduce((sum, i) => sum + i.price * i.quantity, 0),
     [items]
   )
-  const getTax = useCallback(
-    () => Math.round(getSubtotal() * TAX_RATE),
-    [getSubtotal]
-  )
-  const getTotal = useCallback(
-    () => getSubtotal() + getTax(),
-    [getSubtotal, getTax]
-  )
+
+  // ponytail: no tax — total = subtotal only. Add Xendit fee display in checkout, not here.
+  const getTotal = useCallback(() => getSubtotal(), [getSubtotal])
+
   const getItemCount = useCallback(
     () => items.reduce((sum, i) => sum + i.quantity, 0),
     [items]
@@ -93,7 +86,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         updateQuantity,
         clearCart,
         getSubtotal,
-        getTax,
         getTotal,
         getItemCount,
       }}
