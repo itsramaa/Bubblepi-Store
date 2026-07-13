@@ -6,9 +6,14 @@ import { formatPrice } from "@/lib/utils"
 import { parseDurationDays } from "@/lib/duration"
 import VariantCompareTable from "@/components/store/VariantCompareTable"
 import ReviewSection from "@/components/store/ReviewSection"
+import CredentialPreview from "@/components/store/CredentialPreview"
+import RelatedProducts from "@/components/store/RelatedProducts"
 import Link from "next/link"
 import Image from "next/image"
-import { Shield, Zap, MessageCircle, ChevronRight, Star, Users, Tv, Bot, Palette, BookOpen, Gamepad2, Globe, Lock } from "lucide-react"
+import {
+  Shield, Zap, MessageCircle, ChevronRight, Star, Users,
+  Tv, Bot, Palette, BookOpen, Gamepad2, Globe, Lock, CheckCircle2,
+} from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
@@ -31,11 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 function getCategoryIcon(category: string) {
   const icons: Record<string, React.ElementType> = {
-    streaming: Tv,
-    ai: Bot,
-    design: Palette,
-    education: BookOpen,
-    gaming: Gamepad2,
+    streaming: Tv, ai: Bot, design: Palette, education: BookOpen, gaming: Gamepad2,
   }
   return icons[category] ?? Globe
 }
@@ -94,7 +95,7 @@ export default async function ProductDetailPage({ params }: Props) {
   const gradient = getCategoryGradient(product.category)
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="max-w-7xl mx-auto px-4 py-8 pb-28 md:pb-8">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1.5 text-sm text-muted-foreground mb-8">
         <Link href="/" className="hover:text-foreground transition-colors">Beranda</Link>
@@ -122,7 +123,6 @@ export default async function ProductDetailPage({ params }: Props) {
                 <CategoryIcon className="h-32 w-32 text-white/30" />
               </div>
             )}
-            {/* Category badge */}
             <div className="absolute top-4 left-4">
               <Badge className="bg-white/20 backdrop-blur-sm text-white border-white/30 gap-1.5">
                 <CategoryIcon className="h-3 w-3" />
@@ -153,6 +153,9 @@ export default async function ProductDetailPage({ params }: Props) {
               </div>
             ))}
           </div>
+
+          {/* Credential preview */}
+          <CredentialPreview type={product.category} />
         </div>
 
         {/* Right — Info */}
@@ -192,12 +195,12 @@ export default async function ProductDetailPage({ params }: Props) {
           )}
           {totalStock > 0 && totalStock <= 5 && (
             <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-sm font-medium">
-              Stok terbatas! Sisa {totalStock} unit tersedia.
+              ⚠️ Stok terbatas! Sisa {totalStock} unit tersedia.
             </div>
           )}
 
-          {/* Variant selector */}
-          <div>
+          {/* Variant selector — anchor for sticky CTA observer */}
+          <div id="variant-selector-anchor">
             <VariantCompareTable
               variants={withPpd}
               product={{ id: product.id, name: product.name }}
@@ -210,22 +213,17 @@ export default async function ProductDetailPage({ params }: Props) {
           <div className="p-5 rounded-2xl bg-muted/30 border space-y-2.5">
             <p className="font-semibold text-sm">Kenapa beli di Bubblepi?</p>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li className="flex items-center gap-2.5">
-                <Zap className="h-4 w-4 text-amber-500 shrink-0" />
-                Akun dikirim otomatis ke email dalam hitungan menit
-              </li>
-              <li className="flex items-center gap-2.5">
-                <Shield className="h-4 w-4 text-green-500 shrink-0" />
-                Garansi penggantian jika ada masalah
-              </li>
-              <li className="flex items-center gap-2.5">
-                <MessageCircle className="h-4 w-4 text-blue-500 shrink-0" />
-                Support aktif via WhatsApp 08.00–22.00 WIB
-              </li>
-              <li className="flex items-center gap-2.5">
-                <Users className="h-4 w-4 text-[#595B83] shrink-0" />
-                {totalSold > 0 ? `${totalSold}+` : "Ratusan"} pembeli sudah puas
-              </li>
+              {[
+                { icon: Zap, color: "text-amber-500", text: "Akun dikirim otomatis ke email dalam hitungan menit" },
+                { icon: Shield, color: "text-green-500", text: "Garansi penggantian jika ada masalah" },
+                { icon: MessageCircle, color: "text-blue-500", text: "Support aktif via WhatsApp 08.00–22.00 WIB" },
+                { icon: CheckCircle2, color: "text-[#595B83]", text: `${totalSold > 0 ? `${totalSold}+` : "Ratusan"} pembeli sudah puas` },
+              ].map(({ icon: Icon, color, text }) => (
+                <li key={text} className="flex items-center gap-2.5">
+                  <Icon className={`h-4 w-4 ${color} shrink-0`} />
+                  {text}
+                </li>
+              ))}
             </ul>
           </div>
 
@@ -246,6 +244,9 @@ export default async function ProductDetailPage({ params }: Props) {
       <div className="mt-16">
         <ReviewSection productId={product.id} reviews={reviews as any} avgRating={avgRating} />
       </div>
+
+      {/* Related products */}
+      <RelatedProducts productId={product.id} category={product.category} />
     </div>
   )
 }
