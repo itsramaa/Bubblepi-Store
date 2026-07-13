@@ -1,13 +1,13 @@
-import { prisma, notify } from "./_common"
-import { sendTelegramNotification } from "../lib/telegram"
+import { db } from "@/lib/db"
+import { sendTelegramNotification } from "@/lib/telegram"
 
-// Called after fulfillOrder to check critical stock
 export async function checkCriticalStock(variantId: string) {
-  const count = await prisma.accountStock.count({
+  const count = await db.accountStock.count({
     where: { variantId, status: "AVAILABLE" },
   })
+
   if (count < 5) {
-    const variant = await prisma.variant.findUnique({
+    const variant = await db.variant.findUnique({
       where: { id: variantId },
       include: { product: { select: { name: true } } },
     })

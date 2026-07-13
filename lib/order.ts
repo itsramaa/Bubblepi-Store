@@ -1,6 +1,7 @@
 import { db } from "@/lib/db"
 import { sendAccountDelivery } from "@/lib/mailer"
 import { sendTelegramNotification } from "@/lib/telegram"
+import { checkCriticalStock } from "@/scripts/check-critical-stock"
 
 export async function fulfillOrder(orderId: string) {
   const order = await db.order.findUnique({
@@ -86,6 +87,12 @@ export async function fulfillOrder(orderId: string) {
       where: { orderId: orderId, status: "ASSIGNED" },
       data: { status: "DELIVERED" },
     })
+
+    // Alert if any variant stock goes critical after fulfillment
+    const variantIds = [...new Set(order.items.map((i) => i.variantId))]
+    for (const variantId of variantIds) {
+      await checkCriticalStock(variantId).catch(() => {})
+    }
 
     await sendAccountDelivery({
       to: order.customerEmail,
