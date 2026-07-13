@@ -184,3 +184,16 @@ model Voucher {
 
   @@index([code])
 }
+
+model FunnelEvent {
+  id        String   @id @default(cuid())
+  sessionId String   @map("session_id")
+  event     String   // VIEW_PRODUCT | ADD_TO_CART | CHECKOUT_START | PAYMENT_INITIATED | PAYMENT_SUCCESS
+  productId String?  @map("product_id")
+  variantId String?  @map("variant_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([sessionId])
+  @@index([event, createdAt])
+  @@map("funnel_events")
+}

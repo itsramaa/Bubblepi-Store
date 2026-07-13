@@ -12,6 +12,7 @@ import {
 import { cn, formatPrice } from "@/lib/utils"
 import { toast } from "sonner"
 import { SaleCountdown } from "@/components/product/sale-countdown"
+import { trackEvent } from "@/lib/analytics"
 
 interface Variant {
   id: string
@@ -85,6 +86,7 @@ export default function VariantCompareTable({ variants, product, bestValueId, so
       },
       qty
     )
+    trackEvent("ADD_TO_CART", { productId: product.id, variantId: selected.id })
     setAddedId(selected.id)
     toast.success(`${product.name} — ${selected.name} ×${qty} ditambahkan ke keranjang`)
     setTimeout(() => setAddedId(null), 2000)
@@ -104,6 +106,7 @@ export default function VariantCompareTable({ variants, product, bestValueId, so
       },
       qty
     )
+    trackEvent("ADD_TO_CART", { productId: product.id, variantId: selected.id })
     router.push("/checkout")
   }
 

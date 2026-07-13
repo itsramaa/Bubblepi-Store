@@ -9,6 +9,7 @@ import ReviewSection from "@/components/store/ReviewSection"
 import CredentialPreview from "@/components/store/CredentialPreview"
 import RelatedProducts from "@/components/store/RelatedProducts"
 import { StockBadge } from "@/components/product/stock-badge"
+import { ProductViewTracker } from "@/components/store/ProductViewTracker"
 import Link from "next/link"
 import Image from "next/image"
 import { Suspense } from "react"
@@ -106,6 +107,7 @@ export default async function ProductDetailPage({ params }: Props) {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 pb-28 md:pb-8">
+      <ProductViewTracker productId={product.id} />
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1.5 text-sm text-muted-foreground mb-8">
         <Link href="/" className="hover:text-foreground transition-colors">Beranda</Link>
