@@ -1,5 +1,6 @@
 import Navbar from "@/components/store/Navbar"
 import Footer from "@/components/store/Footer"
+import FloatingWhatsApp from "@/components/store/FloatingWhatsApp"
 
 export default function StoreLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -7,6 +8,7 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
       <Navbar />
       <main className="flex-1 pt-16">{children}</main>
       <Footer />
+      <FloatingWhatsApp />
     </div>
   )
 }
