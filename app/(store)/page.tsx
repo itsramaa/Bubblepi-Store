@@ -5,6 +5,7 @@ import HowItWorks from "@/components/store/HowItWorks"
 import CategorySection from "@/components/store/CategorySection"
 import FAQSection from "@/components/store/FAQSection"
 import SocialProofBanner from "@/components/store/SocialProofBanner"
+import TestimonialsSection from "@/components/store/TestimonialsSection"
 
 export const dynamic = "force-dynamic"
 
@@ -13,6 +14,7 @@ export default async function HomePage() {
     where: { isActive: true },
     include: { variants: true },
     take: 6,
+    orderBy: { createdAt: "desc" },
   })
 
   return (
@@ -22,6 +24,7 @@ export default async function HomePage() {
       <FeaturedProducts products={products} />
       <HowItWorks />
       <CategorySection />
+      <TestimonialsSection />
       <FAQSection />
     </div>
   )

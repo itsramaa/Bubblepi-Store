@@ -1,0 +1,31 @@
+import { NextResponse } from "next/server"
+import { db } from "@/lib/db"
+
+export const dynamic = "force-dynamic"
+
+export async function GET() {
+  try {
+    const reviews = await db.review.findMany({
+      where: { isVisible: true, rating: { gte: 4 } },
+      orderBy: { createdAt: "desc" },
+      take: 6,
+      include: {
+        product: { select: { name: true } },
+        order: { select: { customerName: true } },
+      },
+    })
+
+    return NextResponse.json(
+      reviews.map((r) => ({
+        id: r.id,
+        rating: r.rating,
+        comment: r.comment,
+        customerName: r.order.customerName,
+        createdAt: r.createdAt,
+        productName: r.product?.name ?? null,
+      }))
+    )
+  } catch {
+    return NextResponse.json([])
+  }
+}
