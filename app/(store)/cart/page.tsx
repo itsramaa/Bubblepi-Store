@@ -5,7 +5,7 @@ import { formatPrice } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { Trash2, Minus, Plus, ShoppingBag, ArrowRight } from "lucide-react"
+import { Trash2, Minus, Plus, ShoppingBag, ArrowRight, Tag } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 
@@ -50,16 +50,17 @@ export default function CartPage() {
       .catch(() => {})
   }, [items])
 
+  // Empty cart state
   if (items.length === 0) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-24 text-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center">
-            <ShoppingBag className="h-10 w-10 text-muted-foreground" />
-          </div>
-          <h1 className="text-2xl font-bold">Keranjang Kosong</h1>
+          <span className="text-7xl" role="img" aria-label="keranjang">
+            🛒
+          </span>
+          <h1 className="text-2xl font-bold">Keranjangmu masih kosong</h1>
           <p className="text-muted-foreground max-w-sm">
-            Belum ada produk di keranjang. Yuk mulai belanja akun digital premium!
+            Belum ada produk di keranjang. Mulai jelajahi akun digital premium kami!
           </p>
           <Link href="/products">
             <Button className="gap-2 mt-2">
@@ -71,6 +72,10 @@ export default function CartPage() {
       </div>
     )
   }
+
+  const subtotal = getSubtotal()
+  const total = getTotal()
+  const hasDiscount = total < subtotal
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
@@ -154,8 +159,17 @@ export default function CartPage() {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between text-muted-foreground">
                   <span>Subtotal ({getItemCount()} item)</span>
-                  <span>{formatPrice(getSubtotal())}</span>
+                  <span>{formatPrice(subtotal)}</span>
                 </div>
+                {hasDiscount && (
+                  <div className="flex justify-between text-green-600 dark:text-green-400">
+                    <span className="flex items-center gap-1">
+                      <Tag className="h-3 w-3" />
+                      Diskon
+                    </span>
+                    <span>-{formatPrice(subtotal - total)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-muted-foreground text-xs">
                   <span>Biaya Xendit</span>
                   <span>Dihitung saat checkout</span>
@@ -164,7 +178,7 @@ export default function CartPage() {
               <Separator />
               <div className="flex justify-between font-bold text-base">
                 <span>Total</span>
-                <span className="text-primary">{formatPrice(getTotal())}</span>
+                <span className="text-primary">{formatPrice(total)}</span>
               </div>
               <Link href="/checkout" className="block mt-2">
                 <Button className="w-full gap-2">

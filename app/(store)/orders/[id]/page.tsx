@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import OrderTimeline from "@/components/store/OrderTimeline"
 import CredentialsCard from "@/components/store/CredentialsCard"
 import { WarrantyTimer } from "@/components/store/WarrantyTimer"
@@ -14,7 +14,7 @@ import { formatPrice } from "@/lib/utils"
 import type { OrderWithItems } from "@/types"
 import { Skeleton } from "@/components/ui/skeleton"
 import Link from "next/link"
-import { ArrowLeft, RefreshCw, Copy, Check, Share2, Mail, ShoppingCart, Lock } from "lucide-react"
+import { ArrowLeft, RefreshCw, Copy, Check, Share2, Mail, ShoppingCart, Lock, Share } from "lucide-react"
 import { toast } from "sonner"
 import { useCart } from "@/context/CartContext"
 
@@ -24,6 +24,7 @@ const EMAIL_VERIFIED_KEY = (id: string) => `order_verified_${id}`
 export default function OrderStatusPage() {
   const { id } = useParams<{ id: string }>()
   const { addItem } = useCart()
+  const router = useRouter()
   const [order, setOrder] = useState<OrderWithItems | null>(null)
   const [loading, setLoading] = useState(true)
   const [polling, setPolling] = useState(true)
@@ -83,7 +84,6 @@ export default function OrderStatusPage() {
     setVerifying(true)
     setEmailError("")
 
-    // Case-insensitive compare, trim whitespace
     if (emailInput.trim().toLowerCase() === order.customerEmail.toLowerCase()) {
       setEmailVerified(true)
       try { sessionStorage.setItem(EMAIL_VERIFIED_KEY(id), "1") } catch {}
@@ -144,12 +144,21 @@ export default function OrderStatusPage() {
       added++
     })
     toast.success(`${added} item ditambahkan ke keranjang!`)
+    router.push("/cart")
   }
 
   function handleShareWA() {
     if (!order) return
     const text = `Saya baru beli ${order.items.map(i => i.variant.product.name).join(", ")} di Bubblepi Store! Cek pesananku: ${window.location.href}`
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank")
+  }
+
+  function handleShareLink() {
+    if (!order) return
+    const link = `${window.location.origin}/?ref=${btoa(order.customerEmail)}`
+    navigator.clipboard.writeText(link).then(() => {
+      toast.success("Link referral disalin!")
+    })
   }
 
   function copyOrderNumber() {
@@ -365,11 +374,13 @@ export default function OrderStatusPage() {
         </Card>
       )}
 
-      {/* Referral Link */}
+      {/* Bagikan ke teman / Referral */}
       {order.status === "FULFILLED" && emailVerified && (
         <Card className="mt-6 border-[#F4ABC4]">
           <CardHeader>
-            <CardTitle className="text-base text-[#333456]">🎁 Ajak Teman, Dapat Bonus</CardTitle>
+            <CardTitle className="text-base text-[#333456] flex items-center gap-2">
+              <Share className="h-4 w-4" /> Bagikan ke Teman
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-gray-500">
@@ -382,13 +393,9 @@ export default function OrderStatusPage() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => {
-                  const link = `${window.location.origin}/?ref=${btoa(order.customerEmail)}`
-                  navigator.clipboard.writeText(link).then(() => {
-                    toast.success("Link referral disalin!")
-                  })
-                }}
+                onClick={handleShareLink}
               >
+                <Copy className="h-3.5 w-3.5 mr-1" />
                 Salin
               </Button>
             </div>

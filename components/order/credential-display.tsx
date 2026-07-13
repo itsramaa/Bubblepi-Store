@@ -18,8 +18,6 @@ export function CredentialDisplay({ credential, label = 'Akun' }: CredentialDisp
   async function handleCopy() {
     try {
       await navigator.clipboard.writeText(credential);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
     } catch {
       // Fallback for older browsers
       const textarea = document.createElement('textarea');
@@ -28,16 +26,20 @@ export function CredentialDisplay({ credential, label = 'Akun' }: CredentialDisp
       textarea.select();
       document.execCommand('copy');
       document.body.removeChild(textarea);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
     }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
 
   return (
     <div className="rounded-lg border p-4">
       <p className="mb-2 text-sm font-medium text-muted-foreground">{label}</p>
       <div className="flex items-center gap-2">
-        <code className="flex-1 rounded bg-muted px-3 py-2 font-mono text-sm">
+        <code
+          className={`flex-1 rounded bg-muted px-3 py-2 font-mono text-sm transition-all duration-300 ${
+            revealed ? 'blur-none' : 'blur-sm'
+          }`}
+        >
           {revealed ? credential : masked}
         </code>
         <Button

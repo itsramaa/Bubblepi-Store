@@ -3,10 +3,11 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import { formatPrice } from "@/lib/utils"
-import { Search, Package, ArrowRight } from "lucide-react"
+import { Search, Package, ArrowRight, Clock, CreditCard, CheckCircle2, XCircle, Hourglass, AlertTriangle } from "lucide-react"
 import Link from "next/link"
 
 interface Order {
@@ -18,12 +19,48 @@ interface Order {
   items: { quantity: number; variant: { name: string; product: { name: string } } }[]
 }
 
-const STATUS_LABEL: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  PENDING: { label: "Menunggu Bayar", variant: "secondary" },
-  PAID: { label: "Dibayar", variant: "default" },
-  FULFILLED: { label: "Selesai", variant: "default" },
-  CANCELLED: { label: "Dibatalkan", variant: "destructive" },
-  EXPIRED: { label: "Kedaluwarsa", variant: "outline" },
+interface StatusConfig {
+  label: string
+  icon: React.ReactNode
+  className: string
+}
+
+const STATUS_CONFIG: Record<string, StatusConfig> = {
+  PENDING: {
+    label: "Menunggu Bayar",
+    icon: <Clock className="h-3.5 w-3.5" />,
+    className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 border-yellow-300",
+  },
+  PAID: {
+    label: "Dibayar",
+    icon: <CreditCard className="h-3.5 w-3.5" />,
+    className: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border-blue-300",
+  },
+  FULFILLED: {
+    label: "Selesai",
+    icon: <CheckCircle2 className="h-3.5 w-3.5" />,
+    className: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 border-green-300",
+  },
+  FAILED: {
+    label: "Gagal",
+    icon: <XCircle className="h-3.5 w-3.5" />,
+    className: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 border-red-300",
+  },
+  PENDING_STOCK: {
+    label: "Menunggu Stok",
+    icon: <Hourglass className="h-3.5 w-3.5" />,
+    className: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 border-orange-300",
+  },
+  CANCELLED: {
+    label: "Dibatalkan",
+    icon: <AlertTriangle className="h-3.5 w-3.5" />,
+    className: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300 border-gray-300",
+  },
+  EXPIRED: {
+    label: "Kedaluwarsa",
+    icon: <XCircle className="h-3.5 w-3.5" />,
+    className: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300 border-gray-300",
+  },
 }
 
 export default function OrderLookupPage() {
@@ -75,11 +112,34 @@ export default function OrderLookupPage() {
         </Button>
       </form>
 
+      {/* Loading skeleton */}
+      {loading && (
+        <div className="space-y-3">
+          {[1, 2].map((i) => (
+            <Card key={i}>
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-48" />
+                    <Skeleton className="h-3 w-40" />
+                  </div>
+                  <div className="space-y-2 text-right">
+                    <Skeleton className="h-4 w-20 ml-auto" />
+                    <Skeleton className="h-7 w-16 ml-auto rounded-md" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
       {error && (
         <p className="text-destructive text-sm text-center mb-4">{error}</p>
       )}
 
-      {orders !== null && orders.length === 0 && (
+      {!loading && orders !== null && orders.length === 0 && (
         <div className="text-center text-muted-foreground py-12">
           <p>Tidak ada pesanan ditemukan untuk email ini.</p>
           <Link href="/products" className="text-primary text-sm mt-2 inline-block hover:underline">
@@ -88,11 +148,11 @@ export default function OrderLookupPage() {
         </div>
       )}
 
-      {orders && orders.length > 0 && (
+      {!loading && orders && orders.length > 0 && (
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">{orders.length} pesanan ditemukan</p>
           {orders.map((order) => {
-            const statusInfo = STATUS_LABEL[order.status] ?? { label: order.status, variant: "outline" as const }
+            const config = STATUS_CONFIG[order.status] ?? { label: order.status, icon: null, className: "bg-gray-100 text-gray-800" }
             return (
               <Card key={order.id} className="hover:border-primary/30 transition-colors">
                 <CardContent className="p-4">
@@ -100,8 +160,9 @@ export default function OrderLookupPage() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <p className="font-semibold text-sm">#{order.orderNumber}</p>
-                        <Badge variant={statusInfo.variant} className="text-xs">
-                          {statusInfo.label}
+                        <Badge variant="outline" className={`text-xs gap-1 border ${config.className}`}>
+                          {config.icon}
+                          {config.label}
                         </Badge>
                       </div>
                       <p className="text-xs text-muted-foreground mb-2">

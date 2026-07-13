@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import type { CheckoutFormData } from "@/types"
-import { CreditCard, Smartphone, ChevronRight } from "lucide-react"
+import { CreditCard, Smartphone, ChevronRight, Mail } from "lucide-react"
 import { useCart } from "@/context/CartContext"
 
 const BANKS = ["BCA", "BRI", "BNI", "PERMATA"]
@@ -61,6 +61,8 @@ export default function CheckoutStep1({ onSubmit }: Props) {
     onSubmit(form)
   }
 
+  const emailValid = EMAIL_RE.test(form.customerEmail)
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
@@ -74,6 +76,7 @@ export default function CheckoutStep1({ onSubmit }: Props) {
           <Input
             id="name"
             required
+            autoComplete="name"
             value={form.customerName}
             onChange={(e) => setForm({ ...form, customerName: e.target.value })}
             placeholder="Nama kamu"
@@ -85,6 +88,7 @@ export default function CheckoutStep1({ onSubmit }: Props) {
             id="email"
             required
             type="email"
+            autoComplete="email"
             value={form.customerEmail}
             onChange={handleEmailChange}
             onBlur={saveAbandonedCart}
@@ -97,6 +101,19 @@ export default function CheckoutStep1({ onSubmit }: Props) {
             <p className="text-xs text-muted-foreground">Credentials akun akan dikirim ke email ini.</p>
           )}
         </div>
+
+        {/* Real-time delivery confirmation box */}
+        {emailValid && form.customerEmail && (
+          <div className="flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 transition-all">
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <Mail className="h-4 w-4 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-primary">Akun akan dikirim ke:</p>
+              <p className="text-sm font-semibold truncate">{form.customerEmail}</p>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="space-y-2">

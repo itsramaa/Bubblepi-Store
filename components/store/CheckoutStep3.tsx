@@ -3,9 +3,8 @@
 import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { ExternalLink, Clock, QrCode, CheckCircle2, RefreshCw } from "lucide-react"
+import { ExternalLink, Clock, QrCode, CheckCircle2, RefreshCw, MessageCircle, Copy, Check } from "lucide-react"
 import { QRCodeSVG } from "qrcode.react"
 
 interface Props {
@@ -16,6 +15,27 @@ interface Props {
 
 const PAID_STATUSES = ["PAID", "FULFILLED", "PENDING_STOCK"]
 
+const PAYMENT_INSTRUCTIONS: Record<string, { title: string; steps: string[] }> = {
+  QRIS: {
+    title: "Cara Bayar via QRIS",
+    steps: [
+      "Klik \"Bayar Sekarang\" untuk membuka halaman pembayaran Xendit",
+      "Scan QR Code menggunakan GoPay, OVO, DANA, ShopeePay, atau mobile banking",
+      "Masukkan nominal yang tertera dan konfirmasi pembayaran",
+      "Akun akan dikirim otomatis ke email setelah pembayaran terkonfirmasi",
+    ],
+  },
+  VA: {
+    title: "Cara Bayar via Virtual Account",
+    steps: [
+      "Klik \"Bayar Sekarang\" untuk melihat nomor Virtual Account",
+      "Transfer ke nomor VA dari ATM, mobile banking, atau internet banking",
+      "Pastikan nominal transfer tepat sesuai tagihan",
+      "Akun akan dikirim otomatis ke email setelah transfer terkonfirmasi",
+    ],
+  },
+}
+
 export default function CheckoutStep3({ orderId, paymentUrl, createdAt }: Props) {
   const router = useRouter()
   const [timeLeft, setTimeLeft] = useState("")
@@ -23,6 +43,12 @@ export default function CheckoutStep3({ orderId, paymentUrl, createdAt }: Props)
   const [showQr, setShowQr] = useState(false)
   const [paid, setPaid] = useState(false)
   const [polling, setPolling] = useState(true)
+  const [copiedUrl, setCopiedUrl] = useState(false)
+
+  // Detect payment method from paymentUrl (rough heuristic)
+  const isVA = paymentUrl?.toLowerCase().includes("virtual") || paymentUrl?.toLowerCase().includes("bank")
+  const instructionKey = isVA ? "VA" : "QRIS"
+  const instruction = PAYMENT_INSTRUCTIONS[instructionKey]
 
   // Countdown timer
   useEffect(() => {
@@ -53,7 +79,6 @@ export default function CheckoutStep3({ orderId, paymentUrl, createdAt }: Props)
       if (data.success && PAID_STATUSES.includes(data.data?.status)) {
         setPaid(true)
         setPolling(false)
-        // Redirect ke order status page setelah 2 detik
         setTimeout(() => router.push(`/orders/${orderId}`), 2000)
       }
     } catch {}
@@ -65,6 +90,15 @@ export default function CheckoutStep3({ orderId, paymentUrl, createdAt }: Props)
     const interval = setInterval(checkStatus, 5000)
     return () => clearInterval(interval)
   }, [polling, checkStatus])
+
+  async function handleCopyUrl() {
+    if (!paymentUrl) return
+    try {
+      await navigator.clipboard.writeText(paymentUrl)
+      setCopiedUrl(true)
+      setTimeout(() => setCopiedUrl(false), 2000)
+    } catch {}
+  }
 
   if (paid) {
     return (
@@ -125,14 +159,24 @@ export default function CheckoutStep3({ orderId, paymentUrl, createdAt }: Props)
             </Button>
           </a>
 
-          <Button
-            variant="outline"
-            className="w-full gap-2"
-            onClick={() => setShowQr(!showQr)}
-          >
-            <QrCode className="h-4 w-4" />
-            {showQr ? "Sembunyikan QR Code" : "Tampilkan QR Code"}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              className="flex-1 gap-2"
+              onClick={() => setShowQr(!showQr)}
+            >
+              <QrCode className="h-4 w-4" />
+              {showQr ? "Sembunyikan QR" : "QR Code"}
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1 gap-2"
+              onClick={handleCopyUrl}
+            >
+              {copiedUrl ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+              {copiedUrl ? "Disalin!" : "Salin Link"}
+            </Button>
+          </div>
 
           {showQr && (
             <div className="flex flex-col items-center gap-3 p-6 border rounded-xl bg-white">
@@ -142,6 +186,23 @@ export default function CheckoutStep3({ orderId, paymentUrl, createdAt }: Props)
               </p>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Payment instructions */}
+      {!expired && (
+        <div className="rounded-xl border bg-muted/20 p-4 space-y-3">
+          <p className="text-sm font-semibold">{instruction.title}</p>
+          <ol className="space-y-2">
+            {instruction.steps.map((step, i) => (
+              <li key={i} className="flex items-start gap-2.5 text-sm text-muted-foreground">
+                <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                  {i + 1}
+                </span>
+                {step}
+              </li>
+            ))}
+          </ol>
         </div>
       )}
 
@@ -159,6 +220,19 @@ export default function CheckoutStep3({ orderId, paymentUrl, createdAt }: Props)
             Kembali ke Toko
           </Button>
         )}
+      </div>
+
+      {/* WA help link */}
+      <div className="text-center pt-1">
+        <a
+          href="https://wa.me/6281234567890?text=Halo%2C+saya+butuh+bantuan+dengan+pesanan+saya"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <MessageCircle className="h-3.5 w-3.5" />
+          Butuh bantuan? Chat WhatsApp
+        </a>
       </div>
     </div>
   )
