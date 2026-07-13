@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { fulfillOrder } from "@/lib/order"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
+import { sendPaymentReceived, sendOrderExpired } from "@/lib/mailer"
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,6 +41,22 @@ export async function POST(request: NextRequest) {
         where: { id: order.id },
         data: { status: "PAID", paidAt: new Date() },
       })
+
+      sendPaymentReceived({
+        to: order.customerEmail,
+        customerName: order.customerName,
+        orderNumber: order.orderNumber,
+        orderId: order.id,
+      }).catch(async (err) => {
+        console.error("sendPaymentReceived failed:", err)
+        await db.order
+          .update({
+            where: { id: order.id },
+            data: { resendCount: { increment: 1 } },
+          })
+          .catch(() => {})
+      })
+
       await fulfillOrder(order.id)
     } else if (status === "EXPIRED" || status === "FAILED") {
       // AWAITING_PAYMENT adalah status setelah createInvoice — bukan PENDING
@@ -49,6 +66,20 @@ export async function POST(request: NextRequest) {
           data: { status: "FAILED" },
         })
       }
+
+      sendOrderExpired({
+        to: order.customerEmail,
+        customerName: order.customerName,
+        orderNumber: order.orderNumber,
+      }).catch(async (err) => {
+        console.error("sendOrderExpired failed:", err)
+        await db.order
+          .update({
+            where: { id: order.id },
+            data: { resendCount: { increment: 1 } },
+          })
+          .catch(() => {})
+      })
     }
 
     return NextResponse.json({ success: true })
