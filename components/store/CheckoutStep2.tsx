@@ -55,9 +55,9 @@ export default function CheckoutStep2({ formData, onSubmit, onBack, submitting =
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
-      setDiscount(data.voucher.discount)
-      setVoucherId(data.voucher.id)
-      toast.success(`Voucher berhasil! Hemat ${formatPrice(data.voucher.discount)}`)
+      setDiscount(data.discount)
+      setVoucherId(data.voucherId)
+      toast.success(`Voucher berhasil! Hemat ${formatPrice(data.discount)}`)
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Voucher tidak valid")
       setDiscount(0)
