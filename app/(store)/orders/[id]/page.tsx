@@ -289,6 +289,37 @@ export default function OrderStatusPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Referral Link */}
+      {order.status === "FULFILLED" && (
+        <Card className="mt-6 border-[#F4ABC4]">
+          <CardHeader>
+            <CardTitle className="text-base text-[#333456]">🎁 Ajak Teman, Dapat Bonus</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-gray-500">
+              Bagikan link referral kamu. Setiap teman yang beli, kamu dapat komisi Rp 5.000.
+            </p>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 rounded-md bg-gray-100 px-3 py-2 text-xs break-all text-[#333456]">
+                {typeof window !== "undefined" ? `${window.location.origin}/?ref=${btoa(order.customerEmail)}` : ""}
+              </code>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  const link = `${window.location.origin}/?ref=${btoa(order.customerEmail)}`
+                  navigator.clipboard.writeText(link).then(() => {
+                    toast.success("Link referral disalin!")
+                  })
+                }}
+              >
+                Salin
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }
