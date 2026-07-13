@@ -5,10 +5,10 @@ import { Resend } from "resend"
 
 export const dynamic = "force-dynamic"
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 export async function GET(request: NextRequest) {
   const cronError = requireCronSecret(request); if (cronError) return cronError
+
+  const resend = new Resend(process.env.RESEND_API_KEY)
   const in3days = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
 
   const stocks = await db.accountStock.findMany({

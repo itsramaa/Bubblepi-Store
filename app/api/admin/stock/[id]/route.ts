@@ -6,6 +6,8 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authError = await requireAdmin(request); if (authError) return authError
+
   const { id } = await params
   const body = await request.json()
   const item = await db.accountStock.update({ where: { id }, data: body })
@@ -13,9 +15,11 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authError = await requireAdmin(request); if (authError) return authError
+
   const { id } = await params
   await db.accountStock.delete({ where: { id } })
   return NextResponse.json({ success: true })

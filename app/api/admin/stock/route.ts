@@ -3,7 +3,9 @@ import { requireAdmin } from "@/lib/admin-auth"
 import { db } from "@/lib/db"
 import { stockItemSchema } from "@/lib/validators"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const authError = await requireAdmin(request); if (authError) return authError
+
   const stock = await db.accountStock.findMany({
     include: { variant: { include: { product: { select: { name: true } } } } },
     orderBy: { createdAt: "desc" },
@@ -12,10 +14,12 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const authError = await requireAdmin(request); if (authError) return authError
+
   try {
     const body = await request.json()
     const parsed = stockItemSchema.parse(body)
-    const expiresAt = (parsed as any).expiresAt
+    const expiresAt = (parsed as Record<string, unknown>).expiresAt
     const item = await db.accountStock.create({
       data: {
         variantId: parsed.variantId,

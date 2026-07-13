@@ -3,6 +3,8 @@ import { requireAdmin } from "@/lib/admin-auth"
 import { db } from "@/lib/db"
 
 export async function GET(request: NextRequest) {
+  const authError = await requireAdmin(request); if (authError) return authError
+
   const { searchParams } = new URL(request.url)
   const status = searchParams.get("status")
 

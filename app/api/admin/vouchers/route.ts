@@ -3,6 +3,8 @@ import { requireAdmin } from "@/lib/admin-auth"
 import { db } from "@/lib/db"
 
 export async function POST(request: NextRequest) {
+  const authError = await requireAdmin(request); if (authError) return authError
+
   try {
     const body = await request.json()
     const { code, type, value, minOrder, maxUses, expiresAt } = body
@@ -15,17 +17,19 @@ export async function POST(request: NextRequest) {
       data: { code, type, value: parseInt(value), minOrder: parseInt(minOrder) || 0, maxUses: maxUses || null, expiresAt: expiresAt || null },
     })
     return NextResponse.json({ success: true, voucher }, { status: 201 })
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 400 })
+  } catch (e: unknown) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 400 })
   }
 }
 
 export async function PATCH(request: NextRequest) {
+  const authError = await requireAdmin(request); if (authError) return authError
+
   try {
     const { id, isActive } = await request.json()
     await db.voucher.update({ where: { id }, data: { isActive } })
     return NextResponse.json({ success: true })
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 400 })
+  } catch (e: unknown) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 400 })
   }
 }

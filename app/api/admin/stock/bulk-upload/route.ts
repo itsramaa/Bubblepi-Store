@@ -3,6 +3,8 @@ import { requireAdmin } from "@/lib/admin-auth"
 import { db } from "@/lib/db"
 
 export async function POST(request: NextRequest) {
+  const authError = await requireAdmin(request); if (authError) return authError
+
   try {
     const { variantId, credentials } = await request.json()
     if (!variantId || !Array.isArray(credentials) || credentials.length === 0) {
