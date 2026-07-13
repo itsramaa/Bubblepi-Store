@@ -37,10 +37,16 @@ export async function POST(request: NextRequest) {
       if (order.status === "PAID" || order.status === "FULFILLED") {
         return NextResponse.json({ success: true, skipped: true })
       }
+
       await db.order.update({
         where: { id: order.id },
         data: { status: "PAID", paidAt: new Date() },
       })
+
+      // Track payment funnel events (fire-and-forget)
+      db.funnelEvent.create({
+        data: { sessionId: `order:${order.id}`, event: "PAYMENT_INITIATED" },
+      }).catch(() => {})
 
       sendPaymentReceived({
         to: order.customerEmail,
@@ -50,16 +56,17 @@ export async function POST(request: NextRequest) {
       }).catch(async (err) => {
         console.error("sendPaymentReceived failed:", err)
         await db.order
-          .update({
-            where: { id: order.id },
-            data: { resendCount: { increment: 1 } },
-          })
+          .update({ where: { id: order.id }, data: { resendCount: { increment: 1 } } })
           .catch(() => {})
       })
 
       await fulfillOrder(order.id)
+
+      db.funnelEvent.create({
+        data: { sessionId: `order:${order.id}`, event: "PAYMENT_SUCCESS" },
+      }).catch(() => {})
     } else if (status === "EXPIRED" || status === "FAILED") {
-      // AWAITING_PAYMENT adalah status setelah createInvoice — bukan PENDING
+      // AWAITING_PAYMENT adalah status setelah createInvoice
       if (order.status === "AWAITING_PAYMENT" || order.status === "PENDING") {
         await db.order.update({
           where: { id: order.id },
@@ -74,10 +81,7 @@ export async function POST(request: NextRequest) {
       }).catch(async (err) => {
         console.error("sendOrderExpired failed:", err)
         await db.order
-          .update({
-            where: { id: order.id },
-            data: { resendCount: { increment: 1 } },
-          })
+          .update({ where: { id: order.id }, data: { resendCount: { increment: 1 } } })
           .catch(() => {})
       })
     }
