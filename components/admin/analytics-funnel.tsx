@@ -10,7 +10,8 @@ const LABELS: Record<string, string> = {
 }
 
 export async function AnalyticsFunnel() {
-  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // last 30 days
+  // eslint-disable-next-line react-hooks/purity
+  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
   const counts = await Promise.all(
     EVENTS.map((event) =>
       db.funnelEvent.count({ where: { event, createdAt: { gte: since } } })
