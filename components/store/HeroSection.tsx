@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search, Shield, Zap, Star } from "lucide-react"
@@ -54,7 +55,7 @@ export default function HeroSection() {
           </p>
 
           {/* Search bar */}
-          <form onSubmit={handleSearch} className="flex gap-2 max-w-lg mb-10">
+          <form onSubmit={handleSearch} className="flex gap-2 max-w-lg mb-6">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
               <Input
@@ -72,6 +73,16 @@ export default function HeroSection() {
               Cari
             </Button>
           </form>
+
+          {/* Secondary CTA */}
+          <div className="mb-10">
+            <Link
+              href="/products?sort=terlaris"
+              className="inline-flex items-center gap-1 border border-white/30 text-white/80 hover:text-white hover:border-white/60 rounded-lg px-5 py-2.5 text-sm font-medium transition-colors backdrop-blur-sm bg-white/5 hover:bg-white/10"
+            >
+              Lihat Produk Terlaris →
+            </Link>
+          </div>
 
           {/* Trust badges */}
           <div className="flex flex-wrap gap-4">
