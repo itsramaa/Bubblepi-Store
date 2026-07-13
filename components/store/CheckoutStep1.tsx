@@ -11,6 +11,8 @@ import { useCart } from "@/context/CartContext"
 
 const BANKS = ["BCA", "BRI", "BNI", "PERMATA"]
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 interface Props {
   onSubmit: (data: CheckoutFormData) => void
 }
@@ -23,19 +25,40 @@ export default function CheckoutStep1({ onSubmit }: Props) {
     paymentMethod: "QRIS",
     bankCode: "",
   })
+  const [emailError, setEmailError] = useState("")
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    onSubmit(form)
+  function validateEmail(email: string) {
+    if (!email) return
+    if (!EMAIL_RE.test(email)) {
+      setEmailError("Format email tidak valid")
+    } else {
+      setEmailError("")
+    }
+  }
+
+  function handleEmailChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = e.target.value
+    setForm({ ...form, customerEmail: val })
+    if (emailError && EMAIL_RE.test(val)) setEmailError("")
   }
 
   function saveAbandonedCart() {
+    validateEmail(form.customerEmail)
     if (!form.customerEmail || !form.customerName || items.length === 0) return
     fetch("/api/cart/save", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: form.customerEmail, name: form.customerName, items }),
     }).catch(() => {})
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!EMAIL_RE.test(form.customerEmail)) {
+      setEmailError("Format email tidak valid")
+      return
+    }
+    onSubmit(form)
   }
 
   return (
@@ -63,11 +86,16 @@ export default function CheckoutStep1({ onSubmit }: Props) {
             required
             type="email"
             value={form.customerEmail}
-            onChange={(e) => setForm({ ...form, customerEmail: e.target.value })}
+            onChange={handleEmailChange}
             onBlur={saveAbandonedCart}
             placeholder="email@contoh.com"
+            className={cn(emailError && "border-destructive focus-visible:ring-destructive")}
           />
-          <p className="text-xs text-muted-foreground">Credentials akun akan dikirim ke email ini.</p>
+          {emailError ? (
+            <p className="text-xs text-destructive flex items-center gap-1">⚠ {emailError}</p>
+          ) : (
+            <p className="text-xs text-muted-foreground">Credentials akun akan dikirim ke email ini.</p>
+          )}
         </div>
       </div>
 
@@ -81,17 +109,24 @@ export default function CheckoutStep1({ onSubmit }: Props) {
               onClick={() => setForm({ ...form, paymentMethod: method, bankCode: "" })}
               className={cn(
                 "flex items-center gap-3 p-4 rounded-xl border-2 text-left transition-all",
-                form.paymentMethod === method ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"
+                form.paymentMethod === method
+                  ? "border-primary bg-primary/5"
+                  : "border-border hover:border-muted-foreground/30"
               )}
             >
-              <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0",
-                form.paymentMethod === method ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              <div className={cn(
+                "w-9 h-9 rounded-lg flex items-center justify-center shrink-0",
+                form.paymentMethod === method
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
               )}>
                 {method === "QRIS" ? <Smartphone className="h-4 w-4" /> : <CreditCard className="h-4 w-4" />}
               </div>
               <div>
                 <p className="font-medium text-sm">{method}</p>
-                <p className="text-xs text-muted-foreground">{method === "QRIS" ? "GoPay, OVO, DANA" : "BCA, BRI, BNI"}</p>
+                <p className="text-xs text-muted-foreground">
+                  {method === "QRIS" ? "GoPay, OVO, DANA, dll" : "BCA, BRI, BNI, Permata"}
+                </p>
               </div>
             </button>
           ))}
@@ -109,7 +144,9 @@ export default function CheckoutStep1({ onSubmit }: Props) {
                 onClick={() => setForm({ ...form, bankCode: bank })}
                 className={cn(
                   "py-2.5 px-4 rounded-lg border-2 text-sm font-medium transition-all",
-                  form.bankCode === bank ? "border-primary bg-primary/5 text-primary" : "border-border hover:border-muted-foreground/30"
+                  form.bankCode === bank
+                    ? "border-primary bg-primary/5 text-primary"
+                    : "border-border hover:border-muted-foreground/30"
                 )}
               >
                 {bank}
@@ -119,7 +156,11 @@ export default function CheckoutStep1({ onSubmit }: Props) {
         </div>
       )}
 
-      <Button type="submit" className="w-full gap-2" disabled={form.paymentMethod === "VA" && !form.bankCode}>
+      <Button
+        type="submit"
+        className="w-full gap-2"
+        disabled={form.paymentMethod === "VA" && !form.bankCode}
+      >
         Lanjut ke Konfirmasi
         <ChevronRight className="h-4 w-4" />
       </Button>
