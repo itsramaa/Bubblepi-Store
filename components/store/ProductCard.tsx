@@ -40,6 +40,12 @@ function getMinEffectivePrice(product: ProductWithVariants): { minPrice: number;
   return { minPrice: minPrice === Infinity ? 0 : minPrice, hasSale, maxDiscount }
 }
 
+/** Check if product was created within the last 7 days */
+function isNewProduct(product: ProductWithVariants): boolean {
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+  return new Date(product.createdAt) > sevenDaysAgo
+}
+
 export default function ProductCard({ product }: ProductCardProps) {
   const prices = product.variants.map((v) => v.price)
   const maxPrice = Math.max(...prices)
@@ -47,6 +53,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   const isLowStock = (product.totalStock ?? 99) <= 3 && (product.totalStock ?? 99) > 0
   const isOutOfStock = product.totalStock === 0
   const isBestSeller = (product.totalSold ?? 0) >= 10
+  const isNew = isNewProduct(product)
 
   return (
     <Link href={`/products/${product.slug}`} className="group block">
@@ -62,6 +69,11 @@ export default function ProductCard({ product }: ProductCardProps) {
           />
           {/* Badges overlay */}
           <div className="absolute top-2 left-2 flex flex-wrap gap-1">
+            {isNew && (
+              <Badge className="bg-blue-500 text-white text-xs font-semibold gap-1 border-0">
+                Baru
+              </Badge>
+            )}
             {isBestSeller && (
               <Badge className="bg-[#F4ABC4] text-[#333456] text-xs font-semibold gap-1 border-0">
                 <Star className="h-3 w-3 fill-current" /> Terlaris

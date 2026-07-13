@@ -1,4 +1,6 @@
+import Link from "next/link"
 import { ShoppingBag, CreditCard, Mail, ArrowRight } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 const steps = [
   {
@@ -6,6 +8,7 @@ const steps = [
     number: "01",
     title: "Pilih Produk",
     desc: "Pilih layanan dan durasi yang kamu butuhkan. Tersedia opsi sharing maupun private.",
+    micro: "700+ produk tersedia",
     color: "from-[#595B83] to-[#333456]",
   },
   {
@@ -13,6 +16,7 @@ const steps = [
     number: "02",
     title: "Bayar Instan",
     desc: "Bayar via QRIS atau Virtual Account. Aman, cepat, tanpa perlu daftar akun.",
+    micro: "QRIS, Transfer Bank, semua e-wallet",
     color: "from-[#F4ABC4] to-[#595B83]",
   },
   {
@@ -20,6 +24,7 @@ const steps = [
     number: "03",
     title: "Terima di Email",
     desc: "Akun dikirim otomatis ke emailmu dalam hitungan menit. Langsung bisa dipakai!",
+    micro: "Rata-rata < 5 menit",
     color: "from-[#333456] to-[#595B83]",
   },
 ]
@@ -56,7 +61,12 @@ export default function HowItWorks() {
                     </div>
                   </div>
                   <h3 className="font-bold text-lg mb-2">{step.title}</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">{step.desc}</p>
+                  <p className="text-muted-foreground text-sm leading-relaxed mb-3">{step.desc}</p>
+                  {/* Micro-copy objection handler */}
+                  <div className="inline-flex items-center gap-1.5 bg-primary/8 text-primary text-xs font-medium rounded-full px-3 py-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    {step.micro}
+                  </div>
                 </div>
 
                 {/* Arrow between steps (mobile) */}
@@ -68,6 +78,16 @@ export default function HowItWorks() {
               </div>
             )
           })}
+        </div>
+
+        {/* CTA */}
+        <div className="mt-12 text-center">
+          <Link href="/products">
+            <Button size="lg" className="bg-[#595B83] hover:bg-[#333456] text-white font-semibold px-8 gap-2">
+              Mulai Belanja Sekarang <ArrowRight className="h-4 w-4" />
+            </Button>
+          </Link>
+          <p className="text-xs text-muted-foreground mt-3">Tanpa daftar akun · Bayar langsung · Terima instan</p>
         </div>
       </div>
     </section>
