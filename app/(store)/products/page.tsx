@@ -22,18 +22,35 @@ export const metadata: Metadata = {
 }
 
 interface ProductsPageProps {
-  searchParams: Promise<{ category?: string; search?: string; sort?: string }>
+  searchParams: Promise<{
+    category?: string
+    search?: string
+    sort?: string
+    minPrice?: string
+    maxPrice?: string
+    inStock?: string
+  }>
 }
 
 async function ProductList({
   category,
   search,
   sort,
+  minPrice,
+  maxPrice,
+  inStock,
 }: {
   category?: string
   search?: string
   sort?: string
+  minPrice?: string
+  maxPrice?: string
+  inStock?: string
 }) {
+  const minPriceNum = minPrice ? parseInt(minPrice, 10) : undefined
+  const maxPriceNum = maxPrice ? parseInt(maxPrice, 10) : undefined
+  const onlyInStock = inStock === "1"
+
   const products = await db.product.findMany({
     where: {
       isActive: true,
@@ -43,6 +60,17 @@ async function ProductList({
           { name: { contains: search, mode: "insensitive" } },
           { description: { contains: search, mode: "insensitive" } },
         ],
+      }),
+      // Filter by price range on at least one variant
+      ...((minPriceNum !== undefined || maxPriceNum !== undefined) && {
+        variants: {
+          some: {
+            price: {
+              ...(minPriceNum !== undefined && { gte: minPriceNum }),
+              ...(maxPriceNum !== undefined && { lte: maxPriceNum }),
+            },
+          },
+        },
       }),
     },
     include: { variants: true },
@@ -87,6 +115,11 @@ async function ProductList({
     }
   })
 
+  // Filter: only in stock
+  if (onlyInStock) {
+    productsWithMeta = productsWithMeta.filter((p) => p.totalStock > 0)
+  }
+
   // Sort by popular (most sold) post-query since Prisma can't order by computed field
   if (sort === "popular") {
     productsWithMeta = productsWithMeta.sort((a, b) => b.totalSold - a.totalSold)
@@ -101,7 +134,7 @@ async function ProductList({
     })
   }
 
-  if (products.length === 0) {
+  if (productsWithMeta.length === 0) {
     return (
       <div className="text-center py-20">
         <p className="text-4xl mb-4">🔍</p>
@@ -120,7 +153,7 @@ async function ProductList({
 }
 
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {
-  const { category, search, sort } = await searchParams
+  const { category, search, sort, minPrice, maxPrice, inStock } = await searchParams
 
   // Fetch distinct categories from DB for dynamic filter
   const categoryRows = await db.product.findMany({
@@ -144,7 +177,14 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
         <FilterSidebar categories={categories} />
         <div className="flex-1">
           <Suspense fallback={<ProductGridSkeleton />}>
-            <ProductList category={category} search={search} sort={sort} />
+            <ProductList
+              category={category}
+              search={search}
+              sort={sort}
+              minPrice={minPrice}
+              maxPrice={maxPrice}
+              inStock={inStock}
+            />
           </Suspense>
         </div>
       </div>

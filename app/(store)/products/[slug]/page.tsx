@@ -8,6 +8,7 @@ import VariantCompareTable from "@/components/store/VariantCompareTable"
 import ReviewSection from "@/components/store/ReviewSection"
 import CredentialPreview from "@/components/store/CredentialPreview"
 import RelatedProducts from "@/components/store/RelatedProducts"
+import PriceDropNotify from "@/components/store/PriceDropNotify"
 import { StockBadge } from "@/components/product/stock-badge"
 import { ProductViewTracker } from "@/components/store/ProductViewTracker"
 import Link from "next/link"
@@ -236,6 +237,17 @@ export default async function ProductDetailPage({ params }: Props) {
               soldMap={Object.fromEntries(soldMap)}
             />
           </div>
+
+          {/* Price drop notification — only show when product is in stock */}
+          {totalStock > 0 && (() => {
+            const cheapestVariant = withPpd.reduce((a, b) => a.price <= b.price ? a : b)
+            return (
+              <PriceDropNotify
+                variantId={cheapestVariant.id}
+                currentPrice={cheapestVariant.price}
+              />
+            )
+          })()}
 
           {/* Why buy here */}
           <div className="p-5 rounded-2xl bg-muted/30 border space-y-2.5">
