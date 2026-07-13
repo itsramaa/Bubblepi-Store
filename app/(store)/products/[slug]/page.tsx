@@ -8,8 +8,10 @@ import VariantCompareTable from "@/components/store/VariantCompareTable"
 import ReviewSection from "@/components/store/ReviewSection"
 import CredentialPreview from "@/components/store/CredentialPreview"
 import RelatedProducts from "@/components/store/RelatedProducts"
+import { StockBadge } from "@/components/product/stock-badge"
 import Link from "next/link"
 import Image from "next/image"
+import { Suspense } from "react"
 import {
   Shield, Zap, MessageCircle, ChevronRight, Star, Users,
   Tv, Bot, Palette, BookOpen, Gamepad2, Globe, Lock, CheckCircle2,
@@ -195,6 +197,22 @@ export default async function ProductDetailPage({ params }: Props) {
             )}
           </div>
 
+          {/* Per-variant stock badges */}
+          {variantsWithStock.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {variantsWithStock.map((v) => {
+                const badge = <StockBadge key={v.id} availableStock={v.stockCount} />
+                if (!badge) return null
+                return (
+                  <div key={v.id} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <span className="font-medium">{v.name}:</span>
+                    <StockBadge availableStock={v.stockCount} />
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
           {/* Stock warning */}
           {totalStock === 0 && (
             <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm font-medium">
@@ -253,8 +271,25 @@ export default async function ProductDetailPage({ params }: Props) {
         <ReviewSection productId={product.id} reviews={reviews as any} avgRating={avgRating} />
       </div>
 
-      {/* Related products */}
-      <RelatedProducts productId={product.id} category={product.category} />
+      {/* Related products — wrapped in Suspense for streaming */}
+      <Suspense fallback={
+        <div className="mt-16">
+          <div className="h-7 w-40 bg-muted animate-pulse rounded-md mb-6" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="rounded-2xl border bg-card overflow-hidden">
+                <div className="aspect-square bg-muted animate-pulse" />
+                <div className="p-3 space-y-2">
+                  <div className="h-3 bg-muted animate-pulse rounded w-3/4" />
+                  <div className="h-3 bg-muted animate-pulse rounded w-1/2" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      }>
+        <RelatedProducts productId={product.id} category={product.category} />
+      </Suspense>
     </div>
   )
 }
