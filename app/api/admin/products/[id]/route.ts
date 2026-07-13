@@ -3,9 +3,11 @@ import { requireAdmin } from "@/lib/admin-auth"
 import { db } from "@/lib/db"
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authError = await requireAdmin(request); if (authError) return authError
+
   const { id } = await params
   const product = await db.product.findUnique({
     where: { id },
@@ -19,6 +21,8 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authError = await requireAdmin(request); if (authError) return authError
+
   const { id } = await params
   const body = await request.json()
   const product = await db.product.update({ where: { id }, data: body })
@@ -26,9 +30,11 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authError = await requireAdmin(request); if (authError) return authError
+
   const { id } = await params
   await db.product.delete({ where: { id } })
   return NextResponse.json({ success: true })

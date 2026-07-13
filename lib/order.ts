@@ -2,6 +2,7 @@ import { db } from "@/lib/db"
 import { sendAccountDelivery } from "@/lib/mailer"
 import { sendTelegramNotification } from "@/lib/telegram"
 import { checkCriticalStock } from "@/lib/check-critical-stock"
+import { decrypt, isEncrypted } from "@/lib/crypto"
 
 export async function fulfillOrder(orderId: string) {
   const order = await db.order.findUnique({
@@ -57,7 +58,7 @@ export async function fulfillOrder(orderId: string) {
         continue
       }
 
-      credentialsList.push(assigned.credentials)
+      credentialsList.push(isEncrypted(assigned.credentials) ? decrypt(assigned.credentials) : assigned.credentials)
     }
 
     if (credentialsList.length > 0) {

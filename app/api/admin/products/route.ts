@@ -3,7 +3,9 @@ import { requireAdmin } from "@/lib/admin-auth"
 import { db } from "@/lib/db"
 import { productSchema } from "@/lib/validators"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const authError = await requireAdmin(request); if (authError) return authError
+
   const products = await db.product.findMany({
     include: { variants: true },
     orderBy: { createdAt: "desc" },
@@ -12,6 +14,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const authError = await requireAdmin(request); if (authError) return authError
+
   try {
     const body = await request.json()
     const parsed = productSchema.parse(body)

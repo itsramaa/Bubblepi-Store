@@ -3,7 +3,9 @@ import { requireAdmin } from "@/lib/admin-auth"
 import { db } from "@/lib/db"
 import { variantSchema } from "@/lib/validators"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const authError = await requireAdmin(request); if (authError) return authError
+
   const variants = await db.variant.findMany({
     include: { product: { select: { name: true, slug: true } }, stock: true },
   })
@@ -11,6 +13,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const authError = await requireAdmin(request); if (authError) return authError
+
   try {
     const body = await request.json()
     const parsed = variantSchema.parse(body)

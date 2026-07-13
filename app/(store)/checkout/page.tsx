@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useCart } from "@/context/CartContext"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
@@ -10,6 +10,7 @@ import CheckoutStep3 from "@/components/store/CheckoutStep3"
 import StepIndicator from "@/components/store/StepIndicator"
 import { Card, CardContent } from "@/components/ui/card"
 import type { CheckoutFormData } from "@/types"
+import { trackEvent } from "@/lib/analytics"
 
 export default function CheckoutPage() {
   const [step, setStep] = useState(1)
@@ -20,6 +21,10 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false)
   const { items, clearCart } = useCart()
   const router = useRouter()
+
+  useEffect(() => {
+    trackEvent("CHECKOUT_START")
+  }, [])
 
   if (items.length === 0 && step < 3) {
     router.push("/cart")

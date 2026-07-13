@@ -3,11 +3,21 @@ import { cookies } from "next/headers"
 import { db } from "@/lib/db"
 import { generateOrderId } from "@/lib/utils"
 import { sendTelegramNotification } from "@/lib/telegram"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 // No PPN/tax — Xendit fee (QRIS 0.7%, VA Rp 4.000) ditanggung Xendit, tidak ditambahkan ke total
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request)
+    const rl = checkRateLimit(`create-order:${ip}`, 10, 60 * 60 * 1000)
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "Terlalu banyak permintaan. Coba lagi nanti." },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
+      )
+    }
+
     const body = await request.json()
     const { customerName, customerEmail, items, voucherId, discountAmount } = body
 

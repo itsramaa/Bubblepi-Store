@@ -3,14 +3,16 @@ import { requireAdmin } from "@/lib/admin-auth"
 import { db } from "@/lib/db"
 
 export async function PATCH(request: NextRequest) {
+  const authError = await requireAdmin(request); if (authError) return authError
+
   try {
     const { id, isVisible, isPinned } = await request.json()
-    const data: any = {}
+    const data: Record<string, boolean> = {}
     if (isVisible !== undefined) data.isVisible = isVisible
     if (isPinned !== undefined) data.isPinned = isPinned
     await db.review.update({ where: { id }, data })
     return NextResponse.json({ success: true })
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 400 })
+  } catch (e: unknown) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 400 })
   }
 }

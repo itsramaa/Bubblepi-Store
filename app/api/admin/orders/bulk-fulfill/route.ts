@@ -4,6 +4,8 @@ import { db } from "@/lib/db"
 import { fulfillOrder } from "@/lib/order"
 
 export async function POST(request: NextRequest) {
+  const authError = await requireAdmin(request); if (authError) return authError
+
   try {
     const { orderIds } = await request.json()
     if (!Array.isArray(orderIds) || orderIds.length === 0) {

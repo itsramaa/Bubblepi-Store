@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { sendTelegramNotification } from "@/lib/telegram"
+import { sendWarrantyClaimReceived } from "@/lib/mailer"
 import { z } from "zod"
 
 const schema = z.object({
@@ -20,6 +21,7 @@ export async function POST(request: NextRequest) {
         id: true,
         orderNumber: true,
         customerEmail: true,
+        customerName: true,
         status: true,
         paidAt: true,
         items: {
@@ -71,6 +73,22 @@ export async function POST(request: NextRequest) {
     await sendTelegramNotification(
       `🛡️ <b>Klaim Garansi Baru</b>\nOrder: #${order.orderNumber}\nEmail: ${order.customerEmail}\nDeskripsi: ${description.slice(0, 100)}`
     )
+
+    sendWarrantyClaimReceived({
+      to: order.customerEmail,
+      customerName: order.customerName,
+      orderNumber: order.orderNumber,
+      claimDescription: description,
+      orderId: order.id,
+    }).catch(async (err) => {
+      console.error("sendWarrantyClaimReceived failed:", err)
+      await db.order
+        .update({
+          where: { id: order.id },
+          data: { resendCount: { increment: 1 } },
+        })
+        .catch(() => {})
+    })
 
     return NextResponse.json({ success: true, claim }, { status: 201 })
   } catch (e: any) {

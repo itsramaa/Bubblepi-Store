@@ -44,6 +44,8 @@ model Variant {
   name          String
   duration      String
   price         Int            // IDR integer
+  salePrice     Int?           // flash sale price in IDR, null = no sale
+  saleEndsAt    DateTime?      // when flash sale ends, null = no expiry
   hasWarranty   Boolean        @default(false)
   warrantyDays  Int?
   product       Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
@@ -181,4 +183,17 @@ model Voucher {
   orders    Order[]
 
   @@index([code])
+}
+
+model FunnelEvent {
+  id        String   @id @default(cuid())
+  sessionId String   @map("session_id")
+  event     String   // VIEW_PRODUCT | ADD_TO_CART | CHECKOUT_START | PAYMENT_INITIATED | PAYMENT_SUCCESS
+  productId String?  @map("product_id")
+  variantId String?  @map("variant_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([sessionId])
+  @@index([event, createdAt])
+  @@map("funnel_events")
 }

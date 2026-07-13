@@ -4,6 +4,8 @@ import { db } from "@/lib/db"
 import { sendAccountDelivery } from "@/lib/mailer"
 
 export async function PATCH(request: NextRequest) {
+  const authError = await requireAdmin(request); if (authError) return authError
+
   try {
     const { id, action, note } = await request.json()
     const claim = await db.warrantyClaim.findUnique({
@@ -13,23 +15,19 @@ export async function PATCH(request: NextRequest) {
     if (!claim) return NextResponse.json({ error: "Klaim tidak ditemukan" }, { status: 404 })
 
     if (action === "approve") {
-      // Find replacement stock
       const replacement = await db.accountStock.findFirst({
         where: { variantId: claim.orderItem.variantId, status: "AVAILABLE" },
       })
       if (!replacement) return NextResponse.json({ error: "Stok pengganti tidak tersedia" }, { status: 400 })
 
-      // Mark claim approved
       await db.warrantyClaim.update({
         where: { id },
         data: { status: "APPROVED", resolvedAt: new Date() },
       })
-      // Mark replacement stock as assigned to this order
       await db.accountStock.update({
         where: { id: replacement.id },
         data: { status: "ASSIGNED", orderId: claim.orderId },
       })
-      // Send new credentials
       await sendAccountDelivery({
         to: claim.order.customerEmail,
         orderNumber: claim.order.orderNumber,
@@ -47,7 +45,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true })
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 400 })
+  } catch (e: unknown) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 400 })
   }
 }
