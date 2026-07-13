@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { fulfillOrder } from "@/lib/order"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,6 +9,15 @@ export async function POST(request: NextRequest) {
     const webhookToken = process.env.XENDIT_WEBHOOK_TOKEN
     if (webhookToken && token !== webhookToken) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 })
+    }
+
+    const ip = getClientIp(request)
+    const rl = checkRateLimit(`webhook:${ip}`, 100, 60 * 1000)
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded" },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
+      )
     }
 
     const body = await request.json()

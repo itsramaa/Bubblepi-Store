@@ -2,9 +2,19 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { createInvoice } from "@/lib/xendit"
 import { sendOrderConfirmation } from "@/lib/mailer"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request)
+    const rl = checkRateLimit(`payment-create:${ip}`, 10, 60 * 60 * 1000)
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "Terlalu banyak permintaan. Coba lagi nanti." },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
+      )
+    }
+
     const body = await request.json()
     const { orderId, paymentMethod, bankCode } = body
 
