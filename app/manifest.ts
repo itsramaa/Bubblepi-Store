@@ -4,13 +4,15 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Bubblepi Store",
     short_name: "Bubblepi",
-    description: "Beli akun digital premium murah, instant delivery, bergaransi",
+    description: "Tempat beli akun digital dengan harga termurah",
     start_url: "/",
     display: "standalone",
-    background_color: "#060930",
-    theme_color: "#F4ABC4",
+    background_color: "#ffffff",
+    theme_color: "#595B83",
     icons: [
-      { src: "/logo.png", sizes: "any", type: "image/png" },
+      { src: "/favicon.ico", sizes: "48x48", type: "image/x-icon" },
+      { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
     ],
   }
 }
