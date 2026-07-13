@@ -106,9 +106,67 @@ export default async function ProductDetailPage({ params }: Props) {
   const CategoryIcon = getCategoryIcon(product.category)
   const gradient = getCategoryGradient(product.category)
 
+  const productUrl = `https://bubblepi-store.vercel.app/products/${product.slug}`
+  const imageUrl = product.image?.startsWith("http")
+    ? product.image
+    : product.image
+      ? `https://bubblepi-store.vercel.app${product.image}`
+      : undefined
+
+  // JSON-LD: BreadcrumbList
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Beranda", item: "https://bubblepi-store.vercel.app" },
+      { "@type": "ListItem", position: 2, name: "Produk", item: "https://bubblepi-store.vercel.app/products" },
+      { "@type": "ListItem", position: 3, name: product.name, item: productUrl },
+    ],
+  }
+
+  // JSON-LD: Product
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    description: product.description,
+    url: productUrl,
+    ...(imageUrl && { image: imageUrl }),
+    ...(avgRating > 0 && {
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: avgRating.toFixed(1),
+        reviewCount: reviews.length,
+        bestRating: 5,
+        worstRating: 1,
+      },
+    }),
+    offers: {
+      "@type": "AggregateOffer",
+      lowPrice: minPrice,
+      highPrice: maxPrice,
+      priceCurrency: "IDR",
+      availability: totalStock > 0
+        ? "https://schema.org/InStock"
+        : "https://schema.org/OutOfStock",
+      url: productUrl,
+    },
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 pb-28 md:pb-8">
+      {/* JSON-LD Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
+
       <ProductViewTracker productId={product.id} />
+
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1.5 text-sm text-muted-foreground mb-8">
         <Link href="/" className="hover:text-foreground transition-colors">Beranda</Link>
@@ -121,13 +179,14 @@ export default async function ProductDetailPage({ params }: Props) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16">
         {/* Left — Image */}
         <div className="space-y-4">
-          <div className={`relative aspect-square rounded-3xl overflow-hidden bg-gradient-to-br ${gradient}`}>
+          {/* Image with zoom on hover */}
+          <div className={`group relative aspect-square rounded-3xl overflow-hidden bg-gradient-to-br ${gradient}`}>
             {product.image ? (
               <Image
                 src={product.image}
                 alt={product.name}
                 fill
-                className="object-cover"
+                className="object-cover group-hover:scale-105 transition-transform duration-500"
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 priority
               />
@@ -152,15 +211,16 @@ export default async function ProductDetailPage({ params }: Props) {
             )}
           </div>
 
-          {/* Trust badges */}
-          <div className="grid grid-cols-3 gap-3">
+          {/* Trust badges — 4 items */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { icon: Zap, label: "Instant Delivery", sub: "< 5 menit" },
-              { icon: Shield, label: "Bergaransi", sub: product.variants.some(v => v.hasWarranty) ? "Garansi resmi" : "Terpercaya" },
-              { icon: MessageCircle, label: "Support", sub: "Via WhatsApp" },
-            ].map(({ icon: Icon, label, sub }) => (
+              { icon: Zap, label: "Instan", sub: "< 5 menit", color: "text-amber-500" },
+              { icon: Shield, label: "Garansi", sub: product.variants.some(v => v.hasWarranty) ? "Garansi resmi" : "Terpercaya", color: "text-green-500" },
+              { icon: CheckCircle2, label: "Aman", sub: "100% legit", color: "text-blue-500" },
+              { icon: MessageCircle, label: "Support 24/7", sub: "Via WhatsApp", color: "text-[#595B83]" },
+            ].map(({ icon: Icon, label, sub, color }) => (
               <div key={label} className="flex flex-col items-center text-center p-3 rounded-xl border bg-muted/30 gap-1">
-                <Icon className="h-5 w-5 text-primary" />
+                <Icon className={`h-5 w-5 ${color}`} />
                 <p className="text-xs font-medium">{label}</p>
                 <p className="text-xs text-muted-foreground">{sub}</p>
               </div>
@@ -249,15 +309,15 @@ export default async function ProductDetailPage({ params }: Props) {
             )
           })()}
 
-          {/* Why buy here */}
+          {/* Why buy here — 4 trust points */}
           <div className="p-5 rounded-2xl bg-muted/30 border space-y-2.5">
-            <p className="font-semibold text-sm">Kenapa beli di Bubblepi?</p>
+            <p className="font-semibold text-sm">Mengapa beli di sini?</p>
             <ul className="space-y-2 text-sm text-muted-foreground">
               {[
                 { icon: Zap, color: "text-amber-500", text: "Akun dikirim otomatis ke email dalam hitungan menit" },
                 { icon: Shield, color: "text-green-500", text: "Garansi penggantian jika ada masalah" },
-                { icon: MessageCircle, color: "text-blue-500", text: "Support aktif via WhatsApp 08.00–22.00 WIB" },
-                { icon: CheckCircle2, color: "text-[#595B83]", text: `${totalSold > 0 ? `${totalSold}+` : "Ratusan"} pembeli sudah puas` },
+                { icon: CheckCircle2, color: "text-blue-500", text: "Transaksi aman & terenkripsi — 100% terpercaya" },
+                { icon: MessageCircle, color: "text-[#595B83]", text: `Support 24/7 via WhatsApp — ${totalSold > 0 ? `${totalSold}+` : "ratusan"} pembeli sudah puas` },
               ].map(({ icon: Icon, color, text }) => (
                 <li key={text} className="flex items-center gap-2.5">
                   <Icon className={`h-4 w-4 ${color} shrink-0`} />

@@ -120,8 +120,8 @@ async function ProductList({
     productsWithMeta = productsWithMeta.filter((p) => p.totalStock > 0)
   }
 
-  // Sort by popular (most sold) post-query since Prisma can't order by computed field
-  if (sort === "popular") {
+  // Sort by terlaris / popular (most sold)
+  if (sort === "popular" || sort === "terlaris") {
     productsWithMeta = productsWithMeta.sort((a, b) => b.totalSold - a.totalSold)
   }
 
@@ -138,16 +138,25 @@ async function ProductList({
     return (
       <div className="text-center py-20">
         <p className="text-4xl mb-4">🔍</p>
-        <p className="text-lg text-muted-foreground">Produk tidak ditemukan</p>
+        <p className="text-lg font-semibold mb-1">Produk tidak ditemukan</p>
+        <p className="text-sm text-muted-foreground">
+          Coba ubah filter atau kata kunci pencarian kamu
+        </p>
       </div>
     )
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      {productsWithMeta.map((product) => (
-        <ProductCard key={product.id} product={product as unknown as ProductWithVariants} />
-      ))}
+    <div>
+      {/* Product count */}
+      <p className="text-sm text-muted-foreground mb-4">
+        Menampilkan <span className="font-semibold text-foreground">{productsWithMeta.length}</span> produk
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {productsWithMeta.map((product) => (
+          <ProductCard key={product.id} product={product as unknown as ProductWithVariants} />
+        ))}
+      </div>
     </div>
   )
 }

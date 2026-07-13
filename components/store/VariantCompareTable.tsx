@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
   ShoppingCart, Zap, Plus, Minus, Check,
-  LayoutGrid, Table2, Shield, Star,
+  LayoutGrid, Table2, Shield, Star, Info,
 } from "lucide-react"
 import { cn, formatPrice } from "@/lib/utils"
 import { toast } from "sonner"
@@ -256,7 +256,14 @@ export default function VariantCompareTable({ variants, product, bestValueId, so
               <tr className="border-b bg-muted/50">
                 <th className="text-left px-4 py-3 font-semibold">Varian</th>
                 <th className="text-right px-4 py-3 font-semibold">Harga</th>
-                <th className="text-right px-4 py-3 font-semibold">per Hari</th>
+                <th className="text-right px-4 py-3 font-semibold">
+                  <span
+                    className="inline-flex items-center gap-1 cursor-help"
+                    title="Dihitung dari harga dibagi durasi berlangganan"
+                  >
+                    per Hari <Info className="h-3 w-3 text-muted-foreground" />
+                  </span>
+                </th>
                 <th className="text-center px-4 py-3 font-semibold">Garansi</th>
                 <th className="text-center px-4 py-3 font-semibold">Stok</th>
                 <th className="text-center px-4 py-3 font-semibold">Terjual</th>
@@ -448,6 +455,11 @@ export default function VariantCompareTable({ variants, product, bestValueId, so
               <p className={cn("font-bold shrink-0 tabular-nums", isSale ? "text-red-600" : "text-[#333456]")}>
                 {formatPrice(effectivePrice * qty)}
               </p>
+            </div>
+            {/* Mini trust badges */}
+            <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+              <span className="flex items-center gap-1"><Zap className="h-3 w-3 text-amber-500" /> Instan</span>
+              <span className="flex items-center gap-1"><Shield className="h-3 w-3 text-green-500" /> Garansi</span>
             </div>
             <div className="flex gap-2">
               <Button
