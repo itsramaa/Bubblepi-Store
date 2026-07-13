@@ -11,6 +11,7 @@ import {
 } from "lucide-react"
 import { cn, formatPrice } from "@/lib/utils"
 import { toast } from "sonner"
+import { SaleCountdown } from "@/components/product/sale-countdown"
 
 interface Variant {
   id: string
@@ -21,6 +22,8 @@ interface Variant {
   stockCount: number
   hasWarranty?: boolean
   warrantyDays?: number | null
+  salePrice?: number | null
+  saleEndsAt?: string | Date | null
 }
 
 interface Props {
@@ -30,9 +33,20 @@ interface Props {
   soldMap: Record<string, number>
 }
 
+/** Returns the effective price and whether a flash sale is active */
+function getEffectivePrice(v: Variant): { effectivePrice: number; isSale: boolean } {
+  if (
+    v.salePrice != null &&
+    (v.saleEndsAt == null || new Date(v.saleEndsAt) > new Date())
+  ) {
+    return { effectivePrice: v.salePrice, isSale: true }
+  }
+  return { effectivePrice: v.price, isSale: false }
+}
+
 export default function VariantCompareTable({ variants, product, bestValueId, soldMap }: Props) {
   const router = useRouter()
-  const { addItem, updateQuantity: updateCartQty, items } = useCart()
+  const { addItem } = useCart()
 
   const [mode, setMode] = useState<"card" | "compare">("card")
   const [selectedId, setSelectedId] = useState<string>(
@@ -59,13 +73,14 @@ export default function VariantCompareTable({ variants, product, bestValueId, so
 
   function handleAddToCart() {
     if (!selected || isOutOfStock) return
+    const { effectivePrice } = getEffectivePrice(selected)
     addItem(
       {
         variantId: selected.id,
         productId: product.id,
         productName: product.name,
         variantName: selected.name,
-        price: selected.price,
+        price: effectivePrice,
         duration: selected.duration,
       },
       qty
@@ -77,13 +92,14 @@ export default function VariantCompareTable({ variants, product, bestValueId, so
 
   function handleBuyNow() {
     if (!selected || isOutOfStock) return
+    const { effectivePrice } = getEffectivePrice(selected)
     addItem(
       {
         variantId: selected.id,
         productId: product.id,
         productName: product.name,
         variantName: selected.name,
-        price: selected.price,
+        price: effectivePrice,
         duration: selected.duration,
       },
       qty
@@ -126,6 +142,8 @@ export default function VariantCompareTable({ variants, product, bestValueId, so
             const isBest = v.id === bestValueId
             const sold = soldMap[v.id] ?? 0
             const oos = v.stockCount === 0
+            const { effectivePrice, isSale } = getEffectivePrice(v)
+            const saleEndsAtStr = v.saleEndsAt ? new Date(v.saleEndsAt).toISOString() : null
 
             return (
               <button
@@ -147,6 +165,13 @@ export default function VariantCompareTable({ variants, product, bestValueId, so
                   </span>
                 )}
 
+                {/* Flash sale ribbon */}
+                {isSale && (
+                  <span className="absolute -top-2.5 right-4 bg-red-500 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full tracking-wide">
+                    🔥 FLASH SALE
+                  </span>
+                )}
+
                 <div className="flex items-start gap-3">
                   {/* Radio dot */}
                   <div className={cn(
@@ -164,10 +189,26 @@ export default function VariantCompareTable({ variants, product, bestValueId, so
                         <p className="text-xs text-muted-foreground mt-0.5">{v.duration}</p>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="font-bold text-[#333456] text-base">{formatPrice(v.price)}</p>
-                        <p className="text-xs text-muted-foreground">{formatPrice(v.pricePerDay)}/hari</p>
+                        {isSale ? (
+                          <>
+                            <p className="font-bold text-red-600 text-base">{formatPrice(effectivePrice)}</p>
+                            <p className="text-xs text-muted-foreground line-through">{formatPrice(v.price)}</p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="font-bold text-[#333456] text-base">{formatPrice(effectivePrice)}</p>
+                            <p className="text-xs text-muted-foreground">{formatPrice(v.pricePerDay)}/hari</p>
+                          </>
+                        )}
                       </div>
                     </div>
+
+                    {/* Flash sale countdown */}
+                    {isSale && saleEndsAtStr && (
+                      <div className="mt-1">
+                        <SaleCountdown saleEndsAt={saleEndsAtStr} />
+                      </div>
+                    )}
 
                     {/* Badges row */}
                     <div className="flex flex-wrap items-center gap-1.5 mt-2">
@@ -181,6 +222,11 @@ export default function VariantCompareTable({ variants, product, bestValueId, so
                         <Badge variant="outline" className="text-[10px] gap-1 py-0">
                           <Star className="h-2.5 w-2.5 fill-amber-400 text-amber-400" />
                           {sold} terjual
+                        </Badge>
+                      )}
+                      {isSale && v.salePrice != null && (
+                        <Badge className="text-[10px] py-0 bg-red-100 text-red-700 border-red-200 hover:bg-red-100">
+                          Hemat {Math.round((1 - v.salePrice / v.price) * 100)}%
                         </Badge>
                       )}
                       {oos ? (
@@ -220,6 +266,7 @@ export default function VariantCompareTable({ variants, product, bestValueId, so
                 const isSelected = v.id === selectedId
                 const oos = v.stockCount === 0
                 const sold = soldMap[v.id] ?? 0
+                const { effectivePrice, isSale } = getEffectivePrice(v)
 
                 return (
                   <tr
@@ -238,10 +285,24 @@ export default function VariantCompareTable({ variants, product, bestValueId, so
                             ✨ Worth
                           </span>
                         )}
+                        {isSale && (
+                          <span className="ml-1.5 text-[10px] bg-red-500 text-white px-1.5 py-0.5 rounded-full font-bold">
+                            🔥 Sale
+                          </span>
+                        )}
                       </div>
                       <div className="text-xs text-muted-foreground">{v.duration}</div>
                     </td>
-                    <td className="px-4 py-3 text-right font-bold">{formatPrice(v.price)}</td>
+                    <td className="px-4 py-3 text-right">
+                      {isSale ? (
+                        <div>
+                          <span className="font-bold text-red-600">{formatPrice(effectivePrice)}</span>
+                          <span className="block text-xs text-muted-foreground line-through">{formatPrice(v.price)}</span>
+                        </div>
+                      ) : (
+                        <span className="font-bold">{formatPrice(effectivePrice)}</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-right text-muted-foreground text-xs">{formatPrice(v.pricePerDay)}</td>
                     <td className="px-4 py-3 text-center">
                       {v.hasWarranty && v.warrantyDays
@@ -278,80 +339,90 @@ export default function VariantCompareTable({ variants, product, bestValueId, so
       )}
 
       {/* Selected variant summary + qty stepper + CTA */}
-      {selected && !isOutOfStock && (
-        <div className="rounded-2xl border-2 border-[#595B83]/20 bg-[#595B83]/5 p-4 space-y-4">
-          {/* Summary */}
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-muted-foreground">Dipilih</p>
-              <p className="font-semibold text-sm">{selected.name} • {selected.duration}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-xl font-bold text-[#333456]">
-                {formatPrice(selected.price * qty)}
-              </p>
-              {qty > 1 && (
-                <p className="text-xs text-muted-foreground">
-                  {qty} × {formatPrice(selected.price)}
+      {selected && !isOutOfStock && (() => {
+        const { effectivePrice, isSale } = getEffectivePrice(selected)
+        const saleEndsAtStr = selected.saleEndsAt ? new Date(selected.saleEndsAt).toISOString() : null
+        return (
+          <div className="rounded-2xl border-2 border-[#595B83]/20 bg-[#595B83]/5 p-4 space-y-4">
+            {/* Summary */}
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Dipilih</p>
+                <p className="font-semibold text-sm">{selected.name} • {selected.duration}</p>
+                {isSale && saleEndsAtStr && <SaleCountdown saleEndsAt={saleEndsAtStr} />}
+              </div>
+              <div className="text-right">
+                <p className={cn("text-xl font-bold", isSale ? "text-red-600" : "text-[#333456]")}>
+                  {formatPrice(effectivePrice * qty)}
                 </p>
-              )}
+                {qty > 1 && (
+                  <p className="text-xs text-muted-foreground">
+                    {qty} × {formatPrice(effectivePrice)}
+                  </p>
+                )}
+                {isSale && (
+                  <p className="text-xs text-muted-foreground line-through">
+                    {formatPrice(selected.price * qty)}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Qty stepper */}
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Jumlah</span>
+              <div className="flex items-center gap-1 border rounded-xl overflow-hidden bg-background">
+                <button
+                  onClick={() => handleQty(-1)}
+                  disabled={qty <= 1}
+                  className="w-9 h-9 flex items-center justify-center hover:bg-muted disabled:opacity-40 transition-colors"
+                >
+                  <Minus className="h-3.5 w-3.5" />
+                </button>
+                <span className="w-10 text-center font-semibold text-sm tabular-nums">{qty}</span>
+                <button
+                  onClick={() => handleQty(1)}
+                  disabled={qty >= maxQty}
+                  className="w-9 h-9 flex items-center justify-center hover:bg-muted disabled:opacity-40 transition-colors"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {maxQty <= 5 && (
+              <p className="text-xs text-amber-600 text-center">
+                ⚠️ Sisa {selected.stockCount} unit — maks {maxQty} per transaksi
+              </p>
+            )}
+
+            {/* CTA buttons */}
+            <div className="flex gap-2 pt-1">
+              <Button
+                className={cn(
+                  "flex-1 h-11 gap-2 font-semibold text-sm",
+                  addedId === selected.id && "bg-green-600 hover:bg-green-600"
+                )}
+                onClick={handleAddToCart}
+              >
+                {addedId === selected.id ? (
+                  <><Check className="h-4 w-4" /> Ditambahkan!</>
+                ) : (
+                  <><ShoppingCart className="h-4 w-4" /> Tambah ke Keranjang</>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                className="h-11 gap-2 px-4 font-semibold text-sm border-[#595B83] text-[#595B83] hover:bg-[#595B83] hover:text-white transition-colors"
+                onClick={handleBuyNow}
+              >
+                <Zap className="h-4 w-4" />
+                Beli Langsung
+              </Button>
             </div>
           </div>
-
-          {/* Qty stepper */}
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">Jumlah</span>
-            <div className="flex items-center gap-1 border rounded-xl overflow-hidden bg-background">
-              <button
-                onClick={() => handleQty(-1)}
-                disabled={qty <= 1}
-                className="w-9 h-9 flex items-center justify-center hover:bg-muted disabled:opacity-40 transition-colors"
-              >
-                <Minus className="h-3.5 w-3.5" />
-              </button>
-              <span className="w-10 text-center font-semibold text-sm tabular-nums">{qty}</span>
-              <button
-                onClick={() => handleQty(1)}
-                disabled={qty >= maxQty}
-                className="w-9 h-9 flex items-center justify-center hover:bg-muted disabled:opacity-40 transition-colors"
-              >
-                <Plus className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          </div>
-
-          {maxQty <= 5 && (
-            <p className="text-xs text-amber-600 text-center">
-              ⚠️ Sisa {selected.stockCount} unit — maks {maxQty} per transaksi
-            </p>
-          )}
-
-          {/* CTA buttons */}
-          <div className="flex gap-2 pt-1">
-            <Button
-              className={cn(
-                "flex-1 h-11 gap-2 font-semibold text-sm",
-                addedId === selected.id && "bg-green-600 hover:bg-green-600"
-              )}
-              onClick={handleAddToCart}
-            >
-              {addedId === selected.id ? (
-                <><Check className="h-4 w-4" /> Ditambahkan!</>
-              ) : (
-                <><ShoppingCart className="h-4 w-4" /> Tambah ke Keranjang</>
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              className="h-11 gap-2 px-4 font-semibold text-sm border-[#595B83] text-[#595B83] hover:bg-[#595B83] hover:text-white transition-colors"
-              onClick={handleBuyNow}
-            >
-              <Zap className="h-4 w-4" />
-              Beli Langsung
-            </Button>
-          </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* Out of stock state */}
       {isOutOfStock && (
@@ -362,41 +433,44 @@ export default function VariantCompareTable({ variants, product, bestValueId, so
       )}
 
       {/* Sticky bottom CTA — mobile only, shown when variant selector scrolls out of view */}
-      {selected && !isOutOfStock && (
-        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t px-4 py-3 [--safe-area-inset-bottom:env(safe-area-inset-bottom)] pb-[calc(0.75rem+var(--safe-area-inset-bottom))]">
-          <div className="flex items-center justify-between gap-3 mb-2">
-            <div className="min-w-0">
-              <p className="text-xs text-muted-foreground truncate">{product.name}</p>
-              <p className="text-sm font-semibold truncate">{selected.name} • {selected.duration}</p>
+      {selected && !isOutOfStock && (() => {
+        const { effectivePrice, isSale } = getEffectivePrice(selected)
+        return (
+          <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t px-4 py-3 [--safe-area-inset-bottom:env(safe-area-inset-bottom)] pb-[calc(0.75rem+var(--safe-area-inset-bottom))]">
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground truncate">{product.name}</p>
+                <p className="text-sm font-semibold truncate">{selected.name} • {selected.duration}</p>
+              </div>
+              <p className={cn("font-bold shrink-0 tabular-nums", isSale ? "text-red-600" : "text-[#333456]")}>
+                {formatPrice(effectivePrice * qty)}
+              </p>
             </div>
-            <p className="font-bold text-[#333456] shrink-0 tabular-nums">
-              {formatPrice(selected.price * qty)}
-            </p>
+            <div className="flex gap-2">
+              <Button
+                className={cn(
+                  "flex-1 h-11 gap-2 font-semibold",
+                  addedId === selected.id && "bg-green-600 hover:bg-green-600"
+                )}
+                onClick={handleAddToCart}
+              >
+                {addedId === selected.id ? (
+                  <><Check className="h-4 w-4" /> Ditambahkan!</>
+                ) : (
+                  <><ShoppingCart className="h-4 w-4" /> Tambah ke Keranjang</>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                className="h-11 px-4 border-[#595B83] text-[#595B83] hover:bg-[#595B83] hover:text-white transition-colors"
+                onClick={handleBuyNow}
+              >
+                <Zap className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <Button
-              className={cn(
-                "flex-1 h-11 gap-2 font-semibold",
-                addedId === selected.id && "bg-green-600 hover:bg-green-600"
-              )}
-              onClick={handleAddToCart}
-            >
-              {addedId === selected.id ? (
-                <><Check className="h-4 w-4" /> Ditambahkan!</>
-              ) : (
-                <><ShoppingCart className="h-4 w-4" /> Tambah ke Keranjang</>
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              className="h-11 px-4 border-[#595B83] text-[#595B83] hover:bg-[#595B83] hover:text-white transition-colors"
-              onClick={handleBuyNow}
-            >
-              <Zap className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      )}
+        )
+      })()}
     </div>
   )
 }

@@ -66,11 +66,26 @@ async function ProductList({
   })
   const stockMap = new Map(stockCounts.map((s) => [s.variantId, s._count.id]))
 
-  let productsWithMeta = products.map((p) => ({
-    ...p,
-    totalSold: p.variants.reduce((acc, v) => acc + (variantSoldMap.get(v.id) ?? 0), 0),
-    totalStock: p.variants.reduce((acc, v) => acc + (stockMap.get(v.id) ?? 0), 0),
-  }))
+  // Attach average rating + review count per product
+  const productIds = products.map((p) => p.id)
+  const ratingData = await db.review.groupBy({
+    by: ["productId"],
+    where: { productId: { in: productIds }, isVisible: true },
+    _avg: { rating: true },
+    _count: { rating: true },
+  })
+  const ratingMap = new Map(ratingData.map((r) => [r.productId, { avg: r._avg.rating ?? 0, count: r._count.rating }]))
+
+  let productsWithMeta = products.map((p) => {
+    const rating = ratingMap.get(p.id)
+    return {
+      ...p,
+      totalSold: p.variants.reduce((acc, v) => acc + (variantSoldMap.get(v.id) ?? 0), 0),
+      totalStock: p.variants.reduce((acc, v) => acc + (stockMap.get(v.id) ?? 0), 0),
+      avgRating: rating ? Math.round(rating.avg * 10) / 10 : undefined,
+      reviewCount: rating?.count ?? 0,
+    }
+  })
 
   // Sort by popular (most sold) post-query since Prisma can't order by computed field
   if (sort === "popular") {
