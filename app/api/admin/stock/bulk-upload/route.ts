@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requireAdmin } from "@/lib/admin-auth"
 import { db } from "@/lib/db"
+import { encrypt } from "@/lib/crypto"
 
 export async function POST(request: NextRequest) {
   const authError = await requireAdmin(request); if (authError) return authError
@@ -17,7 +18,7 @@ export async function POST(request: NextRequest) {
     const data = (credentials as string[])
       .map((c) => c.trim())
       .filter(Boolean)
-      .map((credentials) => ({ variantId, credentials, status: "AVAILABLE" as const }))
+      .map((c) => ({ variantId, credentials: encrypt(c), status: "AVAILABLE" as const }))
 
     const result = await db.accountStock.createMany({ data, skipDuplicates: true })
     return NextResponse.json({ success: true, data: { inserted: result.count } })
