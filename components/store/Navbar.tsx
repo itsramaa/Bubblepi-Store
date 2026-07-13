@@ -71,7 +71,10 @@ export default function Navbar() {
             <Button variant="ghost" size="icon" className="relative">
               <ShoppingCart className="h-5 w-5" />
               {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-[#F4ABC4] text-[#333456] text-xs font-bold flex items-center justify-center leading-none">
+                <span
+                  key={cartCount}
+                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-[#F4ABC4] text-[#333456] text-xs font-bold flex items-center justify-center leading-none animate-[bounce_0.4s_ease-in-out]"
+                >
                   {cartCount > 9 ? "9+" : cartCount}
                 </span>
               )}

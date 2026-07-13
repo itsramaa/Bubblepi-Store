@@ -9,9 +9,19 @@ const steps = [
 
 const ORDER = ["PENDING", "AWAITING_PAYMENT", "PAID", "FULFILLED"]
 
-export default function OrderTimeline({ status }: { status: string }) {
+interface OrderTimelineProps {
+  status: string
+  timestamps?: Partial<Record<string, string | Date>>
+}
+
+export default function OrderTimeline({ status, timestamps }: OrderTimelineProps) {
   const currentIndex = ORDER.indexOf(status)
   const isFailed = status === "FAILED" || status === "PENDING_STOCK"
+
+  function formatTime(val: string | Date | undefined): string | null {
+    if (!val) return null
+    return new Date(val).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })
+  }
 
   return (
     <div className="relative">
@@ -23,6 +33,8 @@ export default function OrderTimeline({ status }: { status: string }) {
           const done = i < currentIndex && !isFailed
           const active = i === currentIndex && !isFailed
           const Icon = step.icon
+          const ts = timestamps?.[step.status]
+          const timeStr = (done || active) ? formatTime(ts) : null
 
           return (
             <div key={step.status} className="flex items-center gap-4 relative">
@@ -45,6 +57,9 @@ export default function OrderTimeline({ status }: { status: string }) {
                 </p>
                 {active && (
                   <p className="text-xs text-muted-foreground mt-0.5">Sedang diproses...</p>
+                )}
+                {timeStr && (
+                  <p className="text-xs text-muted-foreground mt-0.5">{timeStr}</p>
                 )}
               </div>
             </div>

@@ -52,7 +52,11 @@ const categories = [
   },
 ]
 
-export default function CategorySection() {
+interface CategorySectionProps {
+  categoryCounts?: Record<string, number>
+}
+
+export default function CategorySection({ categoryCounts }: CategorySectionProps) {
   return (
     <section className="max-w-7xl mx-auto px-4 py-20">
       <div className="text-center mb-12">
@@ -66,6 +70,7 @@ export default function CategorySection() {
         {categories.map((cat) => {
           const Icon = cat.icon
           const href = cat.slug ? `/products?category=${cat.slug}` : "/products"
+          const count = cat.slug ? (categoryCounts?.[cat.slug] ?? null) : null
           return (
             <Link
               key={cat.name}
@@ -80,6 +85,9 @@ export default function CategorySection() {
                 <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 leading-tight">
                   {cat.desc}
                 </p>
+                {count !== null && (
+                  <p className="text-xs text-primary font-medium mt-1">{count} produk</p>
+                )}
               </div>
             </Link>
           )
