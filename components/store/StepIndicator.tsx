@@ -1,3 +1,7 @@
+"use client"
+
+import { Check } from "lucide-react"
+
 interface Props {
   currentStep: number
 }
@@ -6,7 +10,7 @@ const steps = ["Data Pembeli", "Konfirmasi", "Pembayaran"]
 
 export default function StepIndicator({ currentStep }: Props) {
   return (
-    <div className="flex items-center justify-center gap-0">
+    <div className="flex items-center justify-center">
       {steps.map((label, i) => {
         const step = i + 1
         const active = step === currentStep
@@ -15,20 +19,37 @@ export default function StepIndicator({ currentStep }: Props) {
           <div key={step} className="flex items-center">
             <div className="flex flex-col items-center">
               <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
+                className={`relative w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
                   done
-                    ? "bg-primary text-white"
+                    ? "bg-primary text-primary-foreground shadow-md"
                     : active
-                    ? "bg-primary text-white ring-4 ring-primary/20"
+                    ? "bg-primary text-primary-foreground ring-4 ring-primary/25 shadow-lg"
                     : "bg-muted text-muted-foreground"
                 }`}
               >
-                {done ? "✓" : step}
+                {/* pulse animation on active step */}
+                {active && (
+                  <span className="absolute inset-0 rounded-full animate-ping bg-primary/20" />
+                )}
+                {done ? <Check className="h-4 w-4" /> : <span>{step}</span>}
               </div>
-              <span className="text-xs mt-1 text-muted-foreground">{label}</span>
+              <span
+                className={`text-xs mt-1.5 font-medium transition-colors ${
+                  active ? "text-primary" : done ? "text-foreground" : "text-muted-foreground"
+                }`}
+              >
+                {label}
+              </span>
             </div>
+
+            {/* connecting line */}
             {i < steps.length - 1 && (
-              <div className={`h-0.5 w-12 mb-5 mx-1 ${done ? "bg-primary" : "bg-muted"}`} />
+              <div className="relative h-0.5 w-14 mx-1 mb-5 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="absolute inset-0 bg-primary transition-all duration-500 ease-out rounded-full"
+                  style={{ width: done ? "100%" : "0%" }}
+                />
+              </div>
             )}
           </div>
         )

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, Gift, Tag, X, Info } from "lucide-react"
+import { Loader2, Gift, Tag, X, Info, Lock, ShieldCheck } from "lucide-react"
 import { toast } from "sonner"
 import type { CheckoutFormData } from "@/types"
 
@@ -19,18 +19,24 @@ interface Props {
 }
 
 // Xendit fee info — informational only, tidak ditambahkan ke total
-const XENDIT_FEE = {
+const XENDIT_FEE: Record<string, string> = {
   QRIS: "Biaya QRIS: 0.7% (ditanggung Xendit)",
   VA: "Biaya VA: Rp 4.000 (ditanggung Xendit)",
 }
 
 export default function CheckoutStep2({ formData, onSubmit, onBack, submitting = false }: Props) {
-  const { items, getSubtotal, getTotal, addItem } = useCart()
+  const { items, getSubtotal, addItem } = useCart()
   const [voucherCode, setVoucherCode] = useState("")
   const [discount, setDiscount] = useState(0)
   const [voucherId, setVoucherId] = useState<string | null>(null)
+  const [voucherError, setVoucherError] = useState("")
   const [validating, setValidating] = useState(false)
-  const [upsells, setUpsells] = useState<Array<{ id: string; name: string; images: string[]; variants: Array<{ id: string; name: string; price: number; duration: string }> }>>([])
+  const [upsells, setUpsells] = useState<Array<{
+    id: string
+    name: string
+    images: string[]
+    variants: Array<{ id: string; name: string; price: number; duration: string }>
+  }>>([])
 
   const subtotal = getSubtotal()
   const totalAfterDiscount = Math.max(subtotal - discount, 0)
@@ -47,6 +53,7 @@ export default function CheckoutStep2({ formData, onSubmit, onBack, submitting =
   async function validateVoucher() {
     if (!voucherCode.trim()) return
     setValidating(true)
+    setVoucherError("")
     try {
       const res = await fetch("/api/vouchers/validate", {
         method: "POST",
@@ -59,7 +66,8 @@ export default function CheckoutStep2({ formData, onSubmit, onBack, submitting =
       setVoucherId(data.voucherId)
       toast.success(`Voucher berhasil! Hemat ${formatPrice(data.discount)}`)
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "Voucher tidak valid")
+      const msg = e instanceof Error ? e.message : "Voucher tidak valid"
+      setVoucherError(msg)
       setDiscount(0)
       setVoucherId(null)
     } finally {
@@ -71,6 +79,7 @@ export default function CheckoutStep2({ formData, onSubmit, onBack, submitting =
     setVoucherCode("")
     setDiscount(0)
     setVoucherId(null)
+    setVoucherError("")
   }
 
   return (
@@ -98,16 +107,28 @@ export default function CheckoutStep2({ formData, onSubmit, onBack, submitting =
         </div>
       </div>
 
-      {/* Items */}
+      {/* Items — visual order summary */}
       <div className="space-y-2">
+        <p className="text-sm font-medium text-muted-foreground">Produk yang dibeli</p>
         {items.map((item) => (
-          <div key={item.variantId} className="flex justify-between text-sm">
-            <span className="text-muted-foreground">
-              {item.productName}{" "}
-              <span className="text-foreground font-medium">({item.variantName})</span>
-              {item.quantity > 1 && ` ×${item.quantity}`}
-            </span>
-            <span className="font-medium">{formatPrice(item.price * item.quantity)}</span>
+          <div
+            key={item.variantId}
+            className="flex items-center gap-3 rounded-xl border bg-card p-3"
+          >
+            {/* initial avatar */}
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
+              {item.productName.slice(0, 2).toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold truncate">{item.productName}</p>
+              <p className="text-xs text-muted-foreground">{item.variantName} · {item.duration}</p>
+            </div>
+            <div className="text-right shrink-0">
+              {item.quantity > 1 && (
+                <p className="text-xs text-muted-foreground">{item.quantity}× {formatPrice(item.price)}</p>
+              )}
+              <p className="text-sm font-bold text-primary">{formatPrice(item.price * item.quantity)}</p>
+            </div>
           </div>
         ))}
       </div>
@@ -132,17 +153,29 @@ export default function CheckoutStep2({ formData, onSubmit, onBack, submitting =
             </Button>
           </div>
         ) : (
-          <div className="flex gap-2">
-            <Input
-              value={voucherCode}
-              onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
-              onKeyDown={(e) => e.key === "Enter" && validateVoucher()}
-              placeholder="MASUKKAN KODE"
-              className="text-sm uppercase tracking-widest"
-            />
-            <Button size="sm" onClick={validateVoucher} disabled={validating || !voucherCode.trim()}>
-              {validating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Pakai"}
-            </Button>
+          <div className="space-y-1.5">
+            <div className="flex gap-2">
+              <Input
+                value={voucherCode}
+                onChange={(e) => {
+                  setVoucherCode(e.target.value.toUpperCase())
+                  if (voucherError) setVoucherError("")
+                }}
+                onKeyDown={(e) => e.key === "Enter" && validateVoucher()}
+                placeholder="MASUKKAN KODE"
+                className={`text-sm uppercase tracking-widest ${voucherError ? "border-destructive focus-visible:ring-destructive" : ""}`}
+              />
+              <Button size="sm" onClick={validateVoucher} disabled={validating || !voucherCode.trim()}>
+                {validating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Pakai"}
+              </Button>
+            </div>
+            {/* Clear error state */}
+            {voucherError && (
+              <p className="flex items-center gap-1 text-xs text-destructive">
+                <X className="h-3 w-3 shrink-0" />
+                {voucherError}
+              </p>
+            )}
           </div>
         )}
       </div>
@@ -213,6 +246,13 @@ export default function CheckoutStep2({ formData, onSubmit, onBack, submitting =
             `Bayar ${formatPrice(totalAfterDiscount)}`
           )}
         </Button>
+      </div>
+
+      {/* Trust badge */}
+      <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+        <Lock className="h-3 w-3 shrink-0" />
+        <span>Dijamin aman · Diproses otomatis · Enkripsi SSL</span>
+        <ShieldCheck className="h-3 w-3 shrink-0 text-green-500" />
       </div>
     </div>
   )
