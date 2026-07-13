@@ -1,13 +1,22 @@
 import Link from "next/link"
 import Image from "next/image"
-import { MessageCircle, Send } from "lucide-react"
+import { MessageCircle, Send, Lock } from "lucide-react"
 
 function InstagramIcon({ className }: { className?: string }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
-      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
     </svg>
   )
 }
@@ -28,6 +37,8 @@ const footerLinks = {
   ],
 }
 
+const paymentMethods = ["QRIS", "BCA", "BRI", "BNI", "GoPay", "OVO", "DANA", "ShopeePay"]
+
 export default function Footer() {
   return (
     <footer className="border-t bg-gradient-to-b from-background to-muted/30 mt-20">
@@ -42,9 +53,17 @@ export default function Footer() {
                 <span className="text-[#F4ABC4]">pi</span>
               </span>
             </Link>
-            <p className="text-sm text-muted-foreground leading-relaxed mb-5">
+            <p className="text-sm text-muted-foreground leading-relaxed mb-4">
               Toko akun digital premium terpercaya. Netflix, Spotify, Canva, dan banyak lagi dengan harga terjangkau.
             </p>
+
+            {/* Dijamin Aman badge */}
+            <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-full px-3 py-1.5 text-xs font-semibold mb-5">
+              <Lock className="h-3.5 w-3.5" />
+              Dijamin Aman & Terpercaya
+            </div>
+
+            {/* Social links */}
             <div className="flex items-center gap-3">
               <a
                 href="https://wa.me/6285179955480"
@@ -140,12 +159,30 @@ export default function Footer() {
           </div>
         </div>
 
+        {/* Payment methods */}
+        <div className="mt-10 pt-8 border-t">
+          <p className="text-xs text-muted-foreground mb-3 font-medium uppercase tracking-wider">Metode Pembayaran</p>
+          <div className="flex flex-wrap gap-2">
+            {paymentMethods.map((method) => (
+              <span
+                key={method}
+                className="inline-flex items-center px-3 py-1 rounded-md bg-muted border text-xs font-semibold text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors"
+              >
+                {method}
+              </span>
+            ))}
+          </div>
+        </div>
+
         {/* Bottom bar */}
-        <div className="mt-12 pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
-          <p>© {new Date().getFullYear()} Bubblepi Store. All rights reserved.</p>
+        <div className="mt-6 pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <Lock className="h-3 w-3 text-emerald-500" />
+            <p>© {new Date().getFullYear()} Bubblepi Store. All rights reserved.</p>
+          </div>
           <div className="flex items-center gap-4">
             <Link href="/privacy" className="hover:text-foreground transition-colors">Kebijakan Privasi</Link>
-            <Link href="/terms" className="hover:text-foreground transition-colors">Syarat & Ketentuan</Link>
+            <Link href="/terms" className="hover:text-foreground transition-colors">Syarat &amp; Ketentuan</Link>
           </div>
         </div>
       </div>
