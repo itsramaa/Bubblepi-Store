@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
+import { requireCronSecret } from "@/lib/admin-auth"
 import { db } from "@/lib/db"
 import { Resend } from "resend"
 
@@ -6,7 +7,8 @@ export const dynamic = "force-dynamic"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const cronError = requireCronSecret(request); if (cronError) return cronError
   const cutoff = new Date(Date.now() - 60 * 60 * 1000) // 1h ago
   const carts = await db.abandonedCart.findMany({
     where: { recovered: false, createdAt: { lt: cutoff } },

@@ -1,10 +1,12 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
+import { requireCronSecret } from "@/lib/admin-auth"
 import { db } from "@/lib/db"
 import { sendTelegramNotification } from "@/lib/telegram"
 
 export const dynamic = "force-dynamic"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const cronError = requireCronSecret(request); if (cronError) return cronError
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 

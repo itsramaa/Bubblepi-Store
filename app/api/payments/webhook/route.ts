@@ -32,7 +32,8 @@ export async function POST(request: NextRequest) {
       })
       await fulfillOrder(order.id)
     } else if (status === "EXPIRED" || status === "FAILED") {
-      if (order.status === "PENDING") {
+      // AWAITING_PAYMENT adalah status setelah createInvoice — bukan PENDING
+      if (order.status === "AWAITING_PAYMENT" || order.status === "PENDING") {
         await db.order.update({
           where: { id: order.id },
           data: { status: "FAILED" },

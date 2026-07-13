@@ -1,7 +1,7 @@
 import { db } from "@/lib/db"
 import { sendAccountDelivery } from "@/lib/mailer"
 import { sendTelegramNotification } from "@/lib/telegram"
-import { checkCriticalStock } from "@/scripts/check-critical-stock"
+import { checkCriticalStock } from "@/lib/check-critical-stock"
 
 export async function fulfillOrder(orderId: string) {
   const order = await db.order.findUnique({
@@ -29,15 +29,20 @@ export async function fulfillOrder(orderId: string) {
     const credentialsList: string[] = []
 
     for (let i = 0; i < item.quantity; i++) {
-      const stock = await db.accountStock.findFirst({
-        where: {
-          variantId: item.variantId,
-          status: "AVAILABLE",
-        },
-        orderBy: { createdAt: "asc" },
+      // Atomic: find + lock stock dalam satu transaction untuk cegah race condition
+      const assigned = await db.$transaction(async (tx) => {
+        const stock = await tx.accountStock.findFirst({
+          where: { variantId: item.variantId, status: "AVAILABLE" },
+          orderBy: { createdAt: "asc" },
+        })
+        if (!stock) return null
+        return tx.accountStock.update({
+          where: { id: stock.id },
+          data: { status: "ASSIGNED", orderId, assignedAt: new Date() },
+        })
       })
 
-      if (!stock) {
+      if (!assigned) {
         allAssigned = false
         await db.order.update({
           where: { id: orderId },
@@ -52,16 +57,7 @@ export async function fulfillOrder(orderId: string) {
         continue
       }
 
-      await db.accountStock.update({
-        where: { id: stock.id },
-        data: {
-          status: "ASSIGNED",
-          orderId: orderId,
-          assignedAt: new Date(),
-        },
-      })
-
-      credentialsList.push(stock.credentials)
+      credentialsList.push(assigned.credentials)
     }
 
     if (credentialsList.length > 0) {
@@ -77,18 +73,18 @@ export async function fulfillOrder(orderId: string) {
       where: { id: orderId },
       data: {
         status: "FULFILLED",
-        // Only set paidAt if not already set by webhook
         ...(order.paidAt ? {} : { paidAt: new Date() }),
       },
     })
 
-    // Update stock from ASSIGNED → DELIVERED
     await db.accountStock.updateMany({
-      where: { orderId: orderId, status: "ASSIGNED" },
+      where: { orderId, status: "ASSIGNED" },
       data: { status: "DELIVERED" },
     })
 
-    // Alert if any variant stock goes critical after fulfillment
+    // ponytail: referral auto-trigger butuh field refCode di Order schema — saat ini via /api/referral manual
+
+    // Alert stok kritis setelah fulfill
     const variantIds = [...new Set(order.items.map((i) => i.variantId))]
     for (const variantId of variantIds) {
       await checkCriticalStock(variantId).catch(() => {})

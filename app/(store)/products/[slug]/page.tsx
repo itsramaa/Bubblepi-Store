@@ -57,12 +57,20 @@ export default async function ProductDetailPage({ params }: Props) {
   const product = await db.product.findUnique({ where: { slug }, include: { variants: true } })
   if (!product) notFound()
 
-  const variantsWithStock = await Promise.all(
-    product.variants.map(async (v) => ({
-      ...v,
-      stockCount: await db.accountStock.count({ where: { variantId: v.id, status: "AVAILABLE" } }),
-    }))
-  )
+  const variantIds = product.variants.map((v) => v.id)
+
+  // Single query — ganti N+1 per-variant count
+  const stockCounts = await db.accountStock.groupBy({
+    by: ["variantId"],
+    where: { variantId: { in: variantIds }, status: "AVAILABLE" },
+    _count: { id: true },
+  })
+  const stockMap = new Map(stockCounts.map((s) => [s.variantId, s._count.id]))
+
+  const variantsWithStock = product.variants.map((v) => ({
+    ...v,
+    stockCount: stockMap.get(v.id) ?? 0,
+  }))
 
   const soldData = await db.orderItem.groupBy({
     by: ["variantId"],

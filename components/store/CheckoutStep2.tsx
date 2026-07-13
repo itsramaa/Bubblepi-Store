@@ -25,12 +25,12 @@ const XENDIT_FEE = {
 }
 
 export default function CheckoutStep2({ formData, onSubmit, onBack, submitting = false }: Props) {
-  const { items, getSubtotal, getTotal } = useCart()
+  const { items, getSubtotal, getTotal, addItem } = useCart()
   const [voucherCode, setVoucherCode] = useState("")
   const [discount, setDiscount] = useState(0)
   const [voucherId, setVoucherId] = useState<string | null>(null)
   const [validating, setValidating] = useState(false)
-  const [upsells, setUpsells] = useState<Array<{ id: string; name: string; variants: Array<{ price: number }> }>>([])
+  const [upsells, setUpsells] = useState<Array<{ id: string; name: string; images: string[]; variants: Array<{ id: string; name: string; price: number; duration: string }> }>>([])
 
   const subtotal = getSubtotal()
   const totalAfterDiscount = Math.max(subtotal - discount, 0)
@@ -182,7 +182,17 @@ export default function CheckoutStep2({ formData, onSubmit, onBack, submitting =
                 <p className="text-sm font-medium">{p.name}</p>
                 <p className="text-xs text-muted-foreground">Mulai {formatPrice(p.variants?.[0]?.price ?? 0)}</p>
               </div>
-              <Button variant="outline" size="sm" className="text-xs">+ Tambah</Button>
+              <Button variant="outline" size="sm" className="text-xs" onClick={() => {
+                addItem({
+                  variantId: p.variants[0].id,
+                  productId: p.id,
+                  productName: p.name,
+                  variantName: p.variants[0].name,
+                  duration: p.variants[0].duration ?? "",
+                  price: p.variants[0].price,
+                }, 1)
+                toast.success(`${p.name} ditambahkan ke keranjang!`)
+              }}>+ Tambah</Button>
             </div>
           ))}
         </div>

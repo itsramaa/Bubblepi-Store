@@ -1,9 +1,12 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { requireAdmin } from "@/lib/admin-auth"
 
 export const dynamic = "force-dynamic"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const authError = await requireAdmin(request); if (authError) return authError
+
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
   thirtyDaysAgo.setHours(0, 0, 0, 0)
@@ -14,7 +17,6 @@ export async function GET() {
     orderBy: { paidAt: "asc" },
   })
 
-  // Group by date
   const byDate: Record<string, number> = {}
   for (let i = 0; i < 30; i++) {
     const d = new Date(thirtyDaysAgo)

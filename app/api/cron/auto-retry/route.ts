@@ -1,10 +1,12 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
+import { requireCronSecret } from "@/lib/admin-auth"
 import { db } from "@/lib/db"
 import { fulfillOrder } from "@/lib/order"
 
 export const dynamic = "force-dynamic"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const cronError = requireCronSecret(request); if (cronError) return cronError
   const pending = await db.order.findMany({
     where: { status: "PENDING_STOCK" },
     select: { id: true },
