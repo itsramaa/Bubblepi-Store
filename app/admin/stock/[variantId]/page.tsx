@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Trash2 } from "lucide-react"
 import { toast } from "sonner"
+import CsvUploadButton from "@/components/admin/CsvUploadButton"
 
 interface StockItem {
   id: string
@@ -101,6 +102,10 @@ export default function AdminStockDetailPage() {
           <Button onClick={handleBulkAdd} disabled={saving || !bulk.trim()}>
             {saving ? "Menyimpan..." : `Tambah ${bulk.split("\n").filter((l) => l.trim()).length} item`}
           </Button>
+          <div className="border-t pt-3">
+            <p className="text-xs text-muted-foreground mb-2">Atau upload file CSV/TXT (satu credentials per baris):</p>
+            <CsvUploadButton variantId={variantId} onSuccess={() => loadStocks()} />
+          </div>
         </CardContent>
       </Card>
 

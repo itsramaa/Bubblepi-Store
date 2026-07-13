@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { TrendingUp, ShoppingBag, Clock, AlertTriangle } from "lucide-react"
 import BulkFulfillButton from "@/components/admin/BulkFulfillButton"
+import RevenueChart from "@/components/admin/RevenueChart"
 
 export const dynamic = "force-dynamic"
 
@@ -98,7 +99,8 @@ export default async function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent orders */}
+        <RevenueChart />
+        {/* Revenue per produk */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Pesanan Terbaru</CardTitle>
