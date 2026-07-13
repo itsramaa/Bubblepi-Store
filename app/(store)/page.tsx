@@ -3,6 +3,7 @@ import HeroSection from "@/components/store/HeroSection"
 import FeaturedProducts from "@/components/store/FeaturedProducts"
 import HowItWorks from "@/components/store/HowItWorks"
 import CategorySection from "@/components/store/CategorySection"
+import { LiveFulfillmentBadge } from "@/components/store/LiveFulfillmentBadge"
 import FAQSection from "@/components/store/FAQSection"
 import SocialProofBanner from "@/components/store/SocialProofBanner"
 import TestimonialsSection from "@/components/store/TestimonialsSection"
@@ -23,6 +24,7 @@ export default async function HomePage() {
       <SocialProofBanner />
       <FeaturedProducts products={products} />
       <HowItWorks />
+      <LiveFulfillmentBadge />
       <CategorySection />
       <TestimonialsSection />
       <FAQSection />

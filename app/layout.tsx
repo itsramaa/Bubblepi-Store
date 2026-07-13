@@ -4,6 +4,7 @@ import { ThemeProvider } from "@/context/ThemeContext"
 import { CartProvider } from "@/context/CartContext"
 import LenisProvider from "@/components/LenisProvider"
 import { Toaster } from "@/components/ui/sonner"
+import { SwRegister } from "@/components/SwRegister"
 import "./globals.css"
 
 const poppins = Poppins({
@@ -25,6 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <LenisProvider />
             {children}
             <Toaster richColors position="top-center" />
+            <SwRegister />
           </CartProvider>
         </ThemeProvider>
       </body>
