@@ -57,8 +57,9 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   return (
     <Link href={`/products/${product.slug}`} className="group block">
-      <div className="rounded-2xl border bg-card overflow-hidden hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300">
-        {/* Image */}
+      {/* Card: subtle lift + inner shadow on hover */}
+      <div className="rounded-2xl border bg-card overflow-hidden hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1 hover:shadow-[inset_0_1px_0_rgba(89,91,131,0.08)] transition-all duration-300">
+        {/* Image with blur placeholder skeleton */}
         <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-[#595B83]/10 to-[#F4ABC4]/10">
           <Image
             src={product.image || "/products/default.svg"}
@@ -66,6 +67,8 @@ export default function ProductCard({ product }: ProductCardProps) {
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-500"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            placeholder="blur"
+            blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PC9zdmc+"
           />
           {/* Badges overlay */}
           <div className="absolute top-2 left-2 flex flex-wrap gap-1">
@@ -108,11 +111,18 @@ export default function ProductCard({ product }: ProductCardProps) {
 
           {/* Rating */}
           {product.avgRating != null && product.reviewCount != null && product.reviewCount > 0 && (
-            <div className="flex items-center gap-1 mb-2">
+            <div className="flex items-center gap-1 mb-1.5">
               <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
               <span className="text-xs font-medium">{product.avgRating.toFixed(1)}</span>
               <span className="text-xs text-muted-foreground">({product.reviewCount})</span>
             </div>
+          )}
+
+          {/* Terjual count — below rating */}
+          {(product.totalSold ?? 0) > 0 && (
+            <p className="text-xs text-muted-foreground mb-2">
+              Terjual {product.totalSold}+
+            </p>
           )}
 
           {/* Price */}
@@ -132,15 +142,8 @@ export default function ProductCard({ product }: ProductCardProps) {
             ) : null}
           </div>
 
-          {/* Sold count + CTA */}
-          <div className="flex items-center justify-between">
-            {(product.totalSold ?? 0) > 0 ? (
-              <span className="text-xs text-muted-foreground">
-                {product.totalSold}+ terjual
-              </span>
-            ) : (
-              <span />
-            )}
+          {/* CTA */}
+          <div className="flex justify-end">
             <Button
               size="sm"
               variant="ghost"
