@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
   try {
     const token = request.headers.get("x-callback-token")
     const webhookToken = process.env.XENDIT_WEBHOOK_TOKEN
-    if (webhookToken && token !== webhookToken) {
+    if (!webhookToken || token !== webhookToken) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 })
     }
 

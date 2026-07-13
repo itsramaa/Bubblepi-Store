@@ -51,7 +51,7 @@ export default function CheckoutStep2({ formData, onSubmit, onBack, submitting =
       const res = await fetch("/api/vouchers/validate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: voucherCode, total: subtotal }),
+        body: JSON.stringify({ code: voucherCode, cartTotal: subtotal }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)

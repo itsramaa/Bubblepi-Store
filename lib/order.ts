@@ -30,6 +30,12 @@ export async function fulfillOrder(orderId: string) {
     const credentialsList: string[] = []
 
     for (let i = 0; i < item.quantity; i++) {
+      // Skip slots yang sudah ASSIGNED untuk order ini (retry safety)
+      const alreadyAssigned = await db.accountStock.count({
+        where: { orderId, variantId: item.variantId, status: { in: ["ASSIGNED", "DELIVERED"] } },
+      })
+      if (alreadyAssigned >= item.quantity) break
+
       // Atomic: find + lock stock dalam satu transaction untuk cegah race condition
       const assigned = await db.$transaction(async (tx) => {
         const stock = await tx.accountStock.findFirst({

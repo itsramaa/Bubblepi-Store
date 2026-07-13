@@ -13,6 +13,7 @@ const envSchema = z.object({
   TELEGRAM_CHAT_ID: z.string().min(1),
   CRON_SECRET: z.string().min(16),
   NEXT_PUBLIC_SUPPORT_WHATSAPP: z.string().min(1),
+  ENCRYPTION_KEY: z.string().length(64, "ENCRYPTION_KEY must be a 64-char hex string"),
 })
 
 export type Env = z.infer<typeof envSchema>
