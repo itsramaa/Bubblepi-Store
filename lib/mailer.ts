@@ -4,6 +4,7 @@ import AccountDeliveryEmail from "@/emails/AccountDelivery"
 import PaymentReceivedEmail from "@/emails/PaymentReceived"
 import OrderExpiredEmail from "@/emails/OrderExpired"
 import WarrantyClaimReceivedEmail from "@/emails/WarrantyClaimReceived"
+import LowStockAlertEmail from "@/emails/LowStockAlert"
 
 function getResend() {
   return new Resend(process.env.RESEND_API_KEY)
@@ -100,6 +101,21 @@ export async function sendWarrantyClaimReceived(params: {
       orderNumber: params.orderNumber,
       claimDescription: params.claimDescription,
       orderUrl: `${process.env.NEXT_PUBLIC_APP_URL}/orders/${params.orderId}`,
+    }),
+  })
+}
+
+export async function sendLowStockAlert(params: {
+  to: string
+  variants: Array<{ name: string; productName: string; available: number }>
+}) {
+  await getResend().emails.send({
+    from: process.env.RESEND_FROM_EMAIL!,
+    to: params.to,
+    subject: "⚠️ Alert Stok Kritis — Bubblepi Store",
+    react: LowStockAlertEmail({
+      variants: params.variants,
+      adminUrl: `${process.env.NEXT_PUBLIC_APP_URL}/admin/stock`,
     }),
   })
 }
