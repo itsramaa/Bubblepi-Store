@@ -22,16 +22,22 @@ export async function POST(request: NextRequest) {
     }
 
     if (status === "PAID") {
+      // Idempotency: skip if already PAID or FULFILLED
+      if (order.status === "PAID" || order.status === "FULFILLED") {
+        return NextResponse.json({ success: true, skipped: true })
+      }
       await db.order.update({
         where: { id: order.id },
         data: { status: "PAID", paidAt: new Date() },
       })
       await fulfillOrder(order.id)
     } else if (status === "EXPIRED" || status === "FAILED") {
-      await db.order.update({
-        where: { id: order.id },
-        data: { status: "FAILED" },
-      })
+      if (order.status === "PENDING") {
+        await db.order.update({
+          where: { id: order.id },
+          data: { status: "FAILED" },
+        })
+      }
     }
 
     return NextResponse.json({ success: true })

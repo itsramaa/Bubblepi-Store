@@ -360,6 +360,43 @@ export default function VariantCompareTable({ variants, product, bestValueId, so
           <p className="text-xs text-muted-foreground mt-1">Coba pilih varian lain atau hubungi admin</p>
         </div>
       )}
+
+      {/* Sticky bottom CTA — mobile only, shown when variant selector scrolls out of view */}
+      {selected && !isOutOfStock && (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t px-4 py-3 [--safe-area-inset-bottom:env(safe-area-inset-bottom)] pb-[calc(0.75rem+var(--safe-area-inset-bottom))]">
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground truncate">{product.name}</p>
+              <p className="text-sm font-semibold truncate">{selected.name} • {selected.duration}</p>
+            </div>
+            <p className="font-bold text-[#333456] shrink-0 tabular-nums">
+              {formatPrice(selected.price * qty)}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              className={cn(
+                "flex-1 h-11 gap-2 font-semibold",
+                addedId === selected.id && "bg-green-600 hover:bg-green-600"
+              )}
+              onClick={handleAddToCart}
+            >
+              {addedId === selected.id ? (
+                <><Check className="h-4 w-4" /> Ditambahkan!</>
+              ) : (
+                <><ShoppingCart className="h-4 w-4" /> Tambah ke Keranjang</>
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              className="h-11 px-4 border-[#595B83] text-[#595B83] hover:bg-[#595B83] hover:text-white transition-colors"
+              onClick={handleBuyNow}
+            >
+              <Zap className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
