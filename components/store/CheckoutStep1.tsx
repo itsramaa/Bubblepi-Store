@@ -124,9 +124,19 @@ export default function CheckoutStep1({ onSubmit }: Props) {
               </div>
               <div>
                 <p className="font-medium text-sm">{method}</p>
-                <p className="text-xs text-muted-foreground">
-                  {method === "QRIS" ? "GoPay, OVO, DANA, dll" : "BCA, BRI, BNI, Permata"}
-                </p>
+                {method === "QRIS" ? (
+                  <div className="flex gap-1 mt-1 flex-wrap">
+                    {["GoPay", "OVO", "DANA", "ShopeePay", "LinkAja"].map(m => (
+                      <span key={m} className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-medium">{m}</span>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex gap-1 mt-1 flex-wrap">
+                    {["BCA", "BRI", "Mandiri", "BNI", "BSI"].map(b => (
+                      <span key={b} className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-medium">{b}</span>
+                    ))}
+                  </div>
+                )}
               </div>
             </button>
           ))}
