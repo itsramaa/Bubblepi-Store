@@ -83,6 +83,7 @@ model Order {
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
   paidAt           DateTime?
+  refCode          String?     // referral code from ?ref= cookie, set saat order creation
   voucherId        String?
   discountAmount   Int         @default(0)
   resendCount      Int         @default(0)

@@ -1,9 +1,23 @@
 import { NextRequest, NextResponse } from "next/server"
+import { verifyAdminToken } from "@/lib/auth"
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const response = NextResponse.next()
-  const { searchParams } = request.nextUrl
+  const { searchParams, pathname } = request.nextUrl
 
+  // Admin route protection — redirect to login if no valid token
+  if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
+    const cookie = request.cookies.get("admin-token")
+    if (!cookie) {
+      return NextResponse.redirect(new URL("/admin/login", request.url))
+    }
+    const valid = await verifyAdminToken(cookie.value)
+    if (!valid) {
+      return NextResponse.redirect(new URL("/admin/login", request.url))
+    }
+  }
+
+  // UTM tracking cookies
   const utmSource = searchParams.get("utm_source")
   const utmMedium = searchParams.get("utm_medium")
   const utmCampaign = searchParams.get("utm_campaign")
@@ -22,5 +36,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest).*)"],
 }

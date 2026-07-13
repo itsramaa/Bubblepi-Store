@@ -82,7 +82,26 @@ export async function fulfillOrder(orderId: string) {
       data: { status: "DELIVERED" },
     })
 
-    // ponytail: referral auto-trigger butuh field refCode di Order schema — saat ini via /api/referral manual
+    // Auto-create referral dari refCode cookie
+    if (order.refCode) {
+      try {
+        const referrerEmail = Buffer.from(order.refCode, "base64url").toString("utf-8")
+        if (referrerEmail !== order.customerEmail) {
+          const existing = await db.referral.findFirst({ where: { orderId } })
+          if (!existing) {
+            await db.referral.create({
+              data: {
+                referrerEmail,
+                referredEmail: order.customerEmail,
+                orderId,
+                commissionValue: 5000,
+                status: "CONFIRMED",
+              },
+            })
+          }
+        }
+      } catch { /* referral non-blocking */ }
+    }
 
     // Alert stok kritis setelah fulfill
     const variantIds = [...new Set(order.items.map((i) => i.variantId))]

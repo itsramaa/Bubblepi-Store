@@ -36,10 +36,11 @@ export async function POST(request: NextRequest) {
     const total = Math.max(subtotal - discount, 0)
     const orderNumber = generateOrderId()
 
-    // UTM tracking
+    // UTM tracking + referral code
     let utmSource: string | null = null
     let utmMedium: string | null = null
     let utmCampaign: string | null = null
+    let refCode: string | null = null
     try {
       const cookieStore = await cookies()
       const utmRaw = cookieStore.get("utm_data")?.value
@@ -49,6 +50,7 @@ export async function POST(request: NextRequest) {
         utmMedium = utm.utmMedium || null
         utmCampaign = utm.utmCampaign || null
       }
+      refCode = cookieStore.get("ref_code")?.value ?? null
     } catch {}
 
     const order = await db.order.create({
@@ -60,6 +62,7 @@ export async function POST(request: NextRequest) {
         tax: 0,
         total,
         discountAmount: discount,
+        refCode,
         ...(voucherId ? { voucherId } : {}),
         status: "PENDING",
         items: { create: orderItems },
