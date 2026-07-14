@@ -14,10 +14,16 @@ const STATUS_LABEL: Record<string, string> = {
   PENDING: "Pending", AWAITING_PAYMENT: "Menunggu Bayar", PAID: "Dibayar",
   FULFILLED: "Selesai", FAILED: "Gagal", PENDING_STOCK: "Menunggu Stok",
 }
-const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  FULFILLED: "default", PAID: "secondary", PENDING: "outline",
-  AWAITING_PAYMENT: "outline", FAILED: "destructive", PENDING_STOCK: "destructive",
+
+const STATUS_CLASS: Record<string, string> = {
+  FULFILLED: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400",
+  PAID: "bg-blue-100 text-blue-700",
+  PENDING: "bg-amber-100 text-amber-700",
+  AWAITING_PAYMENT: "bg-amber-100 text-amber-700",
+  FAILED: "bg-red-100 text-red-700",
+  PENDING_STOCK: "bg-orange-100 text-orange-700",
 }
+
 const STATUSES = ["PENDING", "AWAITING_PAYMENT", "PAID", "FULFILLED", "FAILED", "PENDING_STOCK"]
 
 interface Props { searchParams: Promise<{ status?: string; page?: string; search?: string }> }
@@ -78,7 +84,7 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
         <Button type="submit" size="sm">Cari</Button>
       </form>
 
-      {/* Filter tabs */}
+      {/* Filter tabs — Badge chips with color per status */}
       <div className="flex gap-2 flex-wrap">
         <Link href={buildUrl({ search })}>
           <Badge variant={!status ? "default" : "outline"} className="cursor-pointer px-3 py-1 text-sm">
@@ -87,9 +93,15 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
         </Link>
         {STATUSES.map((s) => (
           <Link key={s} href={buildUrl({ status: s, search })}>
-            <Badge variant={status === s ? "default" : "outline"} className="cursor-pointer px-3 py-1 text-sm">
+            <span
+              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer transition-colors ${
+                status === s
+                  ? STATUS_CLASS[s] ?? "bg-muted text-muted-foreground"
+                  : "bg-muted/50 text-muted-foreground hover:bg-muted"
+              }`}
+            >
               {STATUS_LABEL[s]}
-            </Badge>
+            </span>
           </Link>
         ))}
       </div>
@@ -97,15 +109,16 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
       {/* Orders list */}
       <div className="space-y-2">
         {orders.length === 0 ? (
-          <div className="text-center py-16 text-muted-foreground">
-            <ShoppingBag className="h-10 w-10 mx-auto mb-3 opacity-30" />
-            <p>Tidak ada pesanan</p>
+          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+            <ShoppingBag className="h-12 w-12 mb-3 opacity-20" />
+            <p className="text-base font-medium">Tidak ada order ditemukan</p>
+            <p className="text-sm mt-1">Coba ubah filter atau cari dengan kata kunci lain</p>
           </div>
         ) : orders.map((order) => (
           <Link
             key={order.id}
             href={`/admin/orders/${order.id}`}
-            className="flex items-center justify-between p-4 bg-card border rounded-xl hover:border-primary/30 hover:shadow-sm transition-all"
+            className="flex items-center justify-between p-4 bg-card border rounded-xl hover:bg-muted/50 transition-colors"
           >
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
@@ -117,9 +130,9 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
               </div>
             </div>
             <div className="flex items-center gap-3 shrink-0">
-              <Badge variant={STATUS_VARIANT[order.status] ?? "outline"} className="text-xs">
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_CLASS[order.status] ?? "bg-muted text-muted-foreground"}`}>
                 {STATUS_LABEL[order.status] ?? order.status}
-              </Badge>
+              </span>
               <span className="text-sm font-bold">{formatPrice(order.total)}</span>
             </div>
           </Link>

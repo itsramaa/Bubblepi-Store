@@ -2,9 +2,9 @@ import { db } from "@/lib/db"
 import StatsCard from "@/components/admin/StatsCard"
 import { formatPrice } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { TrendingUp, ShoppingBag, Clock, AlertTriangle } from "lucide-react"
+import { TrendingUp, ShoppingBag, Clock, AlertTriangle, Download } from "lucide-react"
 import BulkFulfillButton from "@/components/admin/BulkFulfillButton"
 import RevenueChart from "@/components/admin/RevenueChart"
 
@@ -14,9 +14,15 @@ const STATUS_LABEL: Record<string, string> = {
   PENDING: "Pending", AWAITING_PAYMENT: "Menunggu Bayar", PAID: "Dibayar",
   FULFILLED: "Selesai", FAILED: "Gagal", PENDING_STOCK: "Menunggu Stok",
 }
-const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  FULFILLED: "default", PAID: "secondary", PENDING: "outline",
-  AWAITING_PAYMENT: "outline", FAILED: "destructive", PENDING_STOCK: "destructive",
+
+// Color-coded classes per status
+const STATUS_CLASS: Record<string, string> = {
+  FULFILLED: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400",
+  PAID: "bg-blue-100 text-blue-700",
+  PENDING: "bg-amber-100 text-amber-700",
+  AWAITING_PAYMENT: "bg-amber-100 text-amber-700",
+  FAILED: "bg-red-100 text-red-700",
+  PENDING_STOCK: "bg-orange-100 text-orange-700",
 }
 
 export default async function AdminDashboard() {
@@ -67,9 +73,10 @@ export default async function AdminDashboard() {
         <div className="flex gap-2">
           {pendingStock > 0 && <BulkFulfillButton pendingCount={pendingStock} />}
           <a href="/api/admin/orders/export" download>
-            <button className="text-sm px-3 py-1.5 border rounded-lg hover:bg-muted transition-colors">
-              ⬇ Export CSV
-            </button>
+            <Button variant="outline" size="sm" className="gap-2">
+              <Download className="h-4 w-4" />
+              Export CSV
+            </Button>
           </a>
         </div>
       </div>
@@ -100,7 +107,7 @@ export default async function AdminDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <RevenueChart />
-        {/* Revenue per produk */}
+        {/* Pesanan terbaru */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Pesanan Terbaru</CardTitle>
@@ -124,9 +131,9 @@ export default async function AdminDashboard() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Badge variant={STATUS_VARIANT[order.status] ?? "outline"} className="text-xs">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_CLASS[order.status] ?? "bg-muted text-muted-foreground"}`}>
                       {STATUS_LABEL[order.status] ?? order.status}
-                    </Badge>
+                    </span>
                     <span className="text-sm font-medium">{formatPrice(order.total)}</span>
                   </div>
                 </Link>
@@ -145,7 +152,7 @@ export default async function AdminDashboard() {
               <p className="text-sm text-muted-foreground text-center py-4">Belum ada data</p>
             ) : (
               <div className="space-y-3">
-                {revenueByProduct.map((r, i) => {
+                {revenueByProduct.map((r) => {
                   const v = variantMap[r.variantId]
                   if (!v) return null
                   const revenue = r._sum.price ?? 0
