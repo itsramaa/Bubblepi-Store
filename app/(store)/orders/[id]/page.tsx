@@ -280,7 +280,7 @@ export default function OrderStatusPage() {
       {/* Order detail */}
       <Card className="mb-6">
         <CardHeader className="pb-3"><CardTitle className="text-base">Detail Pesanan</CardTitle></CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-3 p-4 md:p-6">
           <div className="space-y-1 text-sm text-muted-foreground">
             <div className="flex justify-between gap-2"><span>Nama</span><span className="text-foreground font-medium text-right">{order.customerName}</span></div>
             <div className="flex justify-between gap-2"><span className="shrink-0">Email</span><span className="text-foreground font-medium break-all text-right">{order.customerEmail}</span></div>
@@ -386,8 +386,8 @@ export default function OrderStatusPage() {
             <p className="text-sm text-gray-500">
               Bagikan link referral kamu. Setiap teman yang beli, kamu dapat komisi Rp 5.000.
             </p>
-            <div className="flex items-center gap-2">
-              <code className="flex-1 rounded-md bg-gray-100 px-3 py-2 text-xs break-all text-[#333456]">
+            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+              <code className="flex-1 min-w-0 rounded-md bg-gray-100 px-3 py-2 text-xs break-all text-[#333456]">
                 {typeof window !== "undefined" ? `${window.location.origin}/?ref=${btoa(order.customerEmail)}` : ""}
               </code>
               <Button
