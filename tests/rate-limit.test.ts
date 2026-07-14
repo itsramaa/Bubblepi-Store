@@ -1,6 +1,6 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { checkRateLimit } from "../lib/rate-limit.js"
+import { checkRateLimit } from "../lib/rate-limit"
 
 test("allows requests within limit", () => {
   const key = `test-${Date.now()}`

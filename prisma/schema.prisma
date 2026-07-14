@@ -52,6 +52,7 @@ model Variant {
   stock         AccountStock[]
   orderItems    OrderItem[]
   priceDropNotifications PriceDropNotification[]
+  supplierProducts       SupplierProduct[]
 }
 
 model AccountStock {
@@ -197,6 +198,38 @@ model FunnelEvent {
   @@index([sessionId])
   @@index([event, createdAt])
   @@map("funnel_events")
+}
+
+model SupplierBot {
+  id           String            @id @default(cuid())
+  label        String            // display name e.g. "Barbar Store"
+  botUsername  String            @unique // e.g. "barbarstorebot"
+  serviceUrl   String            // e.g. "http://127.0.0.1:8081"
+  isActive     Boolean           @default(true)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  products     SupplierProduct[]
+
+  @@map("supplier_bots")
+}
+
+model SupplierProduct {
+  id              String      @id @default(cuid())
+  supplierBotId   String
+  variantId       String      // Bubblepi Variant.id
+  productNo       Int         // nomor produk di list supplier bot
+  productBotId    String      // supplier internal product ID e.g. "7791"
+  variantBotId    String      // supplier internal variant ID e.g. "29397"
+  label           String      // e.g. "CAPCUT PRO - 7 DAY PRIVATE"
+  isActive        Boolean     @default(true)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  supplierBot     SupplierBot @relation(fields: [supplierBotId], references: [id], onDelete: Cascade)
+  variant         Variant     @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@unique([supplierBotId, variantId])
+  @@index([variantId])
+  @@map("supplier_products")
 }
 
 model PriceDropNotification {

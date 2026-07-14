@@ -9,7 +9,7 @@ let decrypt: (ciphertext: string) => string
 let isEncrypted: (value: string) => boolean
 
 before(async () => {
-  const mod = await import("../lib/crypto.js")
+  const mod = await import("../lib/crypto")
   encrypt = mod.encrypt
   decrypt = mod.decrypt
   isEncrypted = mod.isEncrypted
