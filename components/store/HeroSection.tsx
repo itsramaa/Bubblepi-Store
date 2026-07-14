@@ -121,7 +121,7 @@ export default function HeroSection({ totalBuyers, totalSold }: HeroSectionProps
           </div>
 
           {/* Headline with animated gradient */}
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6">
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6">
             Langganan
             <br />
             <span
@@ -147,7 +147,7 @@ export default function HeroSection({ totalBuyers, totalSold }: HeroSectionProps
           </p>
 
           {/* Search bar with typewriter placeholder */}
-          <form onSubmit={handleSearch} className="flex gap-2 max-w-lg mb-6">
+          <form onSubmit={handleSearch} className="flex gap-2 w-full max-w-lg mb-6">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
               <Input

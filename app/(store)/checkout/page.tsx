@@ -80,11 +80,11 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-12">
-      <h1 className="text-3xl font-bold mb-8 text-center">Checkout</h1>
+    <div className="max-w-2xl mx-auto px-4 py-8 md:py-12">
+      <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8 text-center">Checkout</h1>
       <StepIndicator currentStep={step} />
       <Card className="mt-8">
-        <CardContent className="p-6 md:p-8">
+        <CardContent className="p-4 md:p-8">
           {step === 1 && <CheckoutStep1 onSubmit={handleStep1Submit} />}
           {step === 2 && (
             <CheckoutStep2

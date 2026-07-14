@@ -168,7 +168,7 @@ export default async function ProductDetailPage({ params }: Props) {
       <ProductViewTracker productId={product.id} />
 
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-1.5 text-sm text-muted-foreground mb-8">
+      <nav className="flex items-center gap-1.5 text-sm text-muted-foreground mb-8 flex-wrap">
         <Link href="/" className="hover:text-foreground transition-colors">Beranda</Link>
         <ChevronRight className="h-3.5 w-3.5" />
         <Link href="/products" className="hover:text-foreground transition-colors">Produk</Link>
