@@ -159,7 +159,7 @@ export default function CheckoutStep3({ orderId, paymentUrl, createdAt }: Props)
             </Button>
           </a>
 
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <Button
               variant="outline"
               className="flex-1 gap-2"
@@ -179,7 +179,7 @@ export default function CheckoutStep3({ orderId, paymentUrl, createdAt }: Props)
           </div>
 
           {showQr && (
-            <div className="flex flex-col items-center gap-3 p-6 border rounded-xl bg-white">
+            <div className="flex flex-col items-center gap-3 p-4 md:p-6 border rounded-xl bg-white">
               <QRCodeSVG value={paymentUrl} size={200} />
               <p className="text-xs text-muted-foreground text-center">
                 Scan QR ini dari aplikasi e-wallet atau mobile banking kamu

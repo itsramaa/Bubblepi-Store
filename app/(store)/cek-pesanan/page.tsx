@@ -97,7 +97,7 @@ export default function OrderLookupPage() {
         </p>
       </div>
 
-      <form onSubmit={handleSearch} className="flex gap-2 mb-8">
+      <form onSubmit={handleSearch} className="flex gap-2 mb-8 w-full">
         <Input
           type="email"
           placeholder="emailkamu@gmail.com"
@@ -156,9 +156,9 @@ export default function OrderLookupPage() {
             return (
               <Card key={order.id} className="hover:border-primary/30 transition-colors">
                 <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start justify-between gap-3 flex-wrap sm:flex-nowrap">
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <p className="font-semibold text-sm">#{order.orderNumber}</p>
                         <Badge variant="outline" className={`text-xs gap-1 border ${config.className}`}>
                           {config.icon}

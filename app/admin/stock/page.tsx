@@ -1,7 +1,6 @@
 import { db } from "@/lib/db"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Archive, AlertTriangle } from "lucide-react"
 
@@ -55,30 +54,39 @@ export default async function AdminStockPage({ searchParams }: Props) {
           const assigned = variant.stock.filter((s) => s.status === "ASSIGNED").length
           const isCritical = available < 5
 
+          const stockColor =
+            available === 0
+              ? "bg-red-100 text-red-700"
+              : available < 5
+              ? "bg-red-100 text-red-700"
+              : available < 10
+              ? "bg-amber-100 text-amber-700"
+              : "bg-emerald-100 text-emerald-700"
+
           return (
             <div
               key={variant.id}
               className={`flex items-center justify-between p-4 bg-card border rounded-xl transition-colors hover:border-primary/20 ${isCritical ? "border-destructive/30" : ""}`}
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 min-w-0">
                 <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${isCritical ? "bg-destructive/10" : "bg-primary/10"}`}>
                   {isCritical
                     ? <AlertTriangle className="h-5 w-5 text-destructive" />
                     : <Archive className="h-5 w-5 text-primary" />}
                 </div>
-                <div>
-                  <p className="font-semibold">{variant.product.name} — {variant.name}</p>
+                <div className="min-w-0">
+                  <p className="font-semibold truncate">{variant.product.name} — {variant.name}</p>
                   <p className="text-sm text-muted-foreground">{variant.duration}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3 shrink-0">
+              <div className="flex flex-wrap gap-2 items-center shrink-0 ml-3">
                 <div className="text-right text-sm hidden sm:block">
                   <p className="text-muted-foreground">{assigned} assigned</p>
                   <p className="text-muted-foreground">{variant.stock.length} total</p>
                 </div>
-                <Badge variant={isCritical ? "destructive" : "default"}>
+                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${stockColor}`}>
                   {available} tersedia
-                </Badge>
+                </span>
                 <Link href={`/admin/stock/${variant.id}`}>
                   <Button variant="outline" size="sm">Kelola</Button>
                 </Link>

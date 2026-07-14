@@ -182,7 +182,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
           {search ? `Hasil: "${search}"` : `${categoryLabel} Produk`}
         </h1>
       </div>
-      <div className="flex flex-col md:flex-row gap-8">
+      <div className="flex flex-col md:flex-row gap-4 md:gap-8">
         <FilterSidebar categories={categories} />
         <div className="flex-1">
           <Suspense fallback={<ProductGridSkeleton />}>

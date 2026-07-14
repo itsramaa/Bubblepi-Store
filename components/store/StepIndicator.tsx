@@ -34,7 +34,7 @@ export default function StepIndicator({ currentStep }: Props) {
                 {done ? <Check className="h-4 w-4" /> : <span>{step}</span>}
               </div>
               <span
-                className={`text-xs mt-1.5 font-medium transition-colors ${
+                className={`hidden sm:block text-xs mt-1.5 font-medium transition-colors ${
                   active ? "text-primary" : done ? "text-foreground" : "text-muted-foreground"
                 }`}
               >

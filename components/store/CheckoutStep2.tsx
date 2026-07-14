@@ -91,17 +91,17 @@ export default function CheckoutStep2({ formData, onSubmit, onBack, submitting =
 
       {/* Customer info */}
       <div className="rounded-xl border bg-muted/30 p-4 space-y-1.5 text-sm">
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Nama</span>
-          <span className="font-medium">{formData.customerName}</span>
+        <div className="flex justify-between gap-2">
+          <span className="text-muted-foreground shrink-0">Nama</span>
+          <span className="font-medium text-right">{formData.customerName}</span>
         </div>
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Email</span>
-          <span className="font-medium">{formData.customerEmail}</span>
+        <div className="flex justify-between gap-2">
+          <span className="text-muted-foreground shrink-0">Email</span>
+          <span className="font-medium break-all text-right">{formData.customerEmail}</span>
         </div>
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Metode Bayar</span>
-          <span className="font-medium">
+        <div className="flex justify-between gap-2">
+          <span className="text-muted-foreground shrink-0">Metode Bayar</span>
+          <span className="font-medium text-right">
             {formData.paymentMethod}{formData.bankCode ? ` — ${formData.bankCode}` : ""}
           </span>
         </div>
@@ -231,8 +231,8 @@ export default function CheckoutStep2({ formData, onSubmit, onBack, submitting =
         </div>
       )}
 
-      <div className="flex gap-3 pt-2">
-        <Button variant="outline" className="flex-1" onClick={onBack} disabled={submitting}>
+      <div className="flex flex-col sm:flex-row gap-3 pt-2">
+        <Button variant="outline" className="flex-1 w-full sm:w-auto" onClick={onBack} disabled={submitting}>
           Kembali
         </Button>
         <Button
