@@ -1,7 +1,9 @@
+import dynamic from "next/dynamic"
 import Navbar from "@/components/store/Navbar"
 import Footer from "@/components/store/Footer"
-import FloatingWhatsApp from "@/components/store/FloatingWhatsApp"
-import LiveActivityToast from "@/components/store/LiveActivityToast"
+
+const FloatingWhatsApp = dynamic(() => import("@/components/store/FloatingWhatsApp"), { ssr: false })
+const LiveActivityToast = dynamic(() => import("@/components/store/LiveActivityToast"), { ssr: false })
 
 export default function StoreLayout({ children }: { children: React.ReactNode }) {
   return (
