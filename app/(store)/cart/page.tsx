@@ -5,7 +5,7 @@ import { formatPrice } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { Trash2, Minus, Plus, ShoppingBag, ArrowRight, Tag } from "lucide-react"
+import { Trash2, Minus, Plus, ArrowRight, Tag } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 
