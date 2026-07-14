@@ -44,10 +44,16 @@ export function decrypt(ciphertext: string): string {
 }
 
 /**
- * Returns true if a string looks like an encrypted value (iv:tag:ciphertext format).
- * Used to safely handle mixed plaintext/encrypted values during migration.
+ * Fix 5: Returns true if a string looks like an encrypted value (iv:tag:ciphertext format).
+ * Validates hex encoding of iv (24 chars) and authTag (32 chars) to avoid false positives
+ * on credentials like "user@email.com:pass:extra".
  */
 export function isEncrypted(value: string): boolean {
   const parts = value.split(":")
-  return parts.length === 3 && parts[0].length === 24 && parts[1].length === 32
+  if (parts.length !== 3) return false
+  if (parts[0].length !== 24 || parts[1].length !== 32) return false
+  return /^[0-9a-f]+$/i.test(parts[0]) && /^[0-9a-f]+$/i.test(parts[1])
 }
+
+// Re-export TAG_LENGTH for tests
+export { TAG_LENGTH }

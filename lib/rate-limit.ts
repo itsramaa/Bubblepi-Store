@@ -15,16 +15,13 @@ setInterval(() => {
 
 /**
  * Check if a key has exceeded the rate limit.
- * @param key - Unique identifier (e.g. "admin-auth:1.2.3.4")
- * @param limit - Max requests allowed in the window
- * @param windowMs - Time window in milliseconds
- * @returns { allowed: boolean, retryAfter: number } retryAfter in seconds
+ * Enhancement 4: Returns remaining + limit for X-RateLimit headers.
  */
 export function checkRateLimit(
   key: string,
   limit: number,
   windowMs: number
-): { allowed: boolean; retryAfter: number } {
+): { allowed: boolean; retryAfter: number; remaining: number; limit: number } {
   const now = Date.now()
   const entry = store.get(key) ?? { timestamps: [] }
 
@@ -35,12 +32,12 @@ export function checkRateLimit(
     const oldest = entry.timestamps[0]
     const retryAfter = Math.ceil((oldest + windowMs - now) / 1000)
     store.set(key, entry)
-    return { allowed: false, retryAfter }
+    return { allowed: false, retryAfter, remaining: 0, limit }
   }
 
   entry.timestamps.push(now)
   store.set(key, entry)
-  return { allowed: true, retryAfter: 0 }
+  return { allowed: true, retryAfter: 0, remaining: limit - entry.timestamps.length, limit }
 }
 
 /**

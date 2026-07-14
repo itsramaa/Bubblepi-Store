@@ -21,7 +21,8 @@ export async function fulfillOrder(orderId: string) {
   })
 
   if (!order) throw new Error("Order not found")
-  if (order.status === "FULFILLED") return
+  // Fix 3: Idempotency guard — skip if already fulfilled or waiting for stock
+  if (order.status === "FULFILLED" || order.status === "PENDING_STOCK") return
 
   let allAssigned = true
   const deliveredItems: Array<{ name: string; credentials: string[] }> = []

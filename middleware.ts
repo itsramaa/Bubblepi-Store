@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from "next/server"
-import { verifyAdminToken } from "@/lib/auth"
+import { verifyAdminToken, getAdminTokenFromHeaders } from "@/lib/auth"
 
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next()
   const { searchParams, pathname } = request.nextUrl
+
+  // Fix 4: Protect /api/admin/* routes via middleware
+  if (pathname.startsWith("/api/admin/")) {
+    const tokenValue =
+      request.cookies.get("admin-token")?.value ??
+      getAdminTokenFromHeaders(request.headers)
+    if (!tokenValue) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const valid = await verifyAdminToken(tokenValue)
+    if (!valid) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
 
   // Admin route protection — redirect to login if no valid token
   if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
@@ -36,5 +46,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest).*)"],
+  // Fix 4: Include /api/admin/* in matcher (removed blanket api exclusion)
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest).*)"],
 }
+

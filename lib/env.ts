@@ -18,11 +18,12 @@ const envSchema = z.object({
 
 export type Env = z.infer<typeof envSchema>
 
-// Validate at module load — throws on missing/invalid vars in production
+// Fix 6: Log warning di semua environment, throw hanya di production
 const _env = envSchema.safeParse(process.env)
-if (!_env.success && process.env.NODE_ENV === "production") {
+if (!_env.success) {
   console.error("❌ Invalid environment variables:", _env.error.flatten().fieldErrors)
-  throw new Error("Invalid environment variables")
+  if (process.env.NODE_ENV === "production") throw new Error("Invalid environment variables")
 }
 
+export { envSchema }
 export const env = (process.env as unknown) as Env
