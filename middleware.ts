@@ -6,14 +6,14 @@ export async function middleware(request: NextRequest) {
   const { searchParams, pathname } = request.nextUrl
 
   // Admin route protection — redirect to login if no valid token
-  if (pathname.startsWith("/admin") && pathname !== "/login") {
+  if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
     const cookie = request.cookies.get("admin-token")
     if (!cookie) {
-      return NextResponse.redirect(new URL("/login", request.url))
+      return NextResponse.redirect(new URL("/admin/login", request.url))
     }
     const valid = await verifyAdminToken(cookie.value)
     if (!valid) {
-      return NextResponse.redirect(new URL("/login", request.url))
+      return NextResponse.redirect(new URL("/admin/login", request.url))
     }
   }
 
