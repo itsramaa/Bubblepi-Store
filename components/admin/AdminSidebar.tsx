@@ -102,7 +102,7 @@ export default function AdminSidebar() {
 
   async function handleLogout() {
     await fetch("/api/admin/logout", { method: "POST" })
-    window.location.href = "/admin/login"
+    window.location.href = "/login"
   }
 
   return (
