@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import { db } from "@/lib/db"
 import HeroSection from "@/components/store/HeroSection"
 import FeaturedProducts from "@/components/store/FeaturedProducts"
@@ -66,12 +67,18 @@ export default async function HomePage() {
     <div>
       <HeroSection totalBuyers={totalBuyers} totalSold={totalStoreSold} />
       <SocialProofBanner />
-      <FeaturedProducts products={products} totalStoreSold={totalStoreSold} />
+      <Suspense fallback={<div className="h-96 animate-pulse bg-muted rounded-xl" />}>
+        <FeaturedProducts products={products} totalStoreSold={totalStoreSold} />
+      </Suspense>
       <HowItWorks />
       <LiveFulfillmentBadge />
       <CategorySection categoryCounts={categoryCountMap} />
-      <TestimonialsSection />
-      <FAQSection />
+      <Suspense fallback={<div className="h-96 animate-pulse bg-muted rounded-xl" />}>
+        <TestimonialsSection />
+      </Suspense>
+      <Suspense fallback={<div className="h-96 animate-pulse bg-muted rounded-xl" />}>
+        <FAQSection />
+      </Suspense>
       <Footer />
     </div>
   )

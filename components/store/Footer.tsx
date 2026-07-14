@@ -47,7 +47,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="lg:col-span-1">
             <Link href="/" className="flex items-center gap-2 mb-4">
-              <Image src="/logo.png" alt="Bubblepi" width={36} height={36} className="rounded-full" />
+              <Image src="/logo.png" alt="Bubblepi" width={36} height={36} className="rounded-full" priority />
               <span className="font-bold text-xl">
                 <span className="text-[#595B83]">Bubble</span>
                 <span className="text-[#F4ABC4]">pi</span>
