@@ -67,7 +67,7 @@ export default function CategorySection({ categoryCounts }: CategorySectionProps
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-        {categories.map((cat) => {
+        {categories.map((cat, i) => {
           const Icon = cat.icon
           const href = cat.slug ? `/products?category=${cat.slug}` : "/products"
           const count = cat.slug ? (categoryCounts?.[cat.slug] ?? null) : null
@@ -75,9 +75,10 @@ export default function CategorySection({ categoryCounts }: CategorySectionProps
             <Link
               key={cat.name}
               href={href}
-              className="group flex flex-col items-center gap-3 p-5 rounded-2xl border bg-card hover:border-primary/30 hover:shadow-md transition-all duration-300 text-center"
+              className="group flex flex-col items-center gap-3 p-5 rounded-2xl border bg-card hover:border-primary/40 hover:shadow-xl hover:shadow-primary/10 transition-all duration-300 text-center animate-[fadeSlideUp_0.5s_ease-out_both]"
+              style={{ animationDelay: `${i * 0.08}s` }}
             >
-              <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${cat.gradient} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+              <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${cat.gradient} flex items-center justify-center group-hover:scale-125 group-hover:-rotate-3 transition-transform duration-300`}>
                 <Icon className="h-6 w-6 text-white" />
               </div>
               <div>

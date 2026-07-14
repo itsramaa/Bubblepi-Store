@@ -60,7 +60,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       {/* Card: subtle lift + inner shadow on hover */}
       <div className="rounded-2xl border bg-card overflow-hidden hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1 hover:shadow-[inset_0_1px_0_rgba(89,91,131,0.08)] transition-all duration-300">
         {/* Image with blur placeholder skeleton */}
-        <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-[#595B83]/10 to-[#F4ABC4]/10">
+        <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-[#595B83]/10 to-[#F4ABC4]/10" style={{ boxShadow: 'inset 0 -2px 10px rgba(0,0,0,0.05)' }}>
           <Image
             src={product.image || "/products/default.svg"}
             alt={product.name}
@@ -146,8 +146,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           <div className="flex justify-end">
             <Button
               size="sm"
-              variant="ghost"
-              className="gap-1 text-xs font-medium text-primary hover:bg-primary/10 h-7 px-3"
+              className="gap-1 text-xs font-medium bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground h-7 px-3 transition-all"
             >
               Lihat <ArrowRight className="h-3 w-3" />
             </Button>

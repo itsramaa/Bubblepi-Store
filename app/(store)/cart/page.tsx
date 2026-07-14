@@ -55,9 +55,11 @@ export default function CartPage() {
     return (
       <div className="max-w-4xl mx-auto px-4 py-24 text-center">
         <div className="flex flex-col items-center gap-4">
-          <span className="text-7xl" role="img" aria-label="keranjang">
-            🛒
-          </span>
+          <div className="relative">
+            <div className="w-24 h-24 rounded-full bg-primary/5 flex items-center justify-center mx-auto mb-4">
+              <span className="text-5xl" role="img" aria-label="keranjang">🛒</span>
+            </div>
+          </div>
           <h1 className="text-2xl font-bold">Keranjangmu masih kosong</h1>
           <p className="text-muted-foreground max-w-sm">
             Belum ada produk di keranjang. Mulai jelajahi akun digital premium kami!
