@@ -73,18 +73,30 @@ export default function TestimonialsSection() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {reviews.slice(0, 6).map((review, i) => (
-          <Card key={review.id} className="hover:border-primary/20 hover:shadow-md transition-all duration-300">
+          <Card
+            key={review.id}
+            className="hover:border-primary/20 hover:shadow-md transition-all duration-300 animate-[fadeSlideUp_0.5s_ease-out_both]"
+            style={{ animationDelay: `${i * 0.1}s` }}
+          >
             <CardContent className="p-5">
               <StarRating rating={review.rating} />
-              <p className="text-sm text-muted-foreground mt-3 mb-4 leading-relaxed line-clamp-4">
-                &ldquo;{review.comment}&rdquo;
-              </p>
+              <div className="relative">
+                <span className="absolute -top-1 left-0 text-3xl leading-none text-primary/20 font-serif select-none" aria-hidden="true">"</span>
+                <p className="text-sm text-muted-foreground mt-1 mb-4 leading-relaxed line-clamp-4 pl-4">
+                  {review.comment}
+                </p>
+              </div>
               <div className="flex items-center gap-3 pt-3 border-t">
                 <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${avatarColors[i % avatarColors.length]}`}>
                   {getInitials(review.customerName)}
                 </div>
                 <div>
-                  <p className="text-sm font-semibold">{review.customerName}</p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-sm font-semibold">{review.customerName}</p>
+                    <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded-full inline-flex items-center gap-0.5">
+                      ✓ Verified
+                    </span>
+                  </div>
                   {review.productName && (
                     <p className="text-xs text-muted-foreground">{review.productName}</p>
                   )}
