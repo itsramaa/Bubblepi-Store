@@ -326,16 +326,16 @@ model SupplierProduct {
 }
 
 model Testimonial {
-  id        String   @id @default(cuid())
-  userId    String?  // Nullable for guest testimonials
+  id        String    @id @default(cuid())
+  userId    String?   // Nullable for guest testimonials
   productId String?
-  rating    Int // 1-5
+  rating    Int       // 1-5
   comment   String
-  isVisible Boolean  @default(true)
-  isPinned  Boolean  @default(false) // featured di atas review lain
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  isVisible Boolean   @default(true)
+  isPinned  Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  user      User?     @relation(fields: [userId], references: [id])
+  product   Product?  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId, isVisible])
 }
