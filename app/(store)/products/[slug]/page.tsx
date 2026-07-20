@@ -100,10 +100,6 @@ export default async function ProductDetailPage({ params }: Props) {
     orderBy: { createdAt: "desc" },
     take: 20,
     include: { 
-      order: { 
-        include: { user: { select: { name: true } } },
-        select: { guestName: true } 
-      },
       user: { select: { name: true } }
     },
   })

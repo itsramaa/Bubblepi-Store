@@ -11,12 +11,7 @@ export async function GET() {
       take: 6,
       include: {
         product: { select: { name: true } },
-        user: { select: { name: true, email: true } },
-        order: {
-          include: {
-            user: { select: { name: true } }
-          }
-        },
+        user: { select: { name: true } },
       },
     })
 
