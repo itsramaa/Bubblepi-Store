@@ -20,7 +20,7 @@ export async function GET() {
         id: r.id,
         rating: r.rating,
         comment: r.comment,
-        guestName: r.user.name ?? r.order?.user?.name ?? r.order?.guestName ?? "Customer",
+        userName: r.user?.name ?? "Customer",
         createdAt: r.createdAt,
         productName: r.product?.name ?? null,
       }))
