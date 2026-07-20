@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npx prisma db push --accept-data-loss --force-reset && npx prisma generate && npx tsx prisma/seed.ts && pnpm build",
+  "buildCommand": "npx prisma db push --skip-generate && npx prisma generate && pnpm build",
   "installCommand": "pnpm install",
   "outputDirectory": ".next",
   "framework": "nextjs",
