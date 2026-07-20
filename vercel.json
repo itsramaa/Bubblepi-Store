@@ -1,5 +1,5 @@
 {
-  "buildCommand": "pnpm prisma migrate deploy --skip-exit-code || pnpm build",
+  "buildCommand": "pnpm prisma db push --skip-generate && pnpm prisma generate && pnpm build",
   "installCommand": "pnpm install",
   "outputDirectory": ".next",
   "framework": "nextjs",
