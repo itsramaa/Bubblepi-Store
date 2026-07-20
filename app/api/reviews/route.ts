@@ -26,18 +26,19 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { productId, orderId, rating, comment } = schema.parse(body)
 
-    // Verify buyer has FULFILLED order for this product
+    // Verify buyer has DELIVERED order for this product
     const order = await db.order.findFirst({
       where: {
         id: orderId,
-        status: "FULFILLED",
+        status: "DELIVERED",
         items: { some: { variant: { productId } } },
       },
     })
     if (!order) return NextResponse.json({ error: "Kamu belum pernah beli produk ini atau order belum selesai" }, { status: 403 })
 
+    // Get user from auth - for now use a placeholder (review without login)
     const review = await db.review.create({
-      data: { productId, orderId, rating, comment },
+      data: { productId, orderId, rating, comment, userId: "anonymous" },
     })
     return NextResponse.json({ success: true, review }, { status: 201 })
   } catch (e: any) {

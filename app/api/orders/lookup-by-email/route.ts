@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
   if (!email) return NextResponse.json({ error: "Email wajib diisi" }, { status: 400 })
 
   const orders = await db.order.findMany({
-    where: { customerEmail: email },
+    where: { guestEmail: email },
     orderBy: { createdAt: "desc" },
     take: 20,
     select: {

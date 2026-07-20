@@ -3,7 +3,7 @@ import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { formatPrice } from "@/lib/utils"
-import { ArrowRight, Star, Tag } from "lucide-react"
+import { ArrowRight, Star } from "lucide-react"
 import type { ProductWithVariants } from "@/types"
 
 interface ProductCardProps {
@@ -15,29 +15,10 @@ interface ProductCardProps {
   }
 }
 
-/** Returns the lowest effective (sale-aware) price across all variants */
-function getMinEffectivePrice(product: ProductWithVariants): { minPrice: number; hasSale: boolean; maxDiscount: number } {
-  const now = new Date()
-  let minPrice = Infinity
-  let hasSale = false
-  let maxDiscount = 0
-
-  for (const v of product.variants) {
-    const isSaleActive =
-      v.salePrice != null &&
-      (v.saleEndsAt == null || new Date(v.saleEndsAt) > now)
-
-    const effective = isSaleActive ? (v.salePrice as number) : v.price
-    if (effective < minPrice) minPrice = effective
-
-    if (isSaleActive && v.salePrice != null) {
-      hasSale = true
-      const pct = Math.round((1 - v.salePrice / v.price) * 100)
-      if (pct > maxDiscount) maxDiscount = pct
-    }
-  }
-
-  return { minPrice: minPrice === Infinity ? 0 : minPrice, hasSale, maxDiscount }
+/** Returns the lowest price across all variants */
+function getMinPrice(product: ProductWithVariants): number {
+  if (!product.variants.length) return 0
+  return Math.min(...product.variants.map((v) => v.price))
 }
 
 /** Check if product was created within the last 7 days */
@@ -49,7 +30,7 @@ function isNewProduct(product: ProductWithVariants): boolean {
 export default function ProductCard({ product }: ProductCardProps) {
   const prices = product.variants.map((v) => v.price)
   const maxPrice = Math.max(...prices)
-  const { minPrice, hasSale, maxDiscount } = getMinEffectivePrice(product)
+  const minPrice = getMinPrice(product)
   const isLowStock = (product.totalStock ?? 99) <= 3 && (product.totalStock ?? 99) > 0
   const isOutOfStock = product.totalStock === 0
   const isBestSeller = (product.totalSold ?? 0) >= 10
@@ -80,11 +61,6 @@ export default function ProductCard({ product }: ProductCardProps) {
             {isBestSeller && (
               <Badge className="bg-[#F4ABC4] text-[#333456] text-xs font-semibold gap-1 border-0">
                 <Star className="h-3 w-3 fill-current" /> Terlaris
-              </Badge>
-            )}
-            {hasSale && (
-              <Badge className="bg-red-500 text-white text-xs font-semibold gap-1 border-0">
-                <Tag className="h-3 w-3" /> -{maxDiscount}%
               </Badge>
             )}
             {isLowStock && !isOutOfStock && (
@@ -128,14 +104,10 @@ export default function ProductCard({ product }: ProductCardProps) {
           {/* Price */}
           <div className="flex items-baseline gap-1 mb-3">
             <span className="text-xs text-muted-foreground">Mulai</span>
-            <span className={`text-lg font-bold ${hasSale ? "text-red-600" : "text-primary"}`}>
+            <span className="text-lg font-bold text-primary">
               {formatPrice(minPrice)}
             </span>
-            {hasSale ? (
-              <span className="text-xs text-muted-foreground line-through">
-                {formatPrice(Math.min(...prices))}
-              </span>
-            ) : maxPrice > minPrice ? (
+            {maxPrice > minPrice ? (
               <span className="text-xs text-muted-foreground">
                 – {formatPrice(maxPrice)}
               </span>

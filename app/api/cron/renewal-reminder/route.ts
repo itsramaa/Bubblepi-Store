@@ -11,33 +11,34 @@ export async function GET(request: NextRequest) {
   const resend = new Resend(process.env.RESEND_API_KEY)
   const in3days = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
 
-  const stocks = await db.accountStock.findMany({
+  // Check warranties expiring soon
+  const warranties = await db.warranty.findMany({
     where: {
-      status: "DELIVERED",
-      expiresAt: { lte: in3days, gte: new Date() },
+      status: "ACTIVE",
+      expiryDate: { lte: in3days, gte: new Date() },
     },
     include: {
-      order: { select: { customerEmail: true, customerName: true } },
+      order: { select: { guestEmail: true, guestName: true, orderNumber: true } },
       variant: { include: { product: { select: { name: true, slug: true } } } },
     },
   })
 
-  // Deduplicate by email
+  // Send renewal reminders
   const sent = new Set<string>()
   let count = 0
-  for (const stock of stocks) {
-    if (!stock.order || sent.has(stock.order.customerEmail)) continue
-    sent.add(stock.order.customerEmail)
+  for (const w of warranties) {
+    if (!w.order || !w.order.guestEmail || sent.has(w.order.guestEmail)) continue
+    sent.add(w.order.guestEmail)
 
     await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL ?? "noreply@bubblepi.store",
-      to: stock.order.customerEmail,
-      subject: `Akun ${stock.variant.product.name} kamu akan expired!`,
+      to: w.order.guestEmail,
+      subject: `Akun ${w.variant.product.name} kamu akan expired!`,
       html: `
-        <p>Halo ${stock.order.customerName},</p>
-        <p>Akun <strong>${stock.variant.product.name} (${stock.variant.name})</strong> kamu akan expired pada <strong>${stock.expiresAt?.toLocaleDateString("id-ID")}</strong>.</p>
+        <p>Halo ${w.order.guestName ?? "Customer"},</p>
+        <p>Akun <strong>${w.variant.product.name} (${w.variant.name})</strong> kamu akan expired pada <strong>${w.expiryDate?.toLocaleDateString("id-ID")}</strong>.</p>
         <p>Perpanjang sekarang sebelum kehabisan stok!</p>
-        <p><a href="${process.env.NEXT_PUBLIC_APP_URL}/products/${stock.variant.product.slug}">Perpanjang Sekarang →</a></p>
+        <p><a href="${process.env.NEXT_PUBLIC_APP_URL}/products/${w.variant.product.slug}">Perpanjang Sekarang →</a></p>
       `,
     })
     count++

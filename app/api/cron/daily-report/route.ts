@@ -11,17 +11,17 @@ export async function GET(request: NextRequest) {
   today.setHours(0, 0, 0, 0)
 
   const [todayOrders, pendingStock, criticalStock, topProducts] = await Promise.all([
-    db.order.findMany({ where: { status: "FULFILLED", paidAt: { gte: today } }, select: { total: true } }),
-    db.order.count({ where: { status: "PENDING_STOCK" } }),
+    db.order.findMany({ where: { status: "DELIVERED", paidAt: { gte: today } }, select: { total: true } }),
+    db.order.count({ where: { status: "PROCESSING" } }),
     db.variant.findMany({
       include: {
         product: { select: { name: true } },
-        _count: { select: { stock: { where: { status: "AVAILABLE" } } } },
+        _count: { select: { stocks: { where: { status: "AVAILABLE" } } } },
       },
     }),
     db.orderItem.groupBy({
       by: ["variantId"],
-      where: { order: { status: "FULFILLED", paidAt: { gte: today } } },
+      where: { order: { status: "DELIVERED", paidAt: { gte: today } } },
       _sum: { quantity: true },
       orderBy: { _sum: { quantity: "desc" } },
       take: 3,
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
   ])
 
   const revenue = todayOrders.reduce((a, o) => a + o.total, 0)
-  const critical = criticalStock.filter((v) => v._count.stock <= 5)
+  const critical = criticalStock.filter((v) => v._count.stocks <= 5)
 
   const topVariantIds = topProducts.map((t) => t.variantId)
   const topVariants = await db.variant.findMany({
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     return "* " + (v?.product.name ?? "") + " " + (v?.name ?? "") + ": " + (t._sum.quantity ?? 0) + "x"
   })
 
-  const critLines = critical.slice(0, 5).map((v) => "* " + v.product.name + " " + v.name + ": " + v._count.stock + " sisa")
+  const critLines = critical.slice(0, 5).map((v) => "* " + v.product.name + " " + v.name + ": " + v._count.stocks + " sisa")
 
   const lines = [
     "📊 <b>Daily Report</b> — " + today.toLocaleDateString("id-ID"),

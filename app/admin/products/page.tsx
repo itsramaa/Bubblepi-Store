@@ -9,12 +9,12 @@ export const dynamic = "force-dynamic"
 
 export default async function AdminProductsPage() {
   const products = await db.product.findMany({
-    include: { variants: { include: { stock: { where: { status: "AVAILABLE" } } } } },
+    include: { variants: { include: { stocks: { where: { status: "AVAILABLE" } } } } },
     orderBy: { createdAt: "desc" },
   })
 
-  function totalStock(variants: { stock: unknown[] }[]) {
-    return variants.reduce((acc, v) => acc + v.stock.length, 0)
+  function totalStock(variants: { stocks: unknown[] }[]) {
+    return variants.reduce((acc, v) => acc + v.stocks.length, 0)
   }
 
   return (

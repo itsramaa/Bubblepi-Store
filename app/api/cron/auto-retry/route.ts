@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic"
 export async function GET(request: NextRequest) {
   const cronError = requireCronSecret(request); if (cronError) return cronError
   const pending = await db.order.findMany({
-    where: { status: "PENDING_STOCK" },
+    where: { status: "PROCESSING" },
     select: { id: true },
   })
   let fulfilled = 0

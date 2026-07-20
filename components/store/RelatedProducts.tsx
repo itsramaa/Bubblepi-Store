@@ -29,7 +29,7 @@ export default async function RelatedProducts({ productId, category }: Props) {
   const soldData = await db.orderItem.groupBy({
     by: ["variantId"],
     where: {
-      order: { status: "FULFILLED" },
+      order: { status: "DELIVERED" },
       variant: { productId: { in: relatedIds } },
     },
     _sum: { quantity: true },

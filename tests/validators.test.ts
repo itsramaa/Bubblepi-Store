@@ -5,8 +5,8 @@ import { checkoutSchema, productSchema, variantSchema, stockItemSchema } from ".
 describe("checkoutSchema", () => {
   it("accepts valid data", () => {
     const result = checkoutSchema.safeParse({
-      customerName: "Budi Santoso",
-      customerEmail: "budi@example.com",
+      guestName: "Budi Santoso",
+      guestEmail: "budi@example.com",
       paymentMethod: "QRIS",
     })
     assert.equal(result.success, true)
@@ -14,8 +14,8 @@ describe("checkoutSchema", () => {
 
   it("rejects name shorter than 2 chars", () => {
     const result = checkoutSchema.safeParse({
-      customerName: "A",
-      customerEmail: "budi@example.com",
+      guestName: "A",
+      guestEmail: "budi@example.com",
       paymentMethod: "QRIS",
     })
     assert.equal(result.success, false)
@@ -23,8 +23,8 @@ describe("checkoutSchema", () => {
 
   it("rejects invalid email", () => {
     const result = checkoutSchema.safeParse({
-      customerName: "Budi",
-      customerEmail: "not-an-email",
+      guestName: "Budi",
+      guestEmail: "not-an-email",
       paymentMethod: "QRIS",
     })
     assert.equal(result.success, false)
@@ -32,8 +32,8 @@ describe("checkoutSchema", () => {
 
   it("rejects invalid paymentMethod", () => {
     const result = checkoutSchema.safeParse({
-      customerName: "Budi",
-      customerEmail: "budi@example.com",
+      guestName: "Budi",
+      guestEmail: "budi@example.com",
       paymentMethod: "BITCOIN",
     })
     assert.equal(result.success, false)
@@ -41,8 +41,8 @@ describe("checkoutSchema", () => {
 
   it("accepts VA with optional bankCode", () => {
     const result = checkoutSchema.safeParse({
-      customerName: "Budi",
-      customerEmail: "budi@example.com",
+      guestName: "Budi",
+      guestEmail: "budi@example.com",
       paymentMethod: "VA",
       bankCode: "BCA",
     })

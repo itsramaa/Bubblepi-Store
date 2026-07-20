@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   for (const cart of carts) {
     // Check if they placed an order in last 2h
     const order = await db.order.findFirst({
-      where: { customerEmail: cart.email, createdAt: { gte: new Date(Date.now() - 2 * 60 * 60 * 1000) } },
+      where: { guestEmail: cart.email, createdAt: { gte: new Date(Date.now() - 2 * 60 * 60 * 1000) } },
     })
     if (order) {
       await db.abandonedCart.update({ where: { id: cart.id }, data: { recovered: true } })

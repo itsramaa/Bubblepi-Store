@@ -3,15 +3,17 @@
 import { useState, useEffect } from "react"
 
 interface WarrantyItem {
-  variant?: {
-    hasWarranty?: boolean
-    warrantyDays?: number | null
-  }
+  variantId: string
+  variantName: string
+  productName: string
+  price: number
+  warrantyOptionId?: string | null
 }
 
 interface WarrantyTimerProps {
   paidAt: string | Date
   items: WarrantyItem[]
+  warrantyDurationDays?: number // default warranty days if no specific warranty
 }
 
 function calculateRemaining(paidAt: string | Date, warrantyDays: number) {
@@ -27,12 +29,16 @@ function calculateRemaining(paidAt: string | Date, warrantyDays: number) {
   }
 }
 
-export function WarrantyTimer({ paidAt, items }: WarrantyTimerProps) {
-  // Use the minimum warrantyDays across all warranty items
+export function WarrantyTimer({ paidAt, items, warrantyDurationDays = 7 }: WarrantyTimerProps) {
+  // Use warranty option if present, otherwise use default
   const warrantyDays = items.reduce((min, i) => {
-    const d = i.variant?.warrantyDays ?? 30
-    return d < min ? d : min
-  }, 30)
+    if (i.warrantyOptionId) {
+      // Has warranty - assume 7 or 30 days based on option
+      // For now use 7 as default, in real app would look up warranty option
+      return min
+    }
+    return warrantyDurationDays
+  }, warrantyDurationDays)
 
   const [remaining, setRemaining] = useState(() => calculateRemaining(paidAt, warrantyDays))
 

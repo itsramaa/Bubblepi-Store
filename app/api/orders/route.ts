@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { customerName, customerEmail } = parsed.data
+    const { guestName, guestEmail } = parsed.data
     const { items, voucherId, discountAmount } = body
 
     if (!items?.length) {
@@ -151,13 +151,10 @@ export async function POST(request: NextRequest) {
       return tx.order.create({
         data: {
           orderNumber,
-          customerName,
-          customerEmail,
+          guestName,
+          guestEmail,
           subtotal,
-          tax: 0,
           total,
-          discountAmount: discount,
-          refCode,
           ...(voucherId ? { voucherId: voucherId as string } : {}),
           status: "PENDING",
           items: { create: orderItems },
@@ -169,7 +166,7 @@ export async function POST(request: NextRequest) {
     sendTelegramNotification(
       `🛒 <b>Pesanan Baru!</b>\n` +
       `Order: <code>${order.orderNumber}</code>\n` +
-      `Pembeli: ${customerName} (${customerEmail})\n` +
+      `Pembeli: ${guestName} (${guestEmail})\n` +
       `Total: Rp ${total.toLocaleString("id-ID")}`
     )
 

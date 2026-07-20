@@ -5,20 +5,20 @@ async function main() {
 
   const [revenue, totalOrders, fulfilledOrders, topProducts, newBuyers] = await Promise.all([
     prisma.order.aggregate({
-      where: { status: "FULFILLED", paidAt: { gte: weekStart } },
+      where: { status: "DELIVERED", paidAt: { gte: weekStart } },
       _sum: { total: true },
     }),
     prisma.order.count({ where: { createdAt: { gte: weekStart } } }),
-    prisma.order.count({ where: { status: "FULFILLED", paidAt: { gte: weekStart } } }),
+    prisma.order.count({ where: { status: "DELIVERED", paidAt: { gte: weekStart } } }),
     prisma.orderItem.groupBy({
       by: ["variantId"],
-      where: { order: { status: "FULFILLED", paidAt: { gte: weekStart } } },
+      where: { order: { status: "DELIVERED", paidAt: { gte: weekStart } } },
       _sum: { price: true },
       orderBy: { _sum: { price: "desc" } },
       take: 5,
     }),
     prisma.order.groupBy({
-      by: ["customerEmail"],
+      by: ["guestEmail"],
       where: { createdAt: { gte: weekStart } },
       _count: { id: true },
     }).then((r) => r.filter((x) => x._count.id === 1).length),

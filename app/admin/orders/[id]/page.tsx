@@ -16,10 +16,10 @@ import { toast } from "sonner"
 
 const STATUS_LABEL: Record<string, string> = {
   PENDING: "Pending", AWAITING_PAYMENT: "Menunggu Bayar", PAID: "Dibayar",
-  FULFILLED: "Selesai", FAILED: "Gagal/Batal", PENDING_STOCK: "Menunggu Stok",
+  DELIVERED: "Selesai", FAILED: "Gagal/Batal", PENDING_STOCK: "Menunggu Stok",
 }
 const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  FULFILLED: "default", PAID: "secondary", PENDING: "outline",
+  DELIVERED: "default", PAID: "secondary", PENDING: "outline",
   AWAITING_PAYMENT: "outline", FAILED: "destructive", PENDING_STOCK: "destructive",
 }
 
@@ -95,7 +95,7 @@ export default function AdminOrderDetailPage() {
 
   const items = order.items as Array<{ id: string; variant: { name: string }; quantity: number; price: number }>
   const stocks = order.stocks as Array<{ id: string; credentials: string; status: string }>
-  const isTerminal = ["FULFILLED", "FAILED"].includes(order.status as string)
+  const isTerminal = ["DELIVERED", "FAILED"].includes(order.status as string)
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -105,7 +105,7 @@ export default function AdminOrderDetailPage() {
         </Link>
         <div className="flex-1">
           <h1 className="text-xl font-bold font-mono">{order.orderNumber as string}</h1>
-          <p className="text-sm text-muted-foreground">{order.customerName as string} • {order.customerEmail as string}</p>
+          <p className="text-sm text-muted-foreground">{order.guestName as string} • {order.guestEmail as string}</p>
         </div>
         <Badge variant={STATUS_VARIANT[order.status as string] ?? "outline"}>
           {STATUS_LABEL[order.status as string] ?? order.status as string}

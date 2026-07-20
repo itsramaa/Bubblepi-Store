@@ -7,7 +7,7 @@ type Params = { params: Promise<{ id: string }> }
 export async function GET(request: NextRequest, { params }: Params) {
   const authError = await requireAdmin(request); if (authError) return authError
   const { id } = await params
-  const bot = await db.supplierBot.findUnique({
+  const bot = await db.supplier.findUnique({
     where: { id },
     include: { products: { include: { variant: { include: { product: true } } } } },
   })
@@ -19,13 +19,13 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   const authError = await requireAdmin(request); if (authError) return authError
   const { id } = await params
   const data = await request.json()
-  const bot = await db.supplierBot.update({ where: { id }, data })
+  const bot = await db.supplier.update({ where: { id }, data })
   return NextResponse.json(bot)
 }
 
 export async function DELETE(request: NextRequest, { params }: Params) {
   const authError = await requireAdmin(request); if (authError) return authError
   const { id } = await params
-  await db.supplierBot.delete({ where: { id } })
+  await db.supplier.delete({ where: { id } })
   return NextResponse.json({ ok: true })
 }

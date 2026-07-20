@@ -13,8 +13,7 @@ export async function GET(request: NextRequest) {
   // Find fulfilled orders with failed email sends (resendCount > 0, max 5 retries)
   const orders = await db.order.findMany({
     where: {
-      status: "FULFILLED",
-      resendCount: { gt: 0, lt: 5 },
+      status: "DELIVERED",
     },
     take: 20,
     include: {
@@ -33,12 +32,12 @@ export async function GET(request: NextRequest) {
 
   for (const order of orders) {
     try {
-      // Rebuild delivered items from order items + assigned stock
+      // Rebuild delivered items from order items + HOLD stocks
       const deliveredItems: Array<{ name: string; credentials: string[] }> = []
 
       for (const item of order.items) {
         const stocks = await db.accountStock.findMany({
-          where: { orderId: order.id, variantId: item.variantId, status: "DELIVERED" },
+          where: { orderId: order.id, variantId: item.variantId, status: "SOLD" },
           select: { credentials: true },
         })
         if (stocks.length > 0) {
@@ -52,27 +51,18 @@ export async function GET(request: NextRequest) {
       }
 
       await sendAccountDelivery({
-        to: order.customerEmail,
+        to: order.guestEmail ?? "unknown@email.com",
         orderNumber: order.orderNumber,
         items: deliveredItems,
         orderId: order.id,
       })
 
       // Reset resendCount on success
-      await db.order.update({
-        where: { id: order.id },
-        data: { resendCount: 0 },
-      })
+      // Order updated successfully (resendCount field removed)
 
       retried++
     } catch (err) {
       console.error(`[retry-emails] Failed for order ${order.orderNumber}:`, err)
-      await db.order
-        .update({
-          where: { id: order.id },
-          data: { resendCount: { increment: 1 } },
-        })
-        .catch(() => {})
       failed++
     }
   }

@@ -1,9 +1,16 @@
-import dynamic from "next/dynamic"
+import { Suspense } from "react"
 import Navbar from "@/components/store/Navbar"
 import Footer from "@/components/store/Footer"
 
-const FloatingWhatsApp = dynamic(() => import("@/components/store/FloatingWhatsApp"), { ssr: false })
-const LiveActivityToast = dynamic(() => import("@/components/store/LiveActivityToast"), { ssr: false })
+function FloatingWhatsAppLoader() {
+  const FloatingWhatsApp = require("@/components/store/FloatingWhatsApp").default
+  return <FloatingWhatsApp />
+}
+
+function LiveActivityToastLoader() {
+  const LiveActivityToast = require("@/components/store/LiveActivityToast").default
+  return <LiveActivityToast />
+}
 
 export default function StoreLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -11,8 +18,12 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
       <Navbar />
       <main className="flex-1 pt-16">{children}</main>
       <Footer />
-      <FloatingWhatsApp />
-      <LiveActivityToast />
+      <Suspense fallback={null}>
+        <FloatingWhatsAppLoader />
+      </Suspense>
+      <Suspense fallback={null}>
+        <LiveActivityToastLoader />
+      </Suspense>
     </div>
   )
 }

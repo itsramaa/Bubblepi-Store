@@ -33,8 +33,8 @@ export async function POST(request: NextRequest) {
       amount: order.total,
       paymentMethod,
       bankCode,
-      customerName: order.customerName,
-      customerEmail: order.customerEmail,
+      customerName: order.guestName ?? "Customer",
+      customerEmail: order.guestEmail ?? "unknown@email.com",
     })
 
     await db.order.update({
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     })
 
     await sendOrderConfirmation({
-      to: order.customerEmail,
+      to: order.guestEmail ?? "unknown@email.com",
       orderNumber: order.orderNumber,
       items: order.items.map((i: { variant: { name: string }; quantity: number; price: number }) => ({
         name: `${i.variant.name}`,

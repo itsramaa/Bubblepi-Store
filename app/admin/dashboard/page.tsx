@@ -12,12 +12,12 @@ export const dynamic = "force-dynamic"
 
 const STATUS_LABEL: Record<string, string> = {
   PENDING: "Pending", AWAITING_PAYMENT: "Menunggu Bayar", PAID: "Dibayar",
-  FULFILLED: "Selesai", FAILED: "Gagal", PENDING_STOCK: "Menunggu Stok",
+  DELIVERED: "Selesai", FAILED: "Gagal", PENDING_STOCK: "Menunggu Stok",
 }
 
 // Color-coded classes per status
 const STATUS_CLASS: Record<string, string> = {
-  FULFILLED: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400",
+  DELIVERED: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400",
   PAID: "bg-blue-100 text-blue-700",
   PENDING: "bg-amber-100 text-amber-700",
   AWAITING_PAYMENT: "bg-amber-100 text-amber-700",
@@ -31,15 +31,15 @@ export default async function AdminDashboard() {
 
   const [revenueToday, totalOrders, pendingOrders, pendingStock, criticalStock, recentOrders, revenueByProduct] = await Promise.all([
     db.order.aggregate({
-      where: { status: "FULFILLED", paidAt: { gte: today } },
+      where: { status: "DELIVERED", paidAt: { gte: today } },
       _sum: { total: true },
     }),
     db.order.count(),
     db.order.count({ where: { status: { in: ["PENDING", "AWAITING_PAYMENT", "PAID"] } } }),
-    db.order.count({ where: { status: "PENDING_STOCK" } }),
+    db.order.count({ where: { status: "PROCESSING" } }),
     db.variant
-      .findMany({ include: { stock: { where: { status: "AVAILABLE" } } } })
-      .then((variants) => variants.filter((v) => v.stock.length < 5).length),
+      .findMany({ include: { stocks: { where: { status: "AVAILABLE" } } } })
+      .then((variants) => variants.filter((v) => v.stocks.length < 5).length),
     db.order.findMany({
       orderBy: { createdAt: "desc" },
       take: 10,
@@ -47,7 +47,7 @@ export default async function AdminDashboard() {
     // Revenue per produk (fulfilled orders, all time)
     db.orderItem.groupBy({
       by: ["variantId"],
-      where: { order: { status: "FULFILLED" } },
+      where: { order: { status: "DELIVERED" } },
       _sum: { price: true },
       _count: { id: true },
       orderBy: { _sum: { price: "desc" } },
@@ -127,7 +127,7 @@ export default async function AdminDashboard() {
                     </div>
                     <div>
                       <p className="text-sm font-medium font-mono">{order.orderNumber}</p>
-                      <p className="text-xs text-muted-foreground">{order.customerName}</p>
+                      <p className="text-xs text-muted-foreground">{order.guestName ?? "Member"}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">

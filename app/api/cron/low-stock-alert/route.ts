@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
         productName: r.productName,
         available: Number(r.available),
       })),
-    }).catch((err) => console.error("Low stock alert failed:", err))
+    }).catch((err) => console.error("Low stocks alert failed:", err))
   }
 
   return NextResponse.json({

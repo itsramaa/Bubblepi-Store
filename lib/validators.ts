@@ -1,8 +1,8 @@
 import { z } from "zod"
 
 export const checkoutSchema = z.object({
-  customerName: z.string().min(2, "Nama harus minimal 2 karakter"),
-  customerEmail: z.string().email("Email tidak valid"),
+  guestName: z.string().min(2, "Nama harus minimal 2 karakter"),
+  guestEmail: z.string().email("Email tidak valid"),
   paymentMethod: z.enum(["QRIS", "VA"]),
   bankCode: z.string().optional(),
 })
@@ -31,3 +31,13 @@ export const stockItemSchema = z.object({
   credentials: z.string().min(1, "Credentials tidak boleh kosong"),
   expiresAt: z.string().datetime().optional().nullable(),
 })
+
+// Utility validators
+export function validateEmail(email: string): boolean {
+  return z.string().email().safeParse(email).success
+}
+
+export function validatePhone(phone: string): boolean {
+  const cleaned = phone.replace(/\D/g, "")
+  return cleaned.length >= 10 && cleaned.length <= 15
+}

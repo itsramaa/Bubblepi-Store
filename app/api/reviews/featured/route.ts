@@ -7,11 +7,16 @@ export async function GET() {
   try {
     const reviews = await db.review.findMany({
       where: { isVisible: true, rating: { gte: 4 } },
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
       take: 6,
       include: {
         product: { select: { name: true } },
-        order: { select: { customerName: true } },
+        user: { select: { name: true, email: true } },
+        order: {
+          include: {
+            user: { select: { name: true } }
+          }
+        },
       },
     })
 
@@ -20,12 +25,13 @@ export async function GET() {
         id: r.id,
         rating: r.rating,
         comment: r.comment,
-        customerName: r.order.customerName,
+        guestName: r.user.name ?? r.order?.user?.name ?? r.order?.guestName ?? "Customer",
         createdAt: r.createdAt,
         productName: r.product?.name ?? null,
       }))
     )
-  } catch {
+  } catch (error) {
+    console.error("Featured reviews error:", error)
     return NextResponse.json([])
   }
 }

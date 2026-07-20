@@ -22,7 +22,7 @@ export async function fulfillOrder(orderId: string) {
 
   if (!order) throw new Error("Order not found")
   // Fix 3: Idempotency guard — skip if already fulfilled or waiting for stock
-  if (order.status === "FULFILLED" || order.status === "PENDING_STOCK") return
+  if (order.status === "DELIVERED" || order.status === "PROCESSING") return
 
   let allAssigned = true
   const deliveredItems: Array<{ name: string; credentials: string[] }> = []
@@ -33,7 +33,7 @@ export async function fulfillOrder(orderId: string) {
     for (let i = 0; i < item.quantity; i++) {
       // Skip slots yang sudah ASSIGNED untuk order ini (retry safety)
       const alreadyAssigned = await db.accountStock.count({
-        where: { orderId, variantId: item.variantId, status: { in: ["ASSIGNED", "DELIVERED"] } },
+        where: { orderId, variantId: item.variantId, status: { in: ["HOLD", "SOLD"] } },
       })
       if (alreadyAssigned >= item.quantity) break
 
@@ -41,12 +41,12 @@ export async function fulfillOrder(orderId: string) {
       const assigned = await db.$transaction(async (tx) => {
         const stock = await tx.accountStock.findFirst({
           where: { variantId: item.variantId, status: "AVAILABLE" },
-          orderBy: { createdAt: "asc" },
+          orderBy: { acquiredAt: "asc" },
         })
         if (!stock) return null
         return tx.accountStock.update({
           where: { id: stock.id },
-          data: { status: "ASSIGNED", orderId, assignedAt: new Date() },
+          data: { status: "HOLD", orderId },
         })
       })
 
@@ -54,7 +54,7 @@ export async function fulfillOrder(orderId: string) {
         allAssigned = false
         await db.order.update({
           where: { id: orderId },
-          data: { status: "PENDING_STOCK" },
+          data: { status: "PROCESSING" },
         })
         sendTelegramNotification(
           `⚠️ <b>Stok Kosong!</b>\n` +
@@ -80,36 +80,18 @@ export async function fulfillOrder(orderId: string) {
     await db.order.update({
       where: { id: orderId },
       data: {
-        status: "FULFILLED",
+        status: "DELIVERED",
         ...(order.paidAt ? {} : { paidAt: new Date() }),
       },
     })
 
     await db.accountStock.updateMany({
-      where: { orderId, status: "ASSIGNED" },
-      data: { status: "DELIVERED" },
+      where: { orderId, status: "HOLD" },
+      data: { status: "SOLD", soldAt: new Date() },
     })
 
-    // Auto-create referral dari refCode cookie
-    if (order.refCode) {
-      try {
-        const referrerEmail = Buffer.from(order.refCode, "base64url").toString("utf-8")
-        if (referrerEmail !== order.customerEmail) {
-          const existing = await db.referral.findFirst({ where: { orderId } })
-          if (!existing) {
-            await db.referral.create({
-              data: {
-                referrerEmail,
-                referredEmail: order.customerEmail,
-                orderId,
-                commissionValue: 5000,
-                status: "CONFIRMED",
-              },
-            })
-          }
-        }
-      } catch { /* referral non-blocking */ }
-    }
+    // Referral logic disabled - refCode not in schema
+    // TODO: Re-enable when refCode is added to Order model
 
     // Alert stok kritis setelah fulfill
     const variantIds = [...new Set(order.items.map((i) => i.variantId))]
@@ -118,7 +100,7 @@ export async function fulfillOrder(orderId: string) {
     }
 
     await sendAccountDelivery({
-      to: order.customerEmail,
+      to: order.guestEmail ?? "unknown@email.com",
       orderNumber: order.orderNumber,
       items: deliveredItems,
       orderId: order.id,
@@ -127,7 +109,7 @@ export async function fulfillOrder(orderId: string) {
     sendTelegramNotification(
       `✅ <b>Order Fulfilled!</b>\n` +
       `Order: <code>${order.orderNumber}</code>\n` +
-      `Akun dikirim ke ${order.customerEmail}`
+      `Akun dikirim ke ${order.guestEmail ?? "unknown@email.com"}`
     )
   }
 }

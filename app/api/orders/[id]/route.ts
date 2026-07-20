@@ -9,6 +9,7 @@ export async function GET(
   const order = await db.order.findUnique({
     where: { id },
     include: {
+      user: { select: { id: true, name: true, email: true } },
       items: { include: { variant: { include: { product: true } } } },
       stocks: true,
     },
@@ -18,5 +19,16 @@ export async function GET(
     return NextResponse.json({ error: "Pesanan tidak ditemukan" }, { status: 404 })
   }
 
-  return NextResponse.json({ success: true, data: order })
+  // Get email: user.email OR guestEmail
+  const email = order.user?.email ?? order.guestEmail ?? ""
+  const name = order.user?.name ?? order.guestName ?? ""
+
+  return NextResponse.json({
+    success: true,
+    data: {
+      ...order,
+      guestEmail: email,
+      guestName: name,
+    },
+  })
 }

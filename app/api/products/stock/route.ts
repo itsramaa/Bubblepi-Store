@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   for (const row of counts) {
     result[row.variantId] = row._count.id
   }
-  // Variants with zero stock won't appear in groupBy — set them explicitly
+  // Variants with zero stocks won't appear in groupBy — set them explicitly
   for (const id of variantIds) {
     if (!(id in result)) result[id] = 0
   }

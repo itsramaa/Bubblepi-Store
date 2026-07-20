@@ -17,7 +17,14 @@ export default async function HomePage() {
     // Products sorted by totalSold via orderItems aggregate
     db.product.findMany({
       where: { isActive: true },
-      include: { variants: true },
+      include: { 
+        variants: { 
+          include: { 
+            warrantyOptions: true,
+            stocks: { where: { status: "AVAILABLE" } }
+          } 
+        } 
+      },
       take: 6,
     }),
     db.product.groupBy({
@@ -29,12 +36,12 @@ export default async function HomePage() {
     db.orderItem.groupBy({
       by: ["variantId"],
       _sum: { quantity: true },
-      where: { order: { status: "FULFILLED" } },
+      where: { order: { status: "DELIVERED" } },
     }),
     // Social proof stats for hero badges
     db.order.aggregate({
       _count: { id: true },
-      where: { status: "FULFILLED" },
+      where: { status: "DELIVERED" },
     }),
   ])
 

@@ -106,7 +106,7 @@ export default function CartPage() {
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold truncate">{item.productName}</p>
-                  <p className="text-sm text-muted-foreground">{item.variantName} • {item.duration}</p>
+                  <p className="text-sm text-muted-foreground">{item.variantName}</p>
                   <p className="text-sm font-bold text-primary mt-0.5">{formatPrice(item.price)}</p>
                   {stock !== undefined && nearLimit && (
                     <p className="text-xs text-amber-600 mt-1">

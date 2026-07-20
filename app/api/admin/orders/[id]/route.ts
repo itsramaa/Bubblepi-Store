@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/admin-auth"
 import { db } from "@/lib/db"
 import { fulfillOrder } from "@/lib/order"
 
-const ALLOWED_STATUSES = ["PENDING", "AWAITING_PAYMENT", "PAID", "FULFILLED", "FAILED", "PENDING_STOCK"] as const
+const ALLOWED_STATUSES = ["PENDING", "AWAITING_PAYMENT", "PAID", "DELIVERED", "FAILED", "PENDING_STOCK"] as const
 
 export async function GET(
   request: NextRequest,
@@ -46,7 +46,7 @@ export async function PATCH(
     if (body.action === "cancel") {
       const order = await db.order.findUnique({ where: { id } })
       if (!order) return NextResponse.json({ error: "Not found" }, { status: 404 })
-      if (["FULFILLED", "FAILED"].includes(order.status)) {
+      if (["DELIVERED", "FAILED"].includes(order.status)) {
         return NextResponse.json({ error: "Order sudah terminal" }, { status: 400 })
       }
       await db.order.update({

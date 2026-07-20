@@ -11,7 +11,7 @@ import { toast } from "sonner"
 interface Variant {
   id: string
   name: string
-  duration: string
+  duration?: string
   price: number
   stockCount: number
 }
@@ -47,7 +47,6 @@ export default function StickyAddToCart({ product, selectedVariant, quantity }: 
       productName: product.name,
       variantName: selectedVariant.name,
       price: selectedVariant.price,
-      duration: selectedVariant.duration,
     }, quantity)
     toast.success(`${selectedVariant.name} ditambahkan ke keranjang`)
   }
@@ -60,7 +59,6 @@ export default function StickyAddToCart({ product, selectedVariant, quantity }: 
       productName: product.name,
       variantName: selectedVariant.name,
       price: selectedVariant.price,
-      duration: selectedVariant.duration,
     }, quantity)
     router.push("/checkout")
   }
@@ -74,7 +72,7 @@ export default function StickyAddToCart({ product, selectedVariant, quantity }: 
         <div className="flex items-center gap-2 mb-2">
           <div className="flex-1 min-w-0">
             <p className="text-xs text-muted-foreground truncate">{product.name}</p>
-            <p className="text-sm font-semibold truncate">{selectedVariant.name} • {selectedVariant.duration}</p>
+            <p className="text-sm font-semibold truncate">{selectedVariant.name} • {selectedVariant.name}</p>
           </div>
           <p className="font-bold text-[#333456] shrink-0">{formatPrice(selectedVariant.price * quantity)}</p>
         </div>

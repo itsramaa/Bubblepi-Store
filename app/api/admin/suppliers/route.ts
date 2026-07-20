@@ -4,7 +4,7 @@ import { db } from "@/lib/db"
 
 export async function GET(request: NextRequest) {
   const authError = await requireAdmin(request); if (authError) return authError
-  const bots = await db.supplierBot.findMany({
+  const bots = await db.supplier.findMany({
     include: { products: { include: { variant: { include: { product: true } } } } },
     orderBy: { createdAt: "desc" },
   })
@@ -13,10 +13,17 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const authError = await requireAdmin(request); if (authError) return authError
-  const { label, botUsername, serviceUrl } = await request.json()
-  if (!label || !botUsername || !serviceUrl) {
-    return NextResponse.json({ error: "label, botUsername, serviceUrl required" }, { status: 400 })
+  const { name, type, botUsername, serviceUrl, botToken, apiKey } = await request.json()
+  if (!name || !type) {
+    return NextResponse.json({ error: "name, type required" }, { status: 400 })
   }
-  const bot = await db.supplierBot.create({ data: { label, botUsername, serviceUrl } })
+  const config = { botUsername, serviceUrl, botToken, apiKey }
+  const bot = await db.supplier.create({ 
+    data: { 
+      name, 
+      type: type === "API" ? "API" : "TELEGRAM_BOT",
+      config: config as any
+    } 
+  })
   return NextResponse.json(bot, { status: 201 })
 }

@@ -10,18 +10,18 @@ export async function GET(request: NextRequest) {
   const variants = await db.variant.findMany({
     include: {
       product: { select: { name: true } },
-      _count: { select: { stock: { where: { status: "AVAILABLE" } } } },
+      _count: { select: { stocks: { where: { status: "AVAILABLE" } } } },
     },
   })
 
-  const critical = variants.filter((v) => v._count.stock > 0 && v._count.stock <= 5)
-  const empty = variants.filter((v) => v._count.stock === 0)
+  const critical = variants.filter((v) => v._count.stocks > 0 && v._count.stocks <= 5)
+  const empty = variants.filter((v) => v._count.stocks === 0)
 
   if (critical.length > 0 || empty.length > 0) {
     const lines = ["⚠️ <b>Alert Stok</b>"]
     if (critical.length > 0) {
       lines.push("", "Kritis:")
-      critical.forEach((v) => lines.push("* " + v.product.name + " " + v.name + ": " + v._count.stock + " sisa"))
+      critical.forEach((v) => lines.push("* " + v.product.name + " " + v.name + ": " + v._count.stocks + " sisa"))
     }
     if (empty.length > 0) {
       lines.push("", "Habis:")

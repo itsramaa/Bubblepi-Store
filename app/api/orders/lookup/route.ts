@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   }
 
   const orders = await db.order.findMany({
-    where: { customerEmail: email.toLowerCase() },
+    where: { guestEmail: email.toLowerCase() },
     include: { items: { include: { variant: true } } },
     orderBy: { createdAt: "desc" },
     take: 50,

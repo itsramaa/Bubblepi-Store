@@ -35,7 +35,7 @@ export default function CheckoutStep2({ formData, onSubmit, onBack, submitting =
     id: string
     name: string
     images: string[]
-    variants: Array<{ id: string; name: string; price: number; duration: string }>
+    variants: Array<{ id: string; name: string; price: number; duration?: string }>
   }>>([])
 
   const subtotal = getSubtotal()
@@ -121,7 +121,7 @@ export default function CheckoutStep2({ formData, onSubmit, onBack, submitting =
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold truncate">{item.productName}</p>
-              <p className="text-xs text-muted-foreground">{item.variantName} · {item.duration}</p>
+              <p className="text-xs text-muted-foreground">{item.variantName}</p>
             </div>
             <div className="text-right shrink-0">
               {item.quantity > 1 && (
@@ -221,7 +221,6 @@ export default function CheckoutStep2({ formData, onSubmit, onBack, submitting =
                   productId: p.id,
                   productName: p.name,
                   variantName: p.variants[0].name,
-                  duration: p.variants[0].duration ?? "",
                   price: p.variants[0].price,
                 }, 1)
                 toast.success(`${p.name} ditambahkan ke keranjang!`)

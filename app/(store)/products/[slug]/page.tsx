@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const product = await db.product.findUnique({ where: { slug }, select: { name: true, description: true, image: true } })
   if (!product) return {}
   const title = `Beli ${product.name} Murah - Bubblepi Store`
-  const desc = product.description.slice(0, 160)
+  const desc = (product.description ?? "").slice(0, 160)
   const imageUrl = product.image?.startsWith("http") ? product.image : `https://bubblepi-store.vercel.app${product.image}`
   return {
     title,
@@ -78,7 +78,7 @@ export default async function ProductDetailPage({ params }: Props) {
 
   const soldData = await db.orderItem.groupBy({
     by: ["variantId"],
-    where: { variantId: { in: product.variants.map((v) => v.id) }, order: { status: "FULFILLED" } },
+    where: { variantId: { in: product.variants.map((v) => v.id) }, order: { status: "DELIVERED" } },
     _sum: { quantity: true },
   })
   const soldMap = new Map(soldData.map((s) => [s.variantId, s._sum.quantity ?? 0]))
@@ -86,7 +86,7 @@ export default async function ProductDetailPage({ params }: Props) {
 
   const withPpd = variantsWithStock.map((v) => ({
     ...v,
-    pricePerDay: Math.round(v.price / parseDurationDays(v.duration)),
+    pricePerDay: Math.round(v.price / parseDurationDays(v.name)),
   }))
   const minPpd = Math.min(...withPpd.map((v) => v.pricePerDay))
   const bestValueId = withPpd.length > 1 ? withPpd.find((v) => v.pricePerDay === minPpd)?.id : undefined
@@ -99,12 +99,18 @@ export default async function ProductDetailPage({ params }: Props) {
     where: { productId: product.id, isVisible: true },
     orderBy: { createdAt: "desc" },
     take: 20,
-    include: { order: { select: { customerName: true } } },
+    include: { 
+      order: { 
+        include: { user: { select: { name: true } } },
+        select: { guestName: true } 
+      },
+      user: { select: { name: true } }
+    },
   })
   const avgRating = reviews.length > 0 ? reviews.reduce((a, r) => a + r.rating, 0) / reviews.length : 0
 
-  const CategoryIcon = getCategoryIcon(product.category)
-  const gradient = getCategoryGradient(product.category)
+  const CategoryIcon = getCategoryIcon((product.category ?? "other") as string)
+  const gradient = getCategoryGradient((product.category ?? "other") as string)
 
   const productUrl = `https://bubblepi-store.vercel.app/products/${product.slug}`
   const imageUrl = product.image?.startsWith("http")
@@ -198,7 +204,7 @@ export default async function ProductDetailPage({ params }: Props) {
             <div className="absolute top-4 left-4">
               <Badge className="bg-white/20 backdrop-blur-sm text-white border-white/30 gap-1.5">
                 <CategoryIcon className="h-3 w-3" />
-                {product.category.charAt(0).toUpperCase() + product.category.slice(1)}
+                {(product.category ?? "Other").charAt(0).toUpperCase() + (product.category ?? "Other").slice(1)}
               </Badge>
             </div>
             {totalSold > 0 && (
@@ -215,7 +221,7 @@ export default async function ProductDetailPage({ params }: Props) {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
               { icon: Zap, label: "Instan", sub: "< 5 menit", color: "text-amber-500" },
-              { icon: Shield, label: "Garansi", sub: product.variants.some(v => v.hasWarranty) ? "Garansi resmi" : "Terpercaya", color: "text-green-500" },
+              { icon: Shield, label: "Garansi", sub: product.variants.some(v => (v as any).warrantyOptions?.length > 0) ? "Garansi resmi" : "Terpercaya", color: "text-green-500" },
               { icon: CheckCircle2, label: "Aman", sub: "100% legit", color: "text-blue-500" },
               { icon: MessageCircle, label: "Support 24/7", sub: "Via WhatsApp", color: "text-[#595B83]" },
             ].map(({ icon: Icon, label, sub, color }) => (
@@ -228,7 +234,7 @@ export default async function ProductDetailPage({ params }: Props) {
           </div>
 
           {/* Credential preview */}
-          <CredentialPreview type={product.category} />
+          <CredentialPreview type={product.category ?? "other"} />
         </div>
 
         {/* Right — Info */}
@@ -237,8 +243,8 @@ export default async function ProductDetailPage({ params }: Props) {
           <div>
             <div className="flex flex-wrap gap-2 mb-3">
               <Badge variant="outline" className="gap-1">
-                {product.type === "private" ? <Lock className="h-3 w-3" /> : <Users className="h-3 w-3" />}
-                {product.type === "private" ? "Private" : "Sharing"}
+                <Users className="h-3 w-3" />
+                Sharing
               </Badge>
               {reviews.length > 0 && (
                 <Badge variant="secondary" className="gap-1">
@@ -291,7 +297,7 @@ export default async function ProductDetailPage({ params }: Props) {
           {/* Variant selector — anchor for sticky CTA observer */}
           <div id="variant-selector-anchor">
             <VariantCompareTable
-              variants={withPpd}
+              variants={withPpd as any}
               product={{ id: product.id, name: product.name }}
               bestValueId={bestValueId}
               soldMap={Object.fromEntries(soldMap)}
@@ -362,7 +368,7 @@ export default async function ProductDetailPage({ params }: Props) {
           </div>
         </div>
       }>
-        <RelatedProducts productId={product.id} category={product.category} />
+        <RelatedProducts productId={product.id} category={product.category ?? "other"} />
       </Suspense>
     </div>
   )

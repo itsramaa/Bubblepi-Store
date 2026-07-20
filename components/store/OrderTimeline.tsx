@@ -4,10 +4,10 @@ const steps = [
   { status: "PENDING", label: "Pesanan Dibuat", icon: Package },
   { status: "AWAITING_PAYMENT", label: "Menunggu Pembayaran", icon: Clock },
   { status: "PAID", label: "Pembayaran Diterima", icon: CheckCircle2 },
-  { status: "FULFILLED", label: "Akun Dikirim", icon: CheckCircle2 },
+  { status: "DELIVERED", label: "Akun Dikirim", icon: CheckCircle2 },
 ]
 
-const ORDER = ["PENDING", "AWAITING_PAYMENT", "PAID", "FULFILLED"]
+const ORDER = ["PENDING", "AWAITING_PAYMENT", "PAID", "DELIVERED"]
 
 interface OrderTimelineProps {
   status: string
@@ -16,7 +16,7 @@ interface OrderTimelineProps {
 
 export default function OrderTimeline({ status, timestamps }: OrderTimelineProps) {
   const currentIndex = ORDER.indexOf(status)
-  const isFailed = status === "FAILED" || status === "PENDING_STOCK"
+  const isFailed = status === "FAILED" || status === "PROCESSING"
 
   function formatTime(val: string | Date | undefined): string | null {
     if (!val) return null
@@ -73,10 +73,10 @@ export default function OrderTimeline({ status, timestamps }: OrderTimelineProps
             </div>
             <div>
               <p className="text-sm font-medium text-destructive">
-                {status === "PENDING_STOCK" ? "Menunggu Stok" : "Pesanan Gagal"}
+                {status === "PROCESSING" ? "Menunggu Stok" : "Pesanan Gagal"}
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {status === "PENDING_STOCK" ? "Admin akan segera memproses pesanan kamu." : "Hubungi admin untuk bantuan."}
+                {status === "PROCESSING" ? "Admin akan segera memproses pesanan kamu." : "Hubungi admin untuk bantuan."}
               </p>
             </div>
           </div>

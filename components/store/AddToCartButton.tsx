@@ -13,7 +13,7 @@ import { toast } from "sonner"
 interface Variant {
   id: string
   name: string
-  duration: string
+  duration?: string
   price: number
   hasWarranty?: boolean
   warrantyDays?: number | null
@@ -32,9 +32,9 @@ export default function AddToCartButton({ variant, product, stockCount, isBestVa
   const router = useRouter()
   const [added, setAdded] = useState(false)
 
-  const stock = stockCount ?? variant.stockCount ?? 0
+  const stock = stockCount ?? 0
   const isOutOfStock = stock === 0
-  const days = parseDurationDays(variant.duration)
+  const days = parseDurationDays(variant.name)
   const pricePerDay = days > 0 ? Math.round(variant.price / days) : variant.price
 
   function handleAdd() {
@@ -45,7 +45,6 @@ export default function AddToCartButton({ variant, product, stockCount, isBestVa
       productName: product.name,
       variantName: variant.name,
       price: variant.price,
-      duration: variant.duration,
     })
     setAdded(true)
     toast.success(`${variant.name} ditambahkan ke keranjang`)
@@ -60,7 +59,6 @@ export default function AddToCartButton({ variant, product, stockCount, isBestVa
       productName: product.name,
       variantName: variant.name,
       price: variant.price,
-      duration: variant.duration,
     })
     router.push("/checkout")
   }
@@ -85,7 +83,7 @@ export default function AddToCartButton({ variant, product, stockCount, isBestVa
         onClick={handleAdd}
         disabled={isOutOfStock}
       >
-        <span>{variant.name} • {variant.duration}</span>
+        <span>{variant.name} • {variant.name}</span>
         <span className="flex items-center gap-2">
           {isOutOfStock ? (
             <span className="text-xs text-destructive font-medium">Habis</span>

@@ -6,11 +6,11 @@ import { stockItemSchema } from "@/lib/validators"
 export async function GET(request: NextRequest) {
   const authError = await requireAdmin(request); if (authError) return authError
 
-  const stock = await db.accountStock.findMany({
+  const stocks = await db.accountStock.findMany({
     include: { variant: { include: { product: { select: { name: true } } } } },
-    orderBy: { createdAt: "desc" },
+    orderBy: { acquiredAt: "desc" },
   })
-  return NextResponse.json({ success: true, data: stock })
+  return NextResponse.json({ success: true, data: stocks })
 }
 
 export async function POST(request: NextRequest) {
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
       data: {
         variantId: parsed.variantId,
         credentials: parsed.credentials,
-        expiresAt: expiresAt ? new Date(expiresAt as string) : null,
+        status: "AVAILABLE",
       },
     })
     return NextResponse.json({ success: true, data: item }, { status: 201 })

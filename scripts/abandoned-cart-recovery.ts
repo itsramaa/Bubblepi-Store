@@ -14,7 +14,7 @@ async function main() {
   for (const cart of carts) {
     // Check if order already placed after cart save
     const recentOrder = await prisma.order.findFirst({
-      where: { customerEmail: cart.email, createdAt: { gte: cart.createdAt } },
+      where: { guestEmail: cart.email, createdAt: { gte: cart.createdAt } },
     })
     if (recentOrder) {
       await prisma.abandonedCart.update({ where: { id: cart.id }, data: { recovered: true } })

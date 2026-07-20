@@ -17,7 +17,7 @@ import { trackEvent } from "@/lib/analytics"
 interface Variant {
   id: string
   name: string
-  duration: string
+  duration?: string
   price: number
   pricePerDay: number
   stockCount: number
@@ -82,7 +82,6 @@ export default function VariantCompareTable({ variants, product, bestValueId, so
         productName: product.name,
         variantName: selected.name,
         price: effectivePrice,
-        duration: selected.duration,
       },
       qty
     )
@@ -102,7 +101,6 @@ export default function VariantCompareTable({ variants, product, bestValueId, so
         productName: product.name,
         variantName: selected.name,
         price: effectivePrice,
-        duration: selected.duration,
       },
       qty
     )
@@ -189,7 +187,7 @@ export default function VariantCompareTable({ variants, product, bestValueId, so
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <p className="font-semibold text-sm">{v.name}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">{v.duration}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{v.name}</p>
                       </div>
                       <div className="text-right shrink-0">
                         {isSale ? (
@@ -301,7 +299,7 @@ export default function VariantCompareTable({ variants, product, bestValueId, so
                           </span>
                         )}
                       </div>
-                      <div className="text-xs text-muted-foreground">{v.duration}</div>
+                      <div className="text-xs text-muted-foreground">{v.name}</div>
                     </td>
                     <td className="px-4 py-3 text-right">
                       {isSale ? (
@@ -358,7 +356,7 @@ export default function VariantCompareTable({ variants, product, bestValueId, so
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground">Dipilih</p>
-                <p className="font-semibold text-sm">{selected.name} • {selected.duration}</p>
+                <p className="font-semibold text-sm">{selected.name} • {selected.name}</p>
                 {isSale && saleEndsAtStr && <SaleCountdown saleEndsAt={saleEndsAtStr} />}
               </div>
               <div className="text-right">
@@ -450,7 +448,7 @@ export default function VariantCompareTable({ variants, product, bestValueId, so
             <div className="flex items-center justify-between gap-3 mb-2">
               <div className="min-w-0">
                 <p className="text-xs text-muted-foreground truncate">{product.name}</p>
-                <p className="text-sm font-semibold truncate">{selected.name} • {selected.duration}</p>
+                <p className="text-sm font-semibold truncate">{selected.name} • {selected.name}</p>
               </div>
               <p className={cn("font-bold shrink-0 tabular-nums", isSale ? "text-red-600" : "text-[#333456]")}>
                 {formatPrice(effectivePrice * qty)}

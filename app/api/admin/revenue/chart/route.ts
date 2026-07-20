@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   thirtyDaysAgo.setHours(0, 0, 0, 0)
 
   const orders = await db.order.findMany({
-    where: { status: "FULFILLED", paidAt: { gte: thirtyDaysAgo } },
+    where: { status: "DELIVERED", paidAt: { gte: thirtyDaysAgo } },
     select: { paidAt: true, total: true },
     orderBy: { paidAt: "asc" },
   })

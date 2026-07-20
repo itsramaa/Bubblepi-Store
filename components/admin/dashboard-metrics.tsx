@@ -15,10 +15,10 @@ export default async function DashboardMetrics() {
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
 
   const [todayRevenue, weekRevenue, monthRevenue, pendingCount] = await Promise.all([
-    db.order.aggregate({ _sum: { total: true }, where: { createdAt: { gte: todayStart }, status: "FULFILLED" } }),
-    db.order.aggregate({ _sum: { total: true }, where: { createdAt: { gte: weekStart }, status: "FULFILLED" } }),
-    db.order.aggregate({ _sum: { total: true }, where: { createdAt: { gte: monthStart }, status: "FULFILLED" } }),
-    db.order.count({ where: { status: { in: ["PENDING", "AWAITING_PAYMENT", "PENDING_STOCK"] } } }),
+    db.order.aggregate({ _sum: { total: true }, where: { createdAt: { gte: todayStart }, status: "DELIVERED" } }),
+    db.order.aggregate({ _sum: { total: true }, where: { createdAt: { gte: weekStart }, status: "DELIVERED" } }),
+    db.order.aggregate({ _sum: { total: true }, where: { createdAt: { gte: monthStart }, status: "DELIVERED" } }),
+    db.order.count({ where: { status: { in: ["PENDING", "AWAITING_PAYMENT", "PROCESSING"] } } }),
   ])
 
   const lowStockVariants = await db.$queryRaw<Array<{ id: string; name: string; available: bigint }>>`

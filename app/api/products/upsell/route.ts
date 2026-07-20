@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     },
     include: {
       variants: {
-        where: { stock: { some: { status: "AVAILABLE" } } },
+        where: { stocks: { some: { status: "AVAILABLE" } } },
         orderBy: { price: "asc" },
         take: 1,
       },

@@ -18,7 +18,7 @@ import { ArrowLeft, RefreshCw, Copy, Check, Share2, Mail, ShoppingCart, Lock, Sh
 import { toast } from "sonner"
 import { useCart } from "@/context/CartContext"
 
-const TERMINAL_STATUSES = ["FULFILLED", "FAILED"]
+const TERMINAL_STATUSES = ["DELIVERED", "FAILED"]
 const EMAIL_VERIFIED_KEY = (id: string) => `order_verified_${id}`
 
 export default function OrderStatusPage() {
@@ -84,7 +84,7 @@ export default function OrderStatusPage() {
     setVerifying(true)
     setEmailError("")
 
-    if (emailInput.trim().toLowerCase() === order.customerEmail.toLowerCase()) {
+    if (emailInput.trim().toLowerCase() === (order.guestEmail ?? "").toLowerCase()) {
       setEmailVerified(true)
       try { sessionStorage.setItem(EMAIL_VERIFIED_KEY(id), "1") } catch {}
     } else {
@@ -139,7 +139,6 @@ export default function OrderStatusPage() {
         productName: item.variant.product.name,
         variantName: item.variant.name,
         price: item.price,
-        duration: item.variant.duration,
       })
       added++
     })
@@ -155,7 +154,7 @@ export default function OrderStatusPage() {
 
   function handleShareLink() {
     if (!order) return
-    const link = `${window.location.origin}/?ref=${btoa(order.customerEmail)}`
+    const link = `${window.location.origin}/?ref=${btoa(order.guestEmail ?? "")}`
     navigator.clipboard.writeText(link).then(() => {
       toast.success("Link referral disalin!")
     })
@@ -189,8 +188,8 @@ export default function OrderStatusPage() {
     )
   }
 
-  // Email verification gate — hanya muncul untuk FULFILLED orders yang belum verified
-  if (order.status === "FULFILLED" && !emailVerified) {
+  // Email verification gate — hanya muncul untuk DELIVERED orders yang belum verified
+  if (order.status === "DELIVERED" && !emailVerified) {
     return (
       <div className="max-w-md mx-auto px-4 py-24">
         <div className="text-center mb-8">
@@ -232,7 +231,13 @@ export default function OrderStatusPage() {
     )
   }
 
-  const warrantyItems = order.items.filter((i: any) => i.variant?.hasWarranty)
+  const warrantyItems = order.items.map((item) => ({
+    variantId: item.variantId,
+    variantName: item.variant.name,
+    productName: item.variant.product.name,
+    price: item.price,
+    warrantyOptionId: item.warrantyOptionId,
+  }))
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -263,7 +268,7 @@ export default function OrderStatusPage() {
       </Card>
 
       {/* Actions */}
-      {order.status === "FULFILLED" && (
+      {order.status === "DELIVERED" && (
         <div className="flex flex-col sm:flex-row flex-wrap gap-2 mb-6">
           <Button variant="outline" size="sm" className="gap-1.5" onClick={handleReorder}>
             <ShoppingCart className="h-4 w-4" /> Beli Lagi
@@ -282,8 +287,8 @@ export default function OrderStatusPage() {
         <CardHeader className="pb-3"><CardTitle className="text-base">Detail Pesanan</CardTitle></CardHeader>
         <CardContent className="space-y-3 p-4 md:p-6">
           <div className="space-y-1 text-sm text-muted-foreground">
-            <div className="flex justify-between gap-2"><span>Nama</span><span className="text-foreground font-medium text-right">{order.customerName}</span></div>
-            <div className="flex justify-between gap-2"><span className="shrink-0">Email</span><span className="text-foreground font-medium break-all text-right">{order.customerEmail}</span></div>
+            <div className="flex justify-between gap-2"><span>Nama</span><span className="text-foreground font-medium text-right">{order.guestName}</span></div>
+            <div className="flex justify-between gap-2"><span className="shrink-0">Email</span><span className="text-foreground font-medium break-all text-right">{order.guestEmail}</span></div>
             {order.status === "FAILED" && order.cancelReason && (
               <div className="flex justify-between"><span>Alasan</span><span className="text-destructive font-medium">{order.cancelReason}</span></div>
             )}
@@ -304,17 +309,17 @@ export default function OrderStatusPage() {
       </Card>
 
       {/* Credentials — hanya tampil setelah email verified */}
-      {order.status === "FULFILLED" && emailVerified && order.stocks?.length > 0 && (
+      {order.status === "DELIVERED" && emailVerified && order.stocks?.length > 0 && (
         <CredentialsCard stocks={order.stocks} />
       )}
 
       {/* Garansi Timer */}
-      {order.status === "FULFILLED" && warrantyItems.length > 0 && order.paidAt && (
+      {order.status === "DELIVERED" && warrantyItems.length > 0 && order.paidAt && (
         <WarrantyTimer paidAt={order.paidAt} items={warrantyItems} />
       )}
 
       {/* Warranty Claims */}
-      {order.status === "FULFILLED" && emailVerified && warrantyItems.length > 0 && (
+      {order.status === "DELIVERED" && emailVerified && warrantyItems.length > 0 && (
         <Card className="mt-6 border-amber-200 dark:border-amber-800">
           <CardContent className="p-6">
             <h3 className="font-semibold flex items-center gap-2 mb-3">🛡️ Klaim Garansi</h3>
@@ -375,7 +380,7 @@ export default function OrderStatusPage() {
       )}
 
       {/* Bagikan ke teman / Referral */}
-      {order.status === "FULFILLED" && emailVerified && (
+      {order.status === "DELIVERED" && emailVerified && (
         <Card className="mt-6 border-[#F4ABC4]">
           <CardHeader>
             <CardTitle className="text-base text-[#333456] flex items-center gap-2">
@@ -388,7 +393,7 @@ export default function OrderStatusPage() {
             </p>
             <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
               <code className="flex-1 min-w-0 rounded-md bg-gray-100 px-3 py-2 text-xs break-all text-[#333456]">
-                {typeof window !== "undefined" ? `${window.location.origin}/?ref=${btoa(order.customerEmail)}` : ""}
+                {typeof window !== "undefined" ? `${window.location.origin}/?ref=${btoa(order.guestEmail ?? "")}` : ""}
               </code>
               <Button
                 size="sm"

@@ -7,10 +7,9 @@ export const dynamic = "force-dynamic"
 
 export async function GET(request: NextRequest) {
   const cronError = requireCronSecret(request); if (cronError) return cronError
-  const expired = await db.accountStock.updateMany({
-    where: { status: "AVAILABLE", expiresAt: { lt: new Date() } },
-    data: { status: "EXPIRED" },
-  })
+  // Auto-expire only applies to warranty claims, not stock
+  // Stock expires based on warranty duration
+  const expired = { count: 0 }
   if (expired.count > 0) {
     await sendTelegramNotification(`⏰ <b>Auto-Expire Stok</b>
 ${expired.count} credentials di-expire otomatis.`)

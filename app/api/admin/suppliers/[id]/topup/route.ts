@@ -12,14 +12,18 @@ export async function POST(request: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "amount minimum 1000" }, { status: 400 })
   }
 
-  const bot = await db.supplierBot.findUnique({ where: { id } })
+  const bot = await db.supplier.findUnique({ where: { id } })
   if (!bot) return NextResponse.json({ error: "not found" }, { status: 404 })
 
-  const token = process.env.SUPPLIER_BOT_TOKEN ?? "dev-token-change-me"
-  const res = await fetch(`${bot.serviceUrl}/api/v1/bots/${bot.botUsername}/topup`, {
+  const config = bot.config as { serviceUrl?: string; botUsername?: string; botToken?: string }
+  const serviceUrl = config?.serviceUrl ?? "http://localhost:8082"
+  const botUsername = config?.botUsername ?? "default"
+  const token = config?.botToken ?? process.env.SUPPLIER_BOT_TOKEN ?? "dev-token"
+
+  const res = await fetch(`${serviceUrl}/api/v1/bots/${botUsername}/topup`, {
     method: "POST",
     headers: { "X-Internal-Token": token, "Content-Type": "application/json" },
-    body: JSON.stringify({ bot_id: bot.botUsername, amount }),
+    body: JSON.stringify({ bot_id: botUsername, amount }),
     signal: AbortSignal.timeout(30000),
   })
   const data = await res.json()

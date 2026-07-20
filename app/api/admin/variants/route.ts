@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   const authError = await requireAdmin(request); if (authError) return authError
 
   const variants = await db.variant.findMany({
-    include: { product: { select: { name: true, slug: true } }, stock: true },
+    include: { product: { select: { name: true, slug: true } }, stocks: true },
   })
   return NextResponse.json({ success: true, data: variants })
 }

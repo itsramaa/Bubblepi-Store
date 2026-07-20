@@ -11,7 +11,7 @@ function randomCity(): string {
 
 export async function GET() {
   const orders = await db.order.findMany({
-    where: { status: "FULFILLED" },
+    where: { status: "DELIVERED" },
     orderBy: { createdAt: "desc" },
     take: 20,
     include: {
@@ -31,7 +31,7 @@ export async function GET() {
     .filter((o) => o.items.length > 0)
     .slice(0, 10)
     .map((o) => {
-      const firstName = o.customerName.split(" ")[0]
+      const firstName = o.guestName?.split(" ")[0] ?? "Customer"
       const firstItem = o.items[0]
       const productName = firstItem.variant.product.name
       return {

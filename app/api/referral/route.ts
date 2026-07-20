@@ -29,10 +29,10 @@ export async function POST(request: NextRequest) {
 
     const order = await db.order.findUnique({
       where: { id: orderId },
-      select: { id: true, customerEmail: true, status: true },
+      select: { id: true, guestEmail: true, status: true },
     })
 
-    if (!order || order.status !== "FULFILLED") {
+    if (!order || order.status !== "DELIVERED") {
       return NextResponse.json({ error: "Order not fulfilled" }, { status: 400 })
     }
 
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     if (!refCode) return NextResponse.json({ skipped: true })
 
     const referrerEmail = Buffer.from(refCode, "base64url").toString("utf-8")
-    if (referrerEmail === order.customerEmail) return NextResponse.json({ skipped: true })
+    if (referrerEmail === order.guestEmail) return NextResponse.json({ skipped: true })
 
     // Avoid duplicate referral for same order
     const existing = await db.referral.findFirst({ where: { orderId } })
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     const referral = await db.referral.create({
       data: {
         referrerEmail,
-        referredEmail: order.customerEmail,
+        referredEmail: order.guestEmail ?? "unknown@email.com",
         orderId,
         commissionValue: 5000,
         status: "CONFIRMED",

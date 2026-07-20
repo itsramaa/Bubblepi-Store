@@ -15,6 +15,7 @@ export async function PATCH(request: NextRequest) {
     if (!claim) return NextResponse.json({ error: "Klaim tidak ditemukan" }, { status: 404 })
 
     if (action === "approve") {
+      if (!claim.orderItem) return NextResponse.json({ error: "orderItem not found" }, { status: 400 })
       const replacement = await db.accountStock.findFirst({
         where: { variantId: claim.orderItem.variantId, status: "AVAILABLE" },
       })
@@ -22,16 +23,17 @@ export async function PATCH(request: NextRequest) {
 
       await db.warrantyClaim.update({
         where: { id },
-        data: { status: "APPROVED", resolvedAt: new Date() },
+        data: { status: "APPROVED", reviewedAt: new Date() },
       })
       await db.accountStock.update({
         where: { id: replacement.id },
-        data: { status: "ASSIGNED", orderId: claim.orderId },
+        data: { status: "SOLD", orderId: claim.orderId },
       })
+      if (!claim.order) return NextResponse.json({ error: "order not found" }, { status: 400 })
       await sendAccountDelivery({
-        to: claim.order.customerEmail,
+        to: claim.order.guestEmail ?? "unknown@email.com",
         orderNumber: claim.order.orderNumber,
-        orderId: claim.orderId,
+        orderId: claim.orderId ?? "unknown",
         items: [{
           name: claim.orderItem.variant.product.name + " (" + claim.orderItem.variant.name + ")",
           credentials: [replacement.credentials],
@@ -40,7 +42,7 @@ export async function PATCH(request: NextRequest) {
     } else if (action === "reject") {
       await db.warrantyClaim.update({
         where: { id },
-        data: { status: "REJECTED", resolveNote: note, resolvedAt: new Date() },
+        data: { status: "REJECTED", rejectionReason: note, reviewedAt: new Date() },
       })
     }
 

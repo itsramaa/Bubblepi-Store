@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       status: { in: ["PENDING", "AWAITING_PAYMENT"] },
       createdAt: { lt: expiredAt },
     },
-    select: { id: true, customerEmail: true, customerName: true, orderNumber: true },
+    select: { id: true, guestEmail: true, guestName: true, orderNumber: true },
   })
 
   const result = await db.order.updateMany({
@@ -31,8 +31,8 @@ export async function GET(request: NextRequest) {
   // Send expiry notifications (fire-and-forget)
   for (const order of expiredOrders) {
     sendOrderExpired({
-      to: order.customerEmail,
-      customerName: order.customerName,
+      to: order.guestEmail ?? "unknown@email.com",
+      customerName: order.guestName ?? "Customer",
       orderNumber: order.orderNumber,
     }).catch((err) => console.error(`[check-expired-orders] Email failed for ${order.orderNumber}:`, err))
   }

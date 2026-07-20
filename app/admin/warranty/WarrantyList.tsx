@@ -16,7 +16,7 @@ interface Claim {
   resolveNote: string | null
   createdAt: string
   resolvedAt: string | null
-  order: { orderNumber: string; customerEmail: string; customerName: string }
+  order: { orderNumber: string; guestEmail: string | null; guestName: string | null }
   orderItem: { variant: { product: { name: string } } }
 }
 
@@ -101,7 +101,7 @@ export default function WarrantyList({ claims: initial }: { claims: Claim[] }) {
               {/* Prominent product name + customer email */}
               <div className="space-y-0.5">
                 <p className="text-sm font-semibold">{c.orderItem.variant.product.name}</p>
-                <p className="text-xs text-muted-foreground">{c.order.customerEmail}</p>
+                <p className="text-xs text-muted-foreground">{c.order.guestEmail ?? "N/A"}</p>
               </div>
 
               <p className="text-sm text-muted-foreground">{c.description}</p>

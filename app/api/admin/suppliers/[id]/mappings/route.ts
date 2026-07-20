@@ -8,7 +8,7 @@ export async function GET(request: NextRequest, { params }: Params) {
   const authError = await requireAdmin(request); if (authError) return authError
   const { id } = await params
   const mappings = await db.supplierProduct.findMany({
-    where: { supplierBotId: id },
+    where: { supplierId: id },
     include: { variant: { include: { product: true } } },
     orderBy: { createdAt: "desc" },
   })
@@ -18,12 +18,12 @@ export async function GET(request: NextRequest, { params }: Params) {
 export async function POST(request: NextRequest, { params }: Params) {
   const authError = await requireAdmin(request); if (authError) return authError
   const { id } = await params
-  const { variantId, productNo, productBotId, variantBotId, label } = await request.json()
-  if (!variantId || !productNo || !productBotId || !variantBotId || !label) {
-    return NextResponse.json({ error: "variantId, productNo, productBotId, variantBotId, label required" }, { status: 400 })
+  const { variantId, productBotId, variantBotId, label } = await request.json()
+  if (!variantId || !productBotId || !variantBotId || !label) {
+    return NextResponse.json({ error: "variantId, productBotId, variantBotId, label required" }, { status: 400 })
   }
   const mapping = await db.supplierProduct.create({
-    data: { supplierBotId: id, variantId, productNo, productBotId, variantBotId, label },
+    data: { supplierId: id, variantId, productBotId, variantBotId, label },
     include: { variant: { include: { product: true } } },
   })
   return NextResponse.json(mapping, { status: 201 })
@@ -35,6 +35,6 @@ export async function DELETE(request: NextRequest, { params }: Params) {
   const { searchParams } = new URL(request.url)
   const mappingId = searchParams.get("mappingId")
   if (!mappingId) return NextResponse.json({ error: "mappingId required" }, { status: 400 })
-  await db.supplierProduct.deleteMany({ where: { id: mappingId, supplierBotId: id } })
+  await db.supplierProduct.deleteMany({ where: { id: mappingId, supplierId: id } })
   return NextResponse.json({ ok: true })
 }

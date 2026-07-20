@@ -6,16 +6,16 @@ async function main() {
 
   const [revenueToday, ordersToday, totalPending, criticalStock, topProducts] = await Promise.all([
     prisma.order.aggregate({
-      where: { status: "FULFILLED", paidAt: { gte: yesterday, lt: today } },
+      where: { status: "DELIVERED", paidAt: { gte: yesterday, lt: today } },
       _sum: { total: true },
     }),
     prisma.order.count({ where: { createdAt: { gte: yesterday, lt: today } } }),
-    prisma.order.count({ where: { status: { in: ["PAID", "PENDING_STOCK"] } } }),
-    prisma.variant.findMany({ include: { stock: { where: { status: "AVAILABLE" } } } })
-      .then((v) => v.filter((x) => x.stock.length < 5)),
+    prisma.order.count({ where: { status: { in: ["PAID", "PROCESSING"] } } }),
+    prisma.variant.findMany({ include: { stocks: { where: { status: "AVAILABLE" } } } })
+      .then((v) => v.filter((x) => x.stocks.length < 5)),
     prisma.orderItem.groupBy({
       by: ["variantId"],
-      where: { order: { status: "FULFILLED", paidAt: { gte: yesterday } } },
+      where: { order: { status: "DELIVERED", paidAt: { gte: yesterday } } },
       _sum: { price: true },
       orderBy: { _sum: { price: "desc" } },
       take: 3,
@@ -35,7 +35,7 @@ async function main() {
   }).join("\n")
 
   const critList = criticalStock.slice(0, 5).map((v) =>
-    `• ${v.name}: ${v.stock.length} unit`
+    `• ${v.name}: ${v.stocks.length} unit`
   ).join("\n")
 
   await notify(

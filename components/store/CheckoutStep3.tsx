@@ -13,7 +13,7 @@ interface Props {
   createdAt: string
 }
 
-const PAID_STATUSES = ["PAID", "FULFILLED", "PENDING_STOCK"]
+const PAID_STATUSES = ["PAID", "DELIVERED", "PROCESSING"]
 
 const PAYMENT_INSTRUCTIONS: Record<string, { title: string; steps: string[] }> = {
   QRIS: {

@@ -80,7 +80,7 @@ async function ProductList({
   // Attach sold count per product
   const soldCounts = await db.orderItem.groupBy({
     by: ["variantId"],
-    where: { order: { status: "FULFILLED" } },
+    where: { order: { status: "DELIVERED" } },
     _sum: { quantity: true },
   })
   const variantSoldMap = new Map(soldCounts.map((s) => [s.variantId, s._sum.quantity ?? 0]))
@@ -171,7 +171,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     distinct: ["category"],
     orderBy: { category: "asc" },
   })
-  const categories = categoryRows.map((r) => r.category)
+  const categories = categoryRows.map((r) => r.category).filter((c): c is string => c !== null)
 
   const categoryLabel = category ? category.charAt(0).toUpperCase() + category.slice(1) : "Semua"
 

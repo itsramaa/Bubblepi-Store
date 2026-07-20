@@ -12,11 +12,11 @@ const PAGE_SIZE = 20
 
 const STATUS_LABEL: Record<string, string> = {
   PENDING: "Pending", AWAITING_PAYMENT: "Menunggu Bayar", PAID: "Dibayar",
-  FULFILLED: "Selesai", FAILED: "Gagal", PENDING_STOCK: "Menunggu Stok",
+  DELIVERED: "Selesai", FAILED: "Gagal", PENDING_STOCK: "Menunggu Stok",
 }
 
 const STATUS_CLASS: Record<string, string> = {
-  FULFILLED: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400",
+  DELIVERED: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400",
   PAID: "bg-blue-100 text-blue-700",
   PENDING: "bg-amber-100 text-amber-700",
   AWAITING_PAYMENT: "bg-amber-100 text-amber-700",
@@ -24,7 +24,7 @@ const STATUS_CLASS: Record<string, string> = {
   PENDING_STOCK: "bg-orange-100 text-orange-700",
 }
 
-const STATUSES = ["PENDING", "AWAITING_PAYMENT", "PAID", "FULFILLED", "FAILED", "PENDING_STOCK"]
+const STATUSES = ["PENDING", "AWAITING_PAYMENT", "PAID", "DELIVERED", "FAILED", "PENDING_STOCK"]
 
 interface Props { searchParams: Promise<{ status?: string; page?: string; search?: string }> }
 
@@ -126,7 +126,7 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
               </div>
               <div>
                 <p className="font-mono font-semibold text-sm">{order.orderNumber}</p>
-                <p className="text-sm text-muted-foreground">{order.customerName} • {order.customerEmail}</p>
+                <p className="text-sm text-muted-foreground">{order.guestName ?? "Member"} • {order.guestEmail}</p>
               </div>
             </div>
             <div className="flex items-center gap-3 shrink-0">

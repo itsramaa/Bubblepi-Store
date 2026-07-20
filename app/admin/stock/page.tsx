@@ -20,7 +20,7 @@ export default async function AdminStockPage({ searchParams }: Props) {
     } : undefined,
     include: {
       product: { select: { name: true } },
-      stock: true,
+      stocks: true,
     },
     orderBy: { product: { name: "asc" } },
   })
@@ -50,8 +50,8 @@ export default async function AdminStockPage({ searchParams }: Props) {
             <p>Tidak ada varian ditemukan</p>
           </div>
         ) : variants.map((variant) => {
-          const available = variant.stock.filter((s) => s.status === "AVAILABLE").length
-          const assigned = variant.stock.filter((s) => s.status === "ASSIGNED").length
+          const available = variant.stocks.filter((s) => s.status === "AVAILABLE").length
+          const assigned = variant.stocks.filter((s) => s.status === "HOLD").length
           const isCritical = available < 5
 
           const stockColor =
@@ -76,13 +76,13 @@ export default async function AdminStockPage({ searchParams }: Props) {
                 </div>
                 <div className="min-w-0">
                   <p className="font-semibold truncate">{variant.product.name} — {variant.name}</p>
-                  <p className="text-sm text-muted-foreground">{variant.duration}</p>
+                  <p className="text-sm text-muted-foreground">{variant.name}</p>
                 </div>
               </div>
               <div className="flex flex-wrap gap-2 items-center shrink-0 ml-3">
                 <div className="text-right text-sm hidden sm:block">
                   <p className="text-muted-foreground">{assigned} assigned</p>
-                  <p className="text-muted-foreground">{variant.stock.length} total</p>
+                  <p className="text-muted-foreground">{variant.stocks.length} total</p>
                 </div>
                 <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${stockColor}`}>
                   {available} tersedia

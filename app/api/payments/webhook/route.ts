@@ -33,8 +33,8 @@ export async function POST(request: NextRequest) {
     }
 
     if (status === "PAID") {
-      // Idempotency: skip if already PAID or FULFILLED
-      if (order.status === "PAID" || order.status === "FULFILLED") {
+      // Idempotency: skip if already PAID or DELIVERED
+      if (order.status === "PAID" || order.status === "DELIVERED") {
         return NextResponse.json({ success: true, skipped: true })
       }
 
@@ -49,15 +49,14 @@ export async function POST(request: NextRequest) {
       }).catch(() => {})
 
       sendPaymentReceived({
-        to: order.customerEmail,
-        customerName: order.customerName,
+        to: order.guestEmail ?? "unknown@email.com",
+        customerName: order.guestName ?? "Customer",
         orderNumber: order.orderNumber,
         orderId: order.id,
       }).catch(async (err) => {
         console.error("sendPaymentReceived failed:", err)
         await db.order
-          .update({ where: { id: order.id }, data: { resendCount: { increment: 1 } } })
-          .catch(() => {})
+          // Resend count tracking removed
       })
 
       await fulfillOrder(order.id)
@@ -75,14 +74,13 @@ export async function POST(request: NextRequest) {
       }
 
       sendOrderExpired({
-        to: order.customerEmail,
-        customerName: order.customerName,
+        to: order.guestEmail ?? "unknown@email.com",
+        customerName: order.guestName ?? "Customer",
         orderNumber: order.orderNumber,
       }).catch(async (err) => {
         console.error("sendOrderExpired failed:", err)
         await db.order
-          .update({ where: { id: order.id }, data: { resendCount: { increment: 1 } } })
-          .catch(() => {})
+          // Resend count tracking removed
       })
     }
 

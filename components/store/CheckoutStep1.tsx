@@ -43,7 +43,7 @@ export default function CheckoutStep1({ onSubmit }: Props) {
   }
 
   function saveAbandonedCart() {
-    validateEmail(form.customerEmail)
+    validateEmail(form.customerEmail ?? "")
     if (!form.customerEmail || !form.customerName || items.length === 0) return
     fetch("/api/cart/save", {
       method: "POST",
@@ -54,14 +54,19 @@ export default function CheckoutStep1({ onSubmit }: Props) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!EMAIL_RE.test(form.customerEmail)) {
+    if (!form.customerEmail || !EMAIL_RE.test(form.customerEmail)) {
       setEmailError("Format email tidak valid")
       return
     }
-    onSubmit(form)
+    // Map to guestName/guestEmail for API
+    onSubmit({
+      ...form,
+      guestName: form.customerName,
+      guestEmail: form.customerEmail,
+    })
   }
 
-  const emailValid = EMAIL_RE.test(form.customerEmail)
+  const emailValid = form.customerEmail ? EMAIL_RE.test(form.customerEmail) : false
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">

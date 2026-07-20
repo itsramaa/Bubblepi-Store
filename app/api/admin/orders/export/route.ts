@@ -31,11 +31,11 @@ export async function GET(request: NextRequest) {
       .join("; ")
     return [
       csvEscape(o.orderNumber),
-      csvEscape(o.customerEmail),
-      csvEscape(o.customerName),
+      csvEscape(o.guestEmail),
+      csvEscape(o.guestName),
       csvEscape(o.status),
       csvEscape(o.total),
-      csvEscape(o.discountAmount),
+      csvEscape(o.subtotal),
       csvEscape(o.paymentMethod),
       csvEscape(o.createdAt.toISOString()),
       csvEscape(o.paidAt?.toISOString()),

@@ -2,7 +2,7 @@ import { db } from "@/lib/db"
 
 export async function LiveFulfillmentBadge() {
   const lastOrder = await db.order.findFirst({
-    where: { status: "FULFILLED" },
+    where: { status: "DELIVERED" },
     orderBy: { paidAt: "desc" },
     include: { items: { include: { variant: { include: { product: { select: { name: true } } } } } } },
   }).catch(() => null)

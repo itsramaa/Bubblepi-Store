@@ -1,18 +1,20 @@
-import type { MetadataRoute } from "next"
+import { MetadataRoute } from "next"
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Bubblepi Store",
-    short_name: "Bubblepi",
-    description: "Tempat beli akun digital dengan harga termurah",
+    name: "BubblePI Store",
+    short_name: "BubblePI",
+    description: "Premium account store - Netflix, Spotify, dll",
     start_url: "/",
     display: "standalone",
-    background_color: "#ffffff",
-    theme_color: "#595B83",
+    background_color: "#0f172a",
+    theme_color: "#6366f1",
     icons: [
-      { src: "/favicon.ico", sizes: "48x48", type: "image/x-icon" },
-      { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
-      { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
+      {
+        src: "/icon.svg",
+        sizes: "any",
+        type: "image/svg+xml",
+      },
     ],
   }
 }
