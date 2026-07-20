@@ -2,9 +2,8 @@ import type { Metadata } from "next"
 import { Poppins } from "next/font/google"
 import { ThemeProvider } from "@/context/ThemeContext"
 import { CartProvider } from "@/context/CartContext"
-import LenisProvider from "@/components/LenisProvider"
 import { Toaster } from "@/components/ui/sonner"
-import { SwRegister } from "@/components/SwRegister"
+import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration"
 import "./globals.css"
 
 const poppins = Poppins({
@@ -23,10 +22,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${poppins.variable} font-sans antialiased min-h-screen`}>
         <ThemeProvider>
           <CartProvider>
-            <LenisProvider />
+            <ServiceWorkerRegistration />
             {children}
             <Toaster richColors position="top-center" />
-            <SwRegister />
           </CartProvider>
         </ThemeProvider>
       </body>
