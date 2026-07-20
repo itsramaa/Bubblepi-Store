@@ -167,6 +167,10 @@ export default function OrderStatusPage() {
     setTimeout(() => setCopiedOrderNum(false), 2000)
   }
 
+  if (typeof window === "undefined") {
+    return <div>Loading...</div>
+  }
+
   if (loading) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
