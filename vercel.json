@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npx prisma migrate resolve --name 20260720000003_fix_enum --applied || true && npx prisma db push --accept-data-loss --force-reset && npx prisma generate && pnpm build",
+  "buildCommand": "npx prisma db push --accept-data-loss --force-reset && npx prisma generate && npx tsx prisma/seed.ts && pnpm build",
   "installCommand": "pnpm install",
   "outputDirectory": ".next",
   "framework": "nextjs",
