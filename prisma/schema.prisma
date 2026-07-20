@@ -327,8 +327,8 @@ model SupplierProduct {
 
 model Testimonial {
   id        String   @id @default(cuid())
-  userId    String
-  productId String
+  userId    String?  // Nullable for guest testimonials
+  productId String?
   rating    Int // 1-5
   comment   String
   isVisible Boolean  @default(true)

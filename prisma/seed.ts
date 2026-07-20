@@ -105,6 +105,7 @@ async function main() {
       type: "TELEGRAM_BOT",
       isActive: true,
       priority: 1,
+      config: {},
     },
   })
 
@@ -134,12 +135,14 @@ async function main() {
           rating: 5,
           comment: "Bagus banget, langsung bisa nonton. Recommend seller ini!",
           isVisible: true,
+          userId: null,
         },
         {
           productId: netflix.id,
           rating: 5,
           comment: "Murah dan kualitas oke. Sudah beberapa kali beli.",
           isVisible: true,
+          userId: null,
         },
       ],
       skipDuplicates: true,
