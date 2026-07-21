@@ -18,6 +18,14 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { orderId, paymentMethod, bankCode } = body
 
+    // Validation
+    if (!orderId || typeof orderId !== "string") {
+      return NextResponse.json({ error: "orderId required" }, { status: 400 })
+    }
+    if (!paymentMethod || !["BCA", "MANDIRI", "BNI", "BRI", "QRIS", "DANA", "OVO", "LINKAJA"].includes(paymentMethod)) {
+      return NextResponse.json({ error: "Invalid payment method" }, { status: 400 })
+    }
+
     const order = await db.order.findUnique({
       where: { id: orderId },
       include: { items: { include: { variant: { include: { product: true } } } } },

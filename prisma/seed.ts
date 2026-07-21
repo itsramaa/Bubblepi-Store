@@ -127,27 +127,19 @@ async function main() {
 
   // Add some testimonials
   const netflix = await prisma.product.findUnique({ where: { slug: "netflix" } })
-  if (netflix) {
-    await prisma.testimonial.createMany({
-      data: [
-        {
-          productId: netflix.id,
-          rating: 5,
-          comment: "Bagus banget, langsung bisa nonton. Recommend seller ini!",
-          isVisible: true,
-          userId: null,
-        },
-        {
-          productId: netflix.id,
-          rating: 5,
-          comment: "Murah dan kualitas oke. Sudah beberapa kali beli.",
-          isVisible: true,
-          userId: null,
-        },
-      ],
-      skipDuplicates: true,
-    })
-  }
+  // Testimonials - skip for now, add manually via admin or API
+  // if (netflix) {
+  //   await prisma.testimonial.createMany({
+  //     data: [
+  //       {
+  //         productId: netflix.id,
+  //         rating: 5,
+  //         comment: "Bagus banget, langsung bisa nonton. Recommend seller ini!",
+  //         isVisible: true,
+  //       },
+  //     ],
+  //   })
+  // }
 
   console.log("✅ Seed selesai!")
 }

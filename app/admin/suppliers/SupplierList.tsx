@@ -53,7 +53,7 @@ export default function SupplierList({ suppliers: initial, variants }: Props) {
   const [topupOpen, setTopupOpen] = useState<string | null>(null)
   const [topupAmount, setTopupAmount] = useState("10000")
   const [topupLoading, setTopupLoading] = useState(false)
-  const [form, setForm] = useState({ label: "", botUsername: "", serviceUrl: "http://127.0.0.1:8081" })
+  const [form, setForm] = useState({ label: "", botUsername: "", serviceUrl: "" })
   const [mapForm, setMapForm] = useState(emptyMapForm)
 
   async function fetchBalance(id: string) {
@@ -82,7 +82,7 @@ export default function SupplierList({ suppliers: initial, variants }: Props) {
     if (!res.ok) { toast.error((await res.json()).error); return }
     const created = await res.json()
     setSuppliers((p) => [{ ...created, products: [] }, ...p])
-    setForm({ label: "", botUsername: "", serviceUrl: "http://127.0.0.1:8081" })
+    setForm({ label: "", botUsername: "", serviceUrl: "" })
     setAddOpen(false)
     toast.success("Bot supplier ditambahkan")
   }
@@ -176,7 +176,7 @@ export default function SupplierList({ suppliers: initial, variants }: Props) {
           <div className="space-y-3">
             <Input placeholder="Label (e.g. Barbar Store)" value={form.label} onChange={(e) => setForm((p) => ({ ...p, label: e.target.value }))} />
             <Input placeholder="Username bot (tanpa @)" value={form.botUsername} onChange={(e) => setForm((p) => ({ ...p, botUsername: e.target.value }))} />
-            <Input placeholder="Service URL (e.g. http://127.0.0.1:8081)" value={form.serviceUrl} onChange={(e) => setForm((p) => ({ ...p, serviceUrl: e.target.value }))} />
+            <Input placeholder="Service URL (cth: http://localhost:8081)" value={form.serviceUrl} onChange={(e) => setForm((p) => ({ ...p, serviceUrl: e.target.value }))} />
             <Button className="w-full" onClick={handleAdd}>Simpan</Button>
           </div>
         </DialogContent>
