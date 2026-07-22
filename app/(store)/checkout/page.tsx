@@ -11,6 +11,7 @@ import StepIndicator from "@/components/store/StepIndicator"
 import { Card, CardContent } from "@/components/ui/card"
 import type { CheckoutFormData } from "@/types"
 import { trackEvent } from "@/lib/analytics"
+import { goAPI } from "@/lib/api-client"
 
 export default function CheckoutPage() {
   const [step, setStep] = useState(1)
@@ -41,9 +42,10 @@ export default function CheckoutPage() {
     setSubmitting(true)
 
     try {
-      const orderRes = await fetch("/api/orders", {
+      const orderRes = await fetch(goAPI("/api/orders"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           guestName: formData.guestName,
           guestEmail: formData.guestEmail,
@@ -55,9 +57,10 @@ export default function CheckoutPage() {
       const orderData = await orderRes.json()
       if (!orderData.success) throw new Error(orderData.error ?? "Gagal membuat pesanan")
 
-      const payRes = await fetch("/api/payments/create", {
+      const payRes = await fetch(goAPI("/api/payments/create"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           orderId: orderData.data.orderId,
           paymentMethod: formData.paymentMethod,
@@ -81,7 +84,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8 md:py-12">
-      <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8 text-center">Checkout</h1>
+      <h1 className="text-display-lg font-bold mb-6 md:mb-8 text-center">Checkout</h1>
       <StepIndicator currentStep={step} />
       <Card className="mt-8">
         <CardContent className="p-4 md:p-8">

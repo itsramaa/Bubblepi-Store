@@ -24,7 +24,7 @@ function getMinPrice(product: ProductWithVariants): number {
 /** Check if product was created within the last 7 days */
 function isNewProduct(product: ProductWithVariants): boolean {
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-  return new Date(product.createdAt) > sevenDaysAgo
+  return new Date(product.createdAt ?? "") > sevenDaysAgo
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
@@ -38,10 +38,10 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   return (
     <Link href={`/products/${product.slug}`} className="group block">
-      {/* Card: subtle lift + inner shadow on hover */}
-      <div className="rounded-2xl border bg-card overflow-hidden hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1 hover:shadow-[inset_0_1px_0_rgba(89,91,131,0.08)] transition-all duration-300">
-        {/* Image with blur placeholder skeleton */}
-        <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-[#595B83]/10 to-[#F4ABC4]/10" style={{ boxShadow: 'inset 0 -2px 10px rgba(0,0,0,0.05)' }}>
+      {/* Card: property-card spec — rounded-md, white surface, no shadow default, hover float */}
+      <div className="card-property border border-hairline group-hover:shadow-card-hover transition-shadow duration-300">
+        {/* Photo plate — rounded-md clipping, 4:3 aspect */}
+        <div className="card-property-photo relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-[#595B83]/10 to-[#F4ABC4]/10">
           <Image
             src={product.image || "/products/default.svg"}
             alt={product.name}
@@ -51,74 +51,72 @@ export default function ProductCard({ product }: ProductCardProps) {
             placeholder="blur"
             blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PC9zdmc+"
           />
-          {/* Badges overlay */}
+          {/* Floating badges overlay */}
           <div className="absolute top-2 left-2 flex flex-wrap gap-1">
             {isNew && (
-              <Badge className="bg-blue-500 text-white text-xs font-semibold gap-1 border-0">
+              <Badge className="bg-canvas text-ink text-[11px] font-semibold border border-hairline rounded-full px-2.5 py-0.5 shadow-sm">
                 Baru
               </Badge>
             )}
             {isBestSeller && (
-              <Badge className="bg-[#F4ABC4] text-[#333456] text-xs font-semibold gap-1 border-0">
-                <Star className="h-3 w-3 fill-current" /> Terlaris
-              </Badge>
+              <div className="guest-favorite-badge flex items-center gap-1 shadow-sm">
+                <Star className="h-3 w-3 fill-current" />
+                Terlaris
+              </div>
             )}
             {isLowStock && !isOutOfStock && (
-              <Badge variant="destructive" className="text-xs">
+              <span className="inline-flex items-center rounded-full bg-canvas text-ink text-[11px] font-semibold border border-hairline px-2.5 py-0.5 shadow-sm">
                 Stok Terbatas
-              </Badge>
+              </span>
             )}
             {isOutOfStock && (
-              <Badge variant="secondary" className="text-xs opacity-80">
+              <span className="inline-flex items-center rounded-full bg-surface-soft text-muted text-[11px] font-semibold border border-hairline px-2.5 py-0.5 shadow-sm">
                 Habis
-              </Badge>
+              </span>
             )}
           </div>
         </div>
 
-        {/* Content */}
-        <div className="p-4">
-          <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wide font-medium">
+        {/* Meta block — body-sm spacing */}
+        <div className="p-4 space-y-1">
+          <p className="text-body-sm text-muted uppercase tracking-wide font-medium">
             {product.category}
           </p>
-          <h3 className="font-semibold text-base leading-snug mb-2 line-clamp-2 group-hover:text-primary transition-colors">
+          <h3 className="text-title-md line-clamp-2 group-hover:text-primary transition-colors">
             {product.name}
           </h3>
 
-          {/* Rating */}
+          {/* Rating — ink star */}
           {product.avgRating != null && product.reviewCount != null && product.reviewCount > 0 && (
-            <div className="flex items-center gap-1 mb-1.5">
-              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-              <span className="text-xs font-medium">{product.avgRating.toFixed(1)}</span>
-              <span className="text-xs text-muted-foreground">({product.reviewCount})</span>
+            <div className="flex items-center gap-1">
+              <Star className="h-3.5 w-3.5 fill-star-rating text-star-rating" />
+              <span className="text-body-sm font-medium">{product.avgRating.toFixed(1)}</span>
+              <span className="text-body-sm text-muted">({product.reviewCount})</span>
             </div>
           )}
 
-          {/* Terjual count — below rating */}
+          {/* Terjual count */}
           {(product.totalSold ?? 0) > 0 && (
-            <p className="text-xs text-muted-foreground mb-2">
-              Terjual {product.totalSold}+
-            </p>
+            <p className="text-body-sm text-muted">Terjual {product.totalSold}+</p>
           )}
 
-          {/* Price */}
-          <div className="flex items-baseline gap-1 mb-3">
-            <span className="text-xs text-muted-foreground">Mulai</span>
-            <span className="text-lg font-bold text-primary">
+          {/* Price — display-sm for emphasis */}
+          <div className="flex items-baseline gap-1 pt-1">
+            <span className="text-body-sm text-muted">Mulai</span>
+            <span className="text-display-sm text-primary font-bold">
               {formatPrice(minPrice)}
             </span>
-            {maxPrice > minPrice ? (
-              <span className="text-xs text-muted-foreground">
-                – {formatPrice(maxPrice)}
-              </span>
-            ) : null}
+            {maxPrice > minPrice && (
+              <span className="text-body-sm text-muted">– {formatPrice(maxPrice)}</span>
+            )}
           </div>
 
-          {/* CTA */}
-          <div className="flex justify-end">
+          {/* CTA — tertiary-text style */}
+          <div className="flex justify-end pt-1">
             <Button
+              variant="ghost"
               size="sm"
-              className="gap-1 text-xs font-medium bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground h-7 px-3 transition-all"
+              className="gap-1 text-body-sm font-medium text-muted hover:text-ink h-7 px-0"
             >
               Lihat <ArrowRight className="h-3 w-3" />
             </Button>

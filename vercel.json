@@ -1,12 +1,6 @@
 {
-  "buildCommand": "npx prisma db push --skip-generate && npx prisma generate && pnpm build",
+  "buildCommand": "pnpm build",
   "installCommand": "pnpm install",
   "outputDirectory": ".next",
-  "framework": "nextjs",
-  "crons": [
-    {
-      "path": "/api/cron/daily-report",
-      "schedule": "0 7 * * *"
-    }
-  ]
+  "framework": "nextjs"
 }

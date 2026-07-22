@@ -2,8 +2,8 @@
  * User Dashboard - Warranty Status
  */
 
-import { db } from "@/lib/db"
 import { getUserFromSession } from "@/lib/auth"
+import { fetchFromGo, parseJson } from "@/lib/api-client"
 import { redirect } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,20 +11,7 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { format, differenceInDays } from "date-fns"
 import { id } from "date-fns/locale"
-
-async function getUserWarranties(userId: string | undefined) {
-  if (!userId) return []
-  return db.warranty.findMany({
-    where: { userId },
-    include: {
-      order: {
-        include: { items: { include: { variant: { include: { product: true } } } } },
-      },
-      claims: { orderBy: { submittedAt: "desc" } },
-    },
-    orderBy: { startDate: "desc" },
-  })
-}
+import type { Warranty } from "@/types"
 
 function getStatusBadge(status: string) {
   const styles: Record<string, string> = { ACTIVE: "bg-green-500", EXPIRED: "bg-gray-500" }
@@ -35,7 +22,8 @@ export default async function UserWarrantyPage() {
   const user = await getUserFromSession()
   if (!user || !user.userId) redirect("/login")
 
-  const warranties = await getUserWarranties(user.userId)
+  const res = await fetchFromGo(`/warranty?email=${encodeURIComponent(user.email)}`)
+  const warranties = await parseJson<Warranty[]>(res)
 
   return (
     <div className="container mx-auto p-6">
@@ -57,15 +45,15 @@ export default async function UserWarrantyPage() {
           {warranties.map((warranty) => {
             const daysLeft = warranty.expiryDate ? differenceInDays(new Date(warranty.expiryDate), new Date()) : 0
             const isExpired = daysLeft < 0
-            const hasPendingClaim = warranty.claims.some((c: any) => c.status === "PENDING_REVIEW")
+            const hasPendingClaim = warranty.claims?.some((c) => c.status === "PENDING_REVIEW")
 
             return (
               <Card key={warranty.id}>
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div>
-                      <CardTitle className="text-lg">{warranty.order.items[0]?.variant.product.name}</CardTitle>
-                      <p className="text-sm text-muted-foreground">{warranty.order.items[0]?.variant.name} • {warranty.duration} hari</p>
+                      <CardTitle className="text-lg">{warranty.order?.items[0]?.variant.product.name ?? "Produk"}</CardTitle>
+                      <p className="text-sm text-muted-foreground">{warranty.order?.items[0]?.variant.name} • {warranty.duration} hari</p>
                     </div>
                     {getStatusBadge(warranty.status)}
                   </div>

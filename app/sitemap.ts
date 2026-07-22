@@ -1,4 +1,6 @@
 import { MetadataRoute } from "next"
+import { fetchFromGo, parseJson } from "@/lib/api-client"
+import type { Product } from "@/types"
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages = [
@@ -8,15 +10,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ]
 
   try {
-    const { db } = await import("@/lib/db")
-    const products = await db.product.findMany({
-      where: { isActive: true },
-      select: { slug: true, updatedAt: true },
-    })
+    const res = await fetchFromGo("/products")
+    const products = await parseJson<Product[]>(res)
 
     const productPages = products.map((p) => ({
       url: `https://bubblepi-store.vercel.app/products/${p.slug}`,
-      lastModified: p.updatedAt,
+      lastModified: p.updatedAt ? new Date(p.updatedAt) : new Date(),
       changeFrequency: "weekly" as const,
       priority: 0.8,
     }))

@@ -25,8 +25,8 @@ export default function OrderTimeline({ status, timestamps }: OrderTimelineProps
 
   return (
     <div className="relative">
-      {/* vertical line */}
-      <div className="absolute left-4 top-4 bottom-4 w-0.5 bg-border" />
+      {/* vertical line — hairline */}
+      <div className="absolute left-4 top-4 bottom-4 w-px bg-hairline" />
 
       <div className="space-y-6">
         {steps.map((step, i) => {
@@ -40,10 +40,10 @@ export default function OrderTimeline({ status, timestamps }: OrderTimelineProps
             <div key={step.status} className="flex items-center gap-4 relative">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center z-10 shrink-0 transition-colors ${
                 done
-                  ? "bg-primary text-primary-foreground"
+                  ? "bg-ink text-on-dark"
                   : active
-                  ? "bg-primary text-primary-foreground ring-4 ring-primary/20"
-                  : "bg-background border-2 border-border text-muted-foreground"
+                  ? "bg-ink text-on-dark ring-4 ring-ink/20"
+                  : "bg-canvas border-2 border-hairline text-muted"
               }`}>
                 {active && !done ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -52,14 +52,14 @@ export default function OrderTimeline({ status, timestamps }: OrderTimelineProps
                 )}
               </div>
               <div>
-                <p className={`text-sm font-medium ${done || active ? "text-foreground" : "text-muted-foreground"}`}>
+                <p className={`text-body-sm font-medium ${done || active ? "text-ink" : "text-muted"}`}>
                   {step.label}
                 </p>
                 {active && (
-                  <p className="text-xs text-muted-foreground mt-0.5">Sedang diproses...</p>
+                  <p className="text-caption-sm text-muted mt-0.5">Sedang diproses...</p>
                 )}
                 {timeStr && (
-                  <p className="text-xs text-muted-foreground mt-0.5">{timeStr}</p>
+                  <p className="text-caption-sm text-muted mt-0.5">{timeStr}</p>
                 )}
               </div>
             </div>
@@ -72,10 +72,10 @@ export default function OrderTimeline({ status, timestamps }: OrderTimelineProps
               <AlertCircle className="h-4 w-4" />
             </div>
             <div>
-              <p className="text-sm font-medium text-destructive">
+              <p className="text-body-sm font-medium text-destructive">
                 {status === "PROCESSING" ? "Menunggu Stok" : "Pesanan Gagal"}
               </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-caption-sm text-muted mt-0.5">
                 {status === "PROCESSING" ? "Admin akan segera memproses pesanan kamu." : "Hubungi admin untuk bantuan."}
               </p>
             </div>

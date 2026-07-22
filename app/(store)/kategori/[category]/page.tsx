@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
-import { db } from "@/lib/db"
+import { fetchFromGo, parseJson } from "@/lib/api-client"
 import ProductCard from "@/components/store/ProductCard"
-import type { ProductWithVariants } from "@/types"
+import type { ProductDetail } from "@/types"
 
 export const dynamic = "force-dynamic"
 
@@ -17,8 +17,6 @@ const CATEGORY_EMOJI: Record<string, string> = {
 
 export async function generateMetadata({ params }: { params: Promise<{ category: string }> }): Promise<Metadata> {
   const { category } = await params
-  const products = await db.product.findFirst({ where: { isActive: true, category }, select: { category: true } })
-  if (!products) return {}
   return {
     title: `Beli ${category.charAt(0).toUpperCase() + category.slice(1)} Murah - Bubblepi Store`,
     description: `Jual ${category} murah, instant delivery, garansi. Lengkap dengan berbagai pilihan varian.`,
@@ -28,13 +26,11 @@ export async function generateMetadata({ params }: { params: Promise<{ category:
 export default async function CategoryPage({ params }: { params: Promise<{ category: string }> }) {
   const { category } = await params
 
-  const products = await db.product.findMany({
-    where: { isActive: true, category },
-    include: { variants: true },
-    orderBy: { createdAt: "desc" },
-  })
+  const res = await fetchFromGo("/products")
+  const allProducts = await parseJson<ProductDetail[]>(res)
 
-  // Dari DB: kalau ada produk dengan kategori ini, tampilkan. Kalau nggak, 404.
+  const products = allProducts.filter((p) => p.isActive && p.category === category)
+
   if (products.length === 0) notFound()
 
   const emoji = CATEGORY_EMOJI[category] ?? "📦"
@@ -53,7 +49,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ categ
         <p className="text-center text-muted-foreground py-10">Belum ada produk di kategori ini.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {products.map((p) => <ProductCard key={p.id} product={p as unknown as ProductWithVariants} />)}
+          {products.map((p) => <ProductCard key={p.id} product={p} />)}
         </div>
       )}
     </div>

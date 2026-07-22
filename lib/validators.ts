@@ -13,23 +13,18 @@ export const productSchema = z.object({
   description: z.string().min(1),
   image: z.string().min(1, "URL gambar tidak boleh kosong"),
   category: z.string().min(1),
-  type: z.enum(["sharing", "private"]).default("sharing"),
   isActive: z.boolean(),
 })
 
 export const variantSchema = z.object({
   productId: z.string().cuid(),
   name: z.string().min(1),
-  duration: z.string().min(1),
   price: z.number().int().positive(),
-  hasWarranty: z.boolean().default(false),
-  warrantyDays: z.number().int().positive().nullable().optional(),
 })
 
 export const stockItemSchema = z.object({
   variantId: z.string().cuid(),
   credentials: z.string().min(1, "Credentials tidak boleh kosong"),
-  expiresAt: z.string().datetime().optional().nullable(),
 })
 
 // Utility validators

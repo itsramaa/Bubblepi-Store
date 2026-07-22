@@ -1,0 +1,78 @@
+---
+alwaysApply: true
+---
+
+# Code Conventions: Bubblepi Store
+
+## Naming
+
+| Konteks           | Convention              | Contoh                          |
+| ----------------- | ----------------------- | ------------------------------- |
+| Components        | PascalCase, named export| `ProductCard.tsx`               |
+| Hooks             | use + PascalCase        | `useAuth.ts`                    |
+| API routes        | kebab-case              | `/api/admin/orders`             |
+| Server Actions    | verb + noun camelCase   | `createOrder`                   |
+| DB tables         | PascalCase (Prisma)     | `OrderItem`                     |
+| DB enums          | UPPER_SNAKE             | `PENDING_PAYMENT`               |
+| Env vars          | UPPER_SNAKE             | `DATABASE_URL`                  |
+| Lib functions     | camelCase               | `validateStock`                 |
+| Lib modules       | kebab-case files        | `lib/suppliers/base.ts`         |
+| Script files      | kebab-case              | `scripts/auto-cancel-expired-orders.ts` |
+| Test files        | `*.test.ts` / `*.edge.test.ts` | `auth.test.ts`              |
+
+## File Structure Rules
+
+- **No barrel exports** — import langsung dari file
+- **Co-locate related files** — `components/admin/AdminSidebar.tsx` bersama admin components
+- **Server logic di `lib/`** — bukan di components
+- **API handlers di `app/api/`** — ikuti App Router convention
+- **Components pakai named export** — `export function Button()`
+- **Server Actions pakai `'use server'` directive** — di atas file
+- **Tidak import dari `dist/` atau `build/`**
+
+## Import Order
+
+```
+1. React / Next.js imports
+2. Third-party libraries (lucide-react, zod, etc.)
+3. Internal: @/components, @/lib, @/hooks
+4. Relative: ./local-file
+```
+
+## TypeScript Rules
+
+- **Strict mode** — tidak ada `any`, tidak ada `@ts-ignore`
+- **Gunakan Zod** untuk validation schemas
+- **Prisma types** — gunakan `Prisma.XxxGetPayload<>` untuk complex queries
+- **Avoid type assertions** — prefer type guards
+
+## React / Next.js Rules
+
+- **App Router only** — tidak ada Pages Router
+- **Server Components by default** — `'use client'` hanya saat perlu interaktivitas
+- **Server Actions** untuk mutations — export dengan `'use server'`
+- **Dynamic imports** untuk heavy components (charts, editors)
+- **Image optimization** — gunakan `next/image` dengan AVIF/WebP
+
+## Styling Rules
+
+- **Tailwind CSS v4** — gunakan utility classes
+- **shadcn/ui components** — tidak ada UI library baru
+- **CSS Variables** untuk theming (via shadcn)
+- **Framer Motion** untuk animations
+- **Responsive** — mobile-first approach
+
+## Testing Rules
+
+- **Framework:** node:test + node:assert
+- **Edge tests:** `*.edge.test.ts` untuk edge cases
+- **Mocking:** minimal mocking — prefer real integration tests
+- **DB tests:** gunakan test database, bukan production
+
+## Custom Conventions
+
+- **Cron scripts** di `scripts/` — jalankan via `npx tsx scripts/[name].ts`
+- **Cron API endpoints** di `app/api/cron/` — dipanggil oleh scheduler eksternal
+- **Supplier system** modular di `lib/suppliers/` — extend via `base.ts`
+- **Stock credentials** di-encrypt via AES-256 — jangan log plaintext
+- **Order numbering** format: `BP-XXXXXXXX`

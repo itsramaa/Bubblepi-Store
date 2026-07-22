@@ -13,7 +13,7 @@ interface WarrantyItem {
 interface WarrantyTimerProps {
   paidAt: string | Date
   items: WarrantyItem[]
-  warrantyDurationDays?: number // default warranty days if no specific warranty
+  warrantyDurationDays?: number
 }
 
 function calculateRemaining(paidAt: string | Date, warrantyDays: number) {
@@ -30,13 +30,7 @@ function calculateRemaining(paidAt: string | Date, warrantyDays: number) {
 }
 
 export function WarrantyTimer({ paidAt, items, warrantyDurationDays = 7 }: WarrantyTimerProps) {
-  // Use warranty option if present, otherwise use default
   const warrantyDays = items.reduce((min, i) => {
-    if (i.warrantyOptionId) {
-      // Has warranty - assume 7 or 30 days based on option
-      // For now use 7 as default, in real app would look up warranty option
-      return min
-    }
     return warrantyDurationDays
   }, warrantyDurationDays)
 
@@ -54,16 +48,16 @@ export function WarrantyTimer({ paidAt, items, warrantyDurationDays = 7 }: Warra
     remaining.percent > 50 ? "bg-green-500" : remaining.percent > 20 ? "bg-yellow-500" : "bg-red-500"
 
   return (
-    <div className="rounded-lg border border-[#F4ABC4] bg-[#F4ABC4]/10 p-4">
-      <h4 className="mb-2 font-semibold text-[#333456]">Status Garansi</h4>
+    <div className="rounded-md border border-[#F4ABC4] bg-[#F4ABC4]/10 p-4">
+      <h4 className="mb-2 font-semibold text-body-sm text-[#333456]">Status Garansi</h4>
       {remaining.expired ? (
-        <p className="text-sm text-gray-500">Garansi sudah berakhir</p>
+        <p className="text-body-sm text-muted">Garansi sudah berakhir</p>
       ) : (
         <div className="space-y-2">
-          <p className="text-sm font-medium text-[#333456]">
+          <p className="text-body-sm font-medium text-[#333456]">
             Aktif — {remaining.days} hari {remaining.hours} jam lagi
           </p>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200">
+          <div className="h-2 w-full overflow-hidden rounded-full bg-surface-strong">
             <div
               className={`h-full rounded-full transition-all ${color}`}
               style={{ width: `${remaining.percent}%` }}

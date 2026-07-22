@@ -27,7 +27,7 @@ export function SaleCountdown({ saleEndsAt }: SaleCountdownProps) {
 
   if (expired) return null
   return (
-    <span className="text-xs text-red-600 font-medium tabular-nums">
+    <span className="text-caption-sm text-red-600 font-medium tabular-nums">
       Flash sale berakhir dalam {timeLeft}
     </span>
   )

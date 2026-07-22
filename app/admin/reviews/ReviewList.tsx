@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Star, Eye, EyeOff, Pin, MessageSquare, Check, X } from "lucide-react"
 import { toast } from "sonner"
+import { goAPI } from "@/lib/api-client"
 
 interface Review {
   id: string
@@ -13,8 +14,8 @@ interface Review {
   isVisible: boolean
   isPinned: boolean
   status?: string
-  createdAt: string
-  product: { name: string }
+  createdAt: string | null
+  product?: { name: string }
 }
 
 function StatusBadge({ status }: { status?: string }) {
@@ -44,10 +45,11 @@ export default function ReviewList({ reviews: initial }: { reviews: Review[] }) 
   const [reviews, setReviews] = useState(initial)
 
   async function toggleField(id: string, field: string, value: boolean) {
-    const res = await fetch("/api/admin/reviews", {
+    const res = await fetch(goAPI(`/api/admin/reviews/${id}`), {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, [field]: !value }),
+      body: JSON.stringify({ [field]: !value }),
+      credentials: "include",
     })
     if (res.ok) {
       setReviews((prev) => prev.map((r) => r.id === id ? { ...r, [field]: !value } : r))
@@ -56,10 +58,11 @@ export default function ReviewList({ reviews: initial }: { reviews: Review[] }) 
   }
 
   async function setStatus(id: string, status: "APPROVED" | "REJECTED") {
-    const res = await fetch("/api/admin/reviews", {
+    const res = await fetch(goAPI(`/api/admin/reviews/${id}`), {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, status }),
+      body: JSON.stringify({ status }),
+      credentials: "include",
     })
     if (res.ok) {
       setReviews((prev) => prev.map((r) => r.id === id ? { ...r, status } : r))
@@ -86,7 +89,7 @@ export default function ReviewList({ reviews: initial }: { reviews: Review[] }) 
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div className="space-y-1 min-w-0">
                   {/* Product name */}
-                  <p className="text-xs font-medium text-primary truncate">{r.product.name}</p>
+                  <p className="text-xs font-medium text-primary truncate">{r.product?.name ?? "Produk"}</p>
                   {/* Star rating */}
                   <div className="flex items-center gap-1.5">
                     <div className="flex">

@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator"
 import { Trash2, Minus, Plus, ArrowRight, Tag } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
+import { goAPI } from "@/lib/api-client"
 
 interface StockInfo {
   [variantId: string]: number
@@ -34,7 +35,12 @@ export default function CartPage() {
   useEffect(() => {
     if (items.length === 0) return
     const variantIds = items.map((i) => i.variantId)
-    fetch(`/api/products/stock?ids=${variantIds.join(",")}`)
+    fetch(goAPI("/api/products/check-stock"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(items.map(i => ({ variantId: i.variantId, quantity: i.quantity }))),
+      credentials: "include",
+    })
       .then((r) => r.json())
       .then((data: StockInfo) => setStockMap(data))
       .catch(() => {})
@@ -44,7 +50,7 @@ export default function CartPage() {
   useEffect(() => {
     if (items.length === 0) return
     const firstProductId = items[0]?.productId ?? ""
-    fetch(`/api/products/upsell?excludeId=${encodeURIComponent(firstProductId)}`)
+    fetch(goAPI(`/api/products/upsell?excludeId=${encodeURIComponent(firstProductId)}`), { credentials: "include" })
       .then((r) => r.json())
       .then((data: { products: CrossSellProduct[] }) => setCrossSellProducts((data.products ?? []).slice(0, 3)))
       .catch(() => {})
@@ -60,7 +66,7 @@ export default function CartPage() {
               <span className="text-5xl" role="img" aria-label="keranjang">🛒</span>
             </div>
           </div>
-          <h1 className="text-2xl font-bold">Keranjangmu masih kosong</h1>
+          <h1 className="text-display-xl font-bold">Keranjangmu masih kosong</h1>
           <p className="text-muted-foreground max-w-sm">
             Belum ada produk di keranjang. Mulai jelajahi akun digital premium kami!
           </p>
@@ -81,7 +87,7 @@ export default function CartPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-2">Keranjang</h1>
+      <h1 className="text-display-lg font-bold mb-2">Keranjang</h1>
       <p className="text-muted-foreground mb-8">{getItemCount()} item dipilih</p>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -201,7 +207,7 @@ export default function CartPage() {
       {/* Cross-sell section */}
       {crossSellProducts.length > 0 && (
         <div className="mt-12">
-          <h2 className="text-xl font-bold mb-4">Sering dibeli bareng</h2>
+          <h2 className="text-display-sm font-bold mb-4">Sering dibeli bareng</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {crossSellProducts.map((product) => {
               const cheapest = product.variants[0]

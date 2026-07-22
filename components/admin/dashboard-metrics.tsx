@@ -1,110 +1,94 @@
-import { db } from "@/lib/db"
+import { fetchFromGo, parseJson } from "@/lib/api-client"
 import { formatPrice } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { TrendingUp, Clock, AlertTriangle } from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
+interface DashboardStats {
+  todayRevenue: number
+  weekRevenue: number
+  monthRevenue: number
+  pendingCount: number
+  lowStockVariants: { id: string; name: string; available: number }[]
+}
+
 export default async function DashboardMetrics() {
-  const now = new Date()
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const weekStart = new Date(todayStart)
-  weekStart.setDate(weekStart.getDate() - weekStart.getDay())
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
-
-  const [todayRevenue, weekRevenue, monthRevenue, pendingCount] = await Promise.all([
-    db.order.aggregate({ _sum: { total: true }, where: { createdAt: { gte: todayStart }, status: "DELIVERED" } }),
-    db.order.aggregate({ _sum: { total: true }, where: { createdAt: { gte: weekStart }, status: "DELIVERED" } }),
-    db.order.aggregate({ _sum: { total: true }, where: { createdAt: { gte: monthStart }, status: "DELIVERED" } }),
-    db.order.count({ where: { status: { in: ["PENDING", "AWAITING_PAYMENT", "PROCESSING"] } } }),
-  ])
-
-  const lowStockVariants = await db.$queryRaw<Array<{ id: string; name: string; available: bigint }>>`
-    SELECT v.id, v.name, COUNT(as_.id) as available
-    FROM "Variant" v
-    LEFT JOIN "AccountStock" as_ ON as_."variantId" = v.id AND as_.status = 'AVAILABLE'
-    GROUP BY v.id, v.name
-    HAVING COUNT(as_.id) < 3
-    ORDER BY available ASC
-    LIMIT 20
-  `
-
-  const lowStock = lowStockVariants.map((v) => ({ ...v, available: Number(v.available) }))
+  const res = await fetchFromGo("/admin/stats")
+  const stats = await parseJson<DashboardStats>(res)
 
   return (
     <div className="space-y-6">
-      {/* Revenue Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card>
+        <Card className="border border-hairline rounded-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Hari Ini</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-body-sm text-muted">Hari Ini</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted" />
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{formatPrice(todayRevenue._sum.total ?? 0)}</p>
-            <p className="text-xs text-muted-foreground mt-1">Revenue hari ini</p>
+            <p className="text-display-sm font-bold">{formatPrice(stats.todayRevenue)}</p>
+            <p className="text-caption-sm text-muted mt-1">Revenue hari ini</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border border-hairline rounded-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Minggu Ini</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-body-sm text-muted">Minggu Ini</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted" />
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{formatPrice(weekRevenue._sum.total ?? 0)}</p>
-            <p className="text-xs text-muted-foreground mt-1">Revenue minggu ini</p>
+            <p className="text-display-sm font-bold">{formatPrice(stats.weekRevenue)}</p>
+            <p className="text-caption-sm text-muted mt-1">Revenue minggu ini</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border border-hairline rounded-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Bulan Ini</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-body-sm text-muted">Bulan Ini</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted" />
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{formatPrice(monthRevenue._sum.total ?? 0)}</p>
-            <p className="text-xs text-muted-foreground mt-1">Revenue bulan ini</p>
+            <p className="text-display-sm font-bold">{formatPrice(stats.monthRevenue)}</p>
+            <p className="text-caption-sm text-muted mt-1">Revenue bulan ini</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Pending Orders */}
-      <Card>
+      <Card className="border border-hairline rounded-sm">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Pesanan Pending</CardTitle>
-          <Clock className="h-4 w-4 text-muted-foreground" />
+          <CardTitle className="text-body-sm text-muted">Pesanan Pending</CardTitle>
+          <Clock className="h-4 w-4 text-muted" />
         </CardHeader>
         <CardContent>
-          <p className="text-2xl font-bold">{pendingCount}</p>
-          <Link href="/admin/orders" className="text-xs text-primary hover:underline mt-1 block">
+          <p className="text-display-sm font-bold">{stats.pendingCount}</p>
+          <Link href="/admin/orders" className="text-caption-sm text-primary hover:underline mt-1 block">
             Lihat semua pesanan →
           </Link>
         </CardContent>
       </Card>
 
-      {/* Low Stock Variants */}
-      {lowStock.length > 0 && (
-        <Card>
+      {stats.lowStockVariants && stats.lowStockVariants.length > 0 && (
+        <Card className="border border-hairline rounded-sm">
           <CardHeader className="flex flex-row items-center gap-2 pb-2">
             <AlertTriangle className="h-4 w-4 text-destructive" />
-            <CardTitle className="text-sm font-medium">Stok Kritis (&lt; 3 tersisa)</CardTitle>
+            <CardTitle className="text-body-sm">Stok Kritis (&lt; 3 tersisa)</CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="space-y-2">
-              {lowStock.map((v) => (
-                <li key={v.id} className="flex items-center justify-between text-sm">
+              {stats.lowStockVariants.map((v) => (
+                <li key={v.id} className="flex items-center justify-between text-body-sm">
                   <Link
                     href={`/admin/stock/${v.id}`}
-                    className="hover:underline text-foreground truncate max-w-[70%]"
+                    className="hover:underline text-ink truncate max-w-[70%]"
                   >
                     {v.name}
                   </Link>
-                  <Badge variant={v.available === 0 ? "destructive" : "outline"}>
+                  <span className={`text-badge inline-flex items-center rounded-full px-2.5 py-0.5 border border-hairline ${
+                    v.available === 0 ? "bg-destructive/10 text-destructive" : "bg-surface-soft text-muted"
+                  }`}>
                     {v.available} tersisa
-                  </Badge>
+                  </span>
                 </li>
               ))}
             </ul>

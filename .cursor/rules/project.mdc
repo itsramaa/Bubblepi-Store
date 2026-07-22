@@ -1,0 +1,60 @@
+---
+alwaysApply: true
+---
+
+# Project: Bubblepi Store
+
+Platform jual beli akun digital (e.g. Capcut Pro, Canva Pro, dll) dengan sistem garansi, supplier otomatis, dan pembayaran via Xendit.
+
+## Stack
+
+| Layer         | Tool                                    |
+| ------------- | --------------------------------------- |
+| Language      | TypeScript (Node.js)                    |
+| Frontend      | Next.js 16 (App Router) + React 19      |
+| Backend       | Next.js Server Actions + API Routes     |
+| Database      | PostgreSQL                              |
+| ORM           | Prisma 6                                |
+| Auth          | JWT (jose) + Xendit webhook             |
+| Styling       | Tailwind CSS v4 + shadcn/ui (base-nova) |
+| Package mgr   | pnpm                                    |
+| Deployment    | (TBD — konfigurasi production)          |
+| Email         | Resend + React Email                    |
+| Payment       | Xendit (QRIS, Virtual Account)          |
+| Testing       | node:test + node:assert                 |
+
+## Path Conventions
+
+- **App Routes:** `app/` (App Router)
+- **API Routes:** `app/api/`
+- **Pages (Store):** `app/(store)/`
+- **Pages (Dashboard):** `app/(dashboard)/`
+- **Admin Pages:** `app/admin/`
+- **Components:** `components/`
+  - UI primitives: `components/ui/`
+  - Store-specific: `components/store/`
+  - Admin-specific: `components/admin/`
+  - Product-related: `components/product/`
+  - Order-related: `components/order/`
+  - Checkout: `components/checkout/`
+- **Server Logic:** `lib/`
+  - Auth: `lib/auth.ts`, `lib/admin-auth.ts`
+  - Payment: `lib/xendit.ts`
+  - Database: `lib/db.ts`
+  - Utilities: `lib/utils.ts`, `lib/validators.ts`
+  - Suppliers: `lib/suppliers/`
+  - Stock: `lib/stock.ts`
+  - Email: `lib/mailer.ts`
+- **Prisma Schema:** `prisma/schema.prisma`
+- **Cron Scripts:** `scripts/`
+- **Cron API Endpoints:** `app/api/cron/`
+- **Tests:** `tests/`
+
+## Environment
+
+- Semua secrets di env vars, tidak di source code
+- `DATABASE_URL` — PostgreSQL connection string
+- `XENDIT_*` — Xendit payment gateway credentials
+- `RESEND_API_KEY` — Resend email service
+- `NEXTAUTH_SECRET` atau JWT secret (via jose)
+- `TELEGRAM_*` — Telegram bot credentials (supplier integration)

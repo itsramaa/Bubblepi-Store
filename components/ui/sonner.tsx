@@ -2,6 +2,7 @@
 
 import { Toaster as Sonner } from "sonner"
 
+// DESIGN.md: sonner = white surface, rounded-md, no shadow tier per Airbnb style
 const Toaster = ({ ...props }: React.ComponentProps<typeof Sonner>) => {
   return (
     <Sonner
@@ -9,10 +10,10 @@ const Toaster = ({ ...props }: React.ComponentProps<typeof Sonner>) => {
       className="toaster group"
       toastOptions={{
         classNames: {
-          toast: "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
-          description: "group-[.toast]:text-muted-foreground",
-          actionButton: "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
-          cancelButton: "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
+          toast: "group toast group-[.toaster]:bg-white group-[.toaster]:text-[var(--bubblepi-ink)] group-[.toaster]:border-[var(--bubblepi-hairline)] group-[.toaster]:rounded-[var(--bubblepi-radius-md)] group-[.toaster]:shadow-[var(--bubblepi-shadow-card-hover)]",
+          description: "group-[.toast]:text-[var(--bubblepi-muted)]",
+          actionButton: "group-[.toast]:bg-[var(--bubblepi-primary)] group-[.toast]:text-white",
+          cancelButton: "group-[.toast]:bg-[var(--bubblepi-surface-soft)] group-[.toast]:text-[var(--bubblepi-muted)]",
         },
       }}
       {...props}

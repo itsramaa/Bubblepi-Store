@@ -1,0 +1,58 @@
+---
+alwaysApply: false
+description: Domain context dan business rules untuk Bubblepi Store. Load saat mengerjakan fitur baru, business logic, atau model data.
+---
+
+# Domain: Bubblepi Store
+
+Platform jual beli akun digital (Capcut Pro, Canva Pro, dll) dengan sistem garansi, supplier otomatis via Telegram/API, dan pembayaran via Xendit.
+
+## Core Entities
+
+- **User** — Akun pembeli. Bisa register/login via JWT. Memiliki role: GUEST, USER, ADMIN.
+- **Product** — Produk digital (e.g. Capcut Pro). Bisa memiliki multiple variants dan warranty options.
+- **Variant** — Variasi produk berdasarkan durasi (1 Bulan, 3 Bulan, 1 Tahun). Memiliki price dan stock.
+- **AccountStock** — Akun/credential yang dijual. Credential di-encrypt AES-256. Status: AVAILABLE, HOLD, SOLD.
+- **Order** — Pesanan dari user atau guest. Guest checkout menyimpan email & nama.
+- **OrderItem** — Item individual dalam order (variant + warranty).
+- **Warranty** — Garansi untuk order. Status: ACTIVE, CLAIMED, EXPIRED. Max 1x claim.
+- **WarrantyClaim** — Klaim garansi. Butuh proof image. Status: PENDING_REVIEW, APPROVED, REJECTED.
+- **Supplier** — Pemasok akun. Tipe: TELEGRAM_BOT atau API. Bisa multiple suppliers dengan priority.
+- **SupplierProduct** — Mapping antara variant Bubblepi dengan product ID di supplier.
+- **Review** — Review produk dari user yang sudah order. 1 user hanya bisa review 1x per order.
+- **Testimonial** — Testimonial publik yang ditampilkan di store. Bisa dari user atau guest.
+- **Voucher** — Kode diskon. Tipe PERCENT atau FIXED. Bisa expired dan punya max uses.
+- **Referral** — Sistem referal. Commission dibayar saat referral order selesai.
+- **AbandonedCart** — Cart yang ditinggalkan. Ada cron recovery.
+- **FunnelEvent** — Analytics event untuk sales funnel tracking.
+- **PriceDropNotification** — Notifikasi ketika harga variant turun.
+
+## Roles & Permissions
+
+| Role    | Capabilities                                                    |
+| ------- | --------------------------------------------------------------- |
+| GUEST   | Browse produk, lihat halaman, checkout (guest email & name)     |
+| USER    | Guest capabilities + login, order history, warranty claims, reviews |
+| ADMIN   | User capabilities + manage products, variants, stock, suppliers, vouchers, reviews, orders, pricelist, referrals |
+
+## External Integrations
+
+- **Xendit** — Payment gateway (QRIS, Virtual Account). Webhook di `app/api/payments/webhook/route.ts`
+- **Resend** — Email transactional (order confirmation, warranty, dll)
+- **Telegram Bot** — Supplier integration via Telegram bot API (`lib/suppliers/telegram-bot.ts`)
+- **Google Sheets** — Pricelist sync via Google APIs (`lib/sync/sheets.ts`)
+- **Supplier (Sekoloko, Barbar Store)** — API-based suppliers via HTTP (`lib/suppliers/api-http.ts`)
+
+## Business Rules
+
+*(Belum ditentukan — akan ditambahkan kemudian)*
+
+## Relevant Skills
+
+- nextjs
+- database-designer
+- shadcn
+- api-design-principles
+- api-dev
+- design-system-patterns
+- responsive-design

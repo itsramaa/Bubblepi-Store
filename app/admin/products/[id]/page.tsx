@@ -8,10 +8,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import { Badge } from "@/components/ui/badge"
+
 import { ArrowLeft, Loader2, Plus, Trash2, Save } from "lucide-react"
 import Link from "next/link"
 import { Skeleton } from "@/components/ui/skeleton"
+import { goAPI } from "@/lib/api-client"
+import { toast } from "sonner"
 
 interface Variant { id: string; name: string; duration: string; price: number; hasWarranty: boolean; warrantyDays: number | null }
 interface Product { id: string; name: string; slug: string; description: string; image: string; category: string; type: string; isActive: boolean; variants: Variant[] }
@@ -27,7 +29,7 @@ export default function EditProductPage() {
   const [addingVariant, setAddingVariant] = useState(false)
 
   useEffect(() => {
-    fetch(`/api/admin/products/${id}`)
+    fetch(goAPI(`/api/admin/products/${id}`), { credentials: "include" })
       .then((r) => r.json())
       .then((d) => { if (d.success) setProduct(d.data) })
       .finally(() => setLoading(false))
@@ -39,9 +41,10 @@ export default function EditProductPage() {
     setSaving(true)
     setError("")
     try {
-      const res = await fetch(`/api/admin/products/${id}`, {
+      const res = await fetch(goAPI(`/api/admin/products/${id}`), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           name: product.name,
           slug: product.slug,
@@ -64,17 +67,19 @@ export default function EditProductPage() {
 
   async function handleDeleteVariant(variantId: string) {
     if (!confirm("Hapus varian ini?")) return
-    await fetch(`/api/admin/variants/${variantId}`, { method: "DELETE" })
+    await fetch(goAPI(`/api/admin/variants/${variantId}`), { method: "DELETE", credentials: "include" })
     setProduct((p) => p ? { ...p, variants: p.variants.filter((v) => v.id !== variantId) } : p)
+    toast.success("Varian berhasil dihapus")
   }
 
   async function handleAddVariant() {
     if (!newVariant.name.trim()) return
     setAddingVariant(true)
-    const res = await fetch("/api/admin/variants", {
+    const res = await fetch(goAPI(`/api/admin/products/${id}/variants`), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ productId: id, name: newVariant.name, duration: newVariant.duration, price: parseInt(newVariant.price) }),
+      credentials: "include",
+      body: JSON.stringify({ productId: id, name: newVariant.name, price: parseInt(newVariant.price) }),
     })
     const data = await res.json()
     if (data.success) {
@@ -86,7 +91,8 @@ export default function EditProductPage() {
 
   async function handleDeleteProduct() {
     if (!confirm("Hapus produk ini beserta semua variannya? Tindakan ini tidak bisa dibatalkan.")) return
-    await fetch(`/api/admin/products/${id}`, { method: "DELETE" })
+    await fetch(goAPI(`/api/admin/products/${id}`), { method: "DELETE", credentials: "include" })
+    toast.success("Produk berhasil dihapus")
     router.push("/admin/products")
   }
 

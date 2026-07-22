@@ -1,5 +1,5 @@
 import { Suspense } from "react"
-import { db } from "@/lib/db"
+import { fetchFromGo, parseJson } from "@/lib/api-client"
 import HeroSection from "@/components/store/HeroSection"
 import FeaturedProducts from "@/components/store/FeaturedProducts"
 import HowItWorks from "@/components/store/HowItWorks"
@@ -9,73 +9,36 @@ import FAQSection from "@/components/store/FAQSection"
 import SocialProofBanner from "@/components/store/SocialProofBanner"
 import TestimonialsSection from "@/components/store/TestimonialsSection"
 import Footer from "@/components/store/Footer"
+import type { ProductDetail } from "@/types"
 
 export const dynamic = "force-dynamic"
 
 export default async function HomePage() {
-  const [rawProducts, categoryCounts, soldCounts, socialStats] = await Promise.all([
-    // Products sorted by totalSold via orderItems aggregate
-    db.product.findMany({
-      where: { isActive: true },
-      include: { 
-        variants: { 
-          include: { 
-            warrantyOptions: true,
-            stocks: { where: { status: "AVAILABLE" } }
-          } 
-        } 
-      },
-      take: 6,
-    }),
-    db.product.groupBy({
-      by: ["category"],
-      where: { isActive: true },
-      _count: { id: true },
-    }),
-    // Count fulfilled orderItems per product via variant relation
-    db.orderItem.groupBy({
-      by: ["variantId"],
-      _sum: { quantity: true },
-      where: { order: { status: "DELIVERED" } },
-    }),
-    // Social proof stats for hero badges
-    db.order.aggregate({
-      _count: { id: true },
-      where: { status: "DELIVERED" },
-    }),
+  const [productsRes, socialRes] = await Promise.all([
+    fetchFromGo("/products"),
+    fetchFromGo("/stats/social-proof"),
   ])
+  const productsJson = await parseJson<ProductDetail[]>(productsRes)
+  const social = await parseJson<{ totalOrders: number; totalTestimonials: number; averageRating: number }>(socialRes)
 
-  // Build variantId → sold map
-  const variantSoldMap = new Map<string, number>(
-    soldCounts.map((s) => [s.variantId, s._sum.quantity ?? 0])
-  )
+  const rawProducts = productsJson.filter((p) => p.isActive).slice(0, 6)
 
-  // Attach totalSold to each product (sum across all its variants)
-  const products = rawProducts
-    .map((p) => ({
-      ...p,
-      totalSold: p.variants.reduce(
-        (sum, v) => sum + (variantSoldMap.get(v.id) ?? 0),
-        0
-      ),
-    }))
-    .sort((a, b) => b.totalSold - a.totalSold)
-
-  const totalStoreSold = socialStats._count.id
-
-  const categoryCountMap = Object.fromEntries(
-    categoryCounts.map((c) => [c.category, c._count.id])
-  )
-
-  // Pass totalBuyers to HeroSection for live trust badges
+  // Social proof
+  const totalStoreSold = social.totalOrders
   const totalBuyers = totalStoreSold
+
+  // Category counts from product list
+  const categoryCountMap: Record<string, number> = {}
+  for (const p of productsJson) {
+    if (p.category) categoryCountMap[p.category] = (categoryCountMap[p.category] ?? 0) + 1
+  }
 
   return (
     <div>
       <HeroSection totalBuyers={totalBuyers} totalSold={totalStoreSold} />
       <SocialProofBanner />
       <Suspense fallback={<div className="h-96 animate-pulse bg-muted rounded-xl" />}>
-        <FeaturedProducts products={products} totalStoreSold={totalStoreSold} />
+        <FeaturedProducts products={rawProducts} totalStoreSold={totalStoreSold} />
       </Suspense>
       <HowItWorks />
       <LiveFulfillmentBadge />

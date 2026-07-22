@@ -19,7 +19,7 @@ import {
   SheetTrigger,
   SheetClose,
 } from "@/components/ui/sheet"
-import { Search, SlidersHorizontal, X, RotateCcw } from "lucide-react"
+import { Search, SlidersHorizontal, RotateCcw } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import { cn } from "@/lib/utils"
 
@@ -118,10 +118,10 @@ export default function FilterSidebar({ categories = [] }: FilterSidebarProps) {
   ]
 
   const filterContent = (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Search */}
       <form onSubmit={handleSearch} className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" />
         <Input
           placeholder="Cari produk..."
           value={search}
@@ -132,7 +132,7 @@ export default function FilterSidebar({ categories = [] }: FilterSidebarProps) {
 
       {/* Sort */}
       <div>
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+        <p className="text-micro-label text-muted uppercase tracking-wider mb-2">
           Urutkan
         </p>
         <Select value={currentSort} onValueChange={handleSort}>
@@ -148,22 +148,22 @@ export default function FilterSidebar({ categories = [] }: FilterSidebarProps) {
         </Select>
       </div>
 
-      {/* Categories */}
+      {/* Categories — category-tab style */}
       <div>
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
-          <SlidersHorizontal className="h-3 w-3" />
+        <p className="text-micro-label text-muted uppercase tracking-wider mb-2">
+          <SlidersHorizontal className="h-3 w-3 inline mr-1" />
           Kategori
         </p>
-        <div className="flex flex-wrap md:flex-col gap-2">
+        <div className="flex flex-wrap md:flex-col gap-1">
           {categoryOptions.map((cat) => (
             <button
               key={cat.slug}
               onClick={() => navigate(cat.slug, search, currentSort)}
               className={cn(
-                "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium w-full text-left transition-colors",
+                "flex items-center gap-2 px-3 py-2 text-button-sm text-left transition-colors w-full",
                 currentCategory === cat.slug
-                  ? "bg-primary text-primary-foreground"
-                  : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                  ? "text-ink border-l-2 border-ink"
+                  : "text-muted hover:text-ink hover:bg-surface-soft"
               )}
             >
               <span>{cat.emoji}</span>
@@ -175,7 +175,7 @@ export default function FilterSidebar({ categories = [] }: FilterSidebarProps) {
 
       {/* Price Range */}
       <div>
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+        <p className="text-micro-label text-muted uppercase tracking-wider mb-2">
           Rentang Harga
         </p>
         <div className="flex items-center gap-2">
@@ -184,16 +184,16 @@ export default function FilterSidebar({ categories = [] }: FilterSidebarProps) {
             placeholder="Min (Rp)"
             value={minPrice}
             onChange={(e) => setMinPrice(e.target.value)}
-            className="text-xs"
+            className="text-body-sm"
             min={0}
           />
-          <span className="text-muted-foreground text-xs">—</span>
+          <span className="text-muted text-body-sm">—</span>
           <Input
             type="number"
             placeholder="Max (Rp)"
             value={maxPrice}
             onChange={(e) => setMaxPrice(e.target.value)}
-            className="text-xs"
+            className="text-body-sm"
             min={0}
           />
         </div>
@@ -209,7 +209,7 @@ export default function FilterSidebar({ categories = [] }: FilterSidebarProps) {
 
       {/* In Stock Toggle */}
       <div className="flex items-center justify-between">
-        <label htmlFor="inStock-toggle" className="text-sm text-muted-foreground">
+        <label htmlFor="inStock-toggle" className="text-body-sm text-muted">
           Hanya tampilkan yang tersedia
         </label>
         <Switch
@@ -228,7 +228,7 @@ export default function FilterSidebar({ categories = [] }: FilterSidebarProps) {
         <Button
           variant="ghost"
           size="sm"
-          className="w-full text-muted-foreground"
+          className="w-full text-muted"
           onClick={resetAllFilters}
         >
           <RotateCcw className="h-3.5 w-3.5 mr-1.5" />

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatPrice } from "@/lib/utils"
 import { TrendingUp } from "lucide-react"
+import { goAPI } from "@/lib/api-client"
 
 interface DataPoint { date: string; revenue: number }
 
@@ -12,16 +13,16 @@ export default function RevenueChart() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch("/api/admin/revenue/chart")
+    fetch(goAPI("/api/admin/revenue/chart"), { credentials: "include" })
       .then((r) => r.json())
       .then((d) => setData(d.data ?? []))
       .finally(() => setLoading(false))
   }, [])
 
   if (loading) return (
-    <Card>
-      <CardHeader><CardTitle>Revenue 30 Hari</CardTitle></CardHeader>
-      <CardContent className="h-48 flex items-center justify-center text-muted-foreground text-sm">
+    <Card className="border border-hairline rounded-sm">
+      <CardHeader><CardTitle className="text-body-sm">Revenue 30 Hari</CardTitle></CardHeader>
+      <CardContent className="h-48 flex items-center justify-center text-body-sm text-muted">
         Memuat data...
       </CardContent>
     </Card>
@@ -32,15 +33,15 @@ export default function RevenueChart() {
   const nonZeroDays = data.filter((d) => d.revenue > 0).length
 
   return (
-    <Card>
+    <Card className="border border-hairline rounded-sm">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-body-sm">
           <TrendingUp className="h-4 w-4 text-primary" />
           Revenue 30 Hari
         </CardTitle>
         <div className="text-right">
-          <p className="text-sm font-bold">{formatPrice(totalRevenue)}</p>
-          <p className="text-xs text-muted-foreground">{nonZeroDays} hari aktif</p>
+          <p className="text-body-sm font-bold">{formatPrice(totalRevenue)}</p>
+          <p className="text-caption-sm text-muted">{nonZeroDays} hari aktif</p>
         </div>
       </CardHeader>
       <CardContent>
@@ -58,16 +59,13 @@ export default function RevenueChart() {
                 <div
                   className={`w-full rounded-t transition-all ${
                     d.revenue > 0
-                      ? isToday
-                        ? "bg-primary"
-                        : "bg-primary/50 group-hover:bg-primary"
-                      : "bg-muted"
+                      ? isToday ? "bg-primary" : "bg-primary/50 group-hover:bg-primary"
+                      : "bg-surface-strong"
                   }`}
                   style={{ height: `${Math.max(pct, d.revenue > 0 ? 4 : 2)}%` }}
                 />
-                {/* Tooltip on hover — CSS only */}
                 {d.revenue > 0 && (
-                  <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-popover border text-xs px-2 py-1 rounded shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10">
+                  <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-popover border border-hairline text-caption-sm px-2 py-1 rounded shadow-card-hover whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10">
                     {date.toLocaleDateString("id-ID", { day: "numeric", month: "short" })}<br />
                     {formatPrice(d.revenue)}
                   </div>
@@ -76,7 +74,7 @@ export default function RevenueChart() {
             )
           })}
         </div>
-        <div className="flex justify-between text-xs text-muted-foreground mt-2">
+        <div className="flex justify-between text-caption-sm text-muted mt-2">
           <span>{new Date(data[0]?.date ?? "").toLocaleDateString("id-ID", { day: "numeric", month: "short" })}</span>
           <span>Hari ini</span>
         </div>

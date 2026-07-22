@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Star } from "lucide-react"
+import { goAPI } from "@/lib/api-client"
 
 interface Review {
   id: string
@@ -29,7 +30,7 @@ function StarRating({ rating }: { rating: number }) {
       {Array.from({ length: 5 }).map((_, i) => (
         <Star
           key={i}
-          className={`h-4 w-4 ${i < rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30"}`}
+          className={`h-4 w-4 ${i < rating ? "fill-star-rating text-star-rating" : "text-muted/30"}`}
         />
       ))}
     </div>
@@ -53,7 +54,7 @@ export default function TestimonialsSection() {
   const [reviews, setReviews] = useState<Review[]>(staticTestimonials)
 
   useEffect(() => {
-    fetch("/api/reviews/featured")
+    fetch(goAPI("/api/reviews/featured"), { credentials: "include" })
       .then((r) => r.json())
       .then((d) => {
         if (Array.isArray(d) && d.length >= 3) setReviews(d)
@@ -64,9 +65,9 @@ export default function TestimonialsSection() {
   return (
     <section className="max-w-7xl mx-auto px-4 py-20">
       <div className="text-center mb-12">
-        <p className="text-sm font-medium text-primary mb-1 uppercase tracking-wider">Testimoni</p>
-        <h2 className="text-3xl md:text-4xl font-bold mb-3">Yang Mereka Bilang</h2>
-        <p className="text-muted-foreground max-w-md mx-auto">
+        <p className="text-caption text-primary mb-1 uppercase tracking-wider">Testimoni</p>
+        <h2 className="text-display-xl mb-3">Yang Mereka Bilang</h2>
+        <p className="text-body-md text-muted max-w-md mx-auto">
           Lebih dari 500 pembeli puas — ini cerita mereka
         </p>
       </div>
@@ -75,30 +76,29 @@ export default function TestimonialsSection() {
         {reviews.slice(0, 6).map((review, i) => (
           <Card
             key={review.id}
-            className="hover:border-primary/20 hover:shadow-md transition-all duration-300 animate-[fadeSlideUp_0.5s_ease-out_both]"
-            style={{ animationDelay: `${i * 0.1}s` }}
+            className="border border-hairline hover:border-primary/20 hover:shadow-card-hover transition-all duration-300"
           >
             <CardContent className="p-5">
               <StarRating rating={review.rating} />
-              <div className="relative">
-                <span className="absolute -top-1 left-0 text-3xl leading-none text-primary/20 font-serif select-none" aria-hidden="true">"</span>
-                <p className="text-sm text-muted-foreground mt-1 mb-4 leading-relaxed line-clamp-4 pl-4">
+              <div className="relative mt-1 mb-4">
+                <span className="absolute -top-1 left-0 text-3xl leading-none text-primary/20 font-serif select-none" aria-hidden="true">&quot;</span>
+                <p className="text-body-sm text-muted leading-relaxed line-clamp-4 pl-4">
                   {review.comment}
                 </p>
               </div>
-              <div className="flex items-center gap-3 pt-3 border-t">
-                <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${avatarColors[i % avatarColors.length]}`}>
+              <div className="flex items-center gap-3 pt-3 border-t border-hairline">
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center text-body-sm font-bold shrink-0 ${avatarColors[i % avatarColors.length]}`}>
                   {getInitials(review.customerName)}
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5">
-                    <p className="text-sm font-semibold">{review.customerName}</p>
-                    <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded-full inline-flex items-center gap-0.5">
+                    <p className="text-body-sm font-semibold">{review.customerName}</p>
+                    <span className="text-[10px] font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full inline-flex items-center gap-0.5">
                       ✓ Verified
                     </span>
                   </div>
                   {review.productName && (
-                    <p className="text-xs text-muted-foreground">{review.productName}</p>
+                    <p className="text-caption-sm text-muted">{review.productName}</p>
                   )}
                 </div>
               </div>

@@ -10,6 +10,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { ArrowLeft, Loader2, Plus, Trash2 } from "lucide-react"
 import Link from "next/link"
+import { toast } from "sonner"
+import { goAPI } from "@/lib/api-client"
+import { productSchema } from "@/lib/validators"
 
 interface VariantForm {
   name: string
@@ -56,11 +59,19 @@ export default function NewProductPage() {
     setSaving(true)
 
     try {
+      // Client-side validation
+      const parsed = productSchema.safeParse(form)
+      if (!parsed.success) {
+        const firstIssue = parsed.error.issues[0]
+        throw new Error(firstIssue?.message ?? "Data produk tidak valid")
+      }
+
       // Create product
-      const productRes = await fetch("/api/admin/products", {
+      const productRes = await fetch(goAPI("/api/admin/products"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...form }),
+        credentials: "include",
       })
       const productData = await productRes.json()
       if (!productData.success) throw new Error(productData.error ?? "Gagal membuat produk")
@@ -70,15 +81,19 @@ export default function NewProductPage() {
       // Create variants
       for (const v of variants) {
         if (!v.name.trim()) continue
-        const vRes = await fetch("/api/admin/variants", {
+        const price = parseInt(v.price)
+        if (isNaN(price) || price <= 0) {
+          throw new Error(`Harga varian "${v.name}" harus berupa angka positif`)
+        }
+        const vRes = await fetch(goAPI(`/api/admin/products/${productId}/variants`), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             productId,
             name: v.name,
-            duration: v.duration,
             price: parseInt(v.price),
           }),
+          credentials: "include",
         })
         const vData = await vRes.json()
         if (!vData.success) throw new Error(vData.error ?? "Gagal membuat varian")
@@ -86,6 +101,7 @@ export default function NewProductPage() {
 
       router.push("/admin/products")
       router.refresh()
+      toast.success("Produk berhasil dibuat!")
     } catch (err) {
       setError(err instanceof Error ? err.message : "Terjadi kesalahan")
     } finally {

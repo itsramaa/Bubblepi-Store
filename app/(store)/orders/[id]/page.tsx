@@ -17,8 +17,16 @@ import Link from "next/link"
 import { ArrowLeft, RefreshCw, Copy, Check, Share2, Mail, ShoppingCart, Lock, Share } from "lucide-react"
 import { toast } from "sonner"
 import { useCart } from "@/context/CartContext"
+import { goAPI } from "@/lib/api-client"
 
-const TERMINAL_STATUSES = ["DELIVERED", "FAILED"]
+interface Claim {
+  id: string
+  status: string
+  createdAt: string
+  description: string
+  resolveNote?: string
+}
+
 const EMAIL_VERIFIED_KEY = (id: string) => `order_verified_${id}`
 
 export default function OrderStatusPage() {
@@ -27,34 +35,32 @@ export default function OrderStatusPage() {
   const router = useRouter()
   const [order, setOrder] = useState<OrderWithItems | null>(null)
   const [loading, setLoading] = useState(true)
-  const [polling, setPolling] = useState(true)
   const [resending, setResending] = useState(false)
   const [claimForm, setClaimForm] = useState({ orderItemId: "", description: "" })
-  const [claims, setClaims] = useState<any[]>([])
+  const [claims, setClaims] = useState<Claim[]>([])
   const [submittingClaim, setSubmittingClaim] = useState(false)
+  const [polling] = useState(true)
   const [copiedOrderNum, setCopiedOrderNum] = useState(false)
 
-  // Email verification gate
-  const [emailVerified, setEmailVerified] = useState(false)
+  // Email verification gate — lazy-init from sessionStorage (safe: SSR renders loading skeleton first)
+  const [emailVerified, setEmailVerified] = useState(() => {
+    if (typeof window === "undefined") return false
+    try {
+      return sessionStorage.getItem(EMAIL_VERIFIED_KEY(id)) === "1"
+    } catch {
+      return false
+    }
+  })
   const [emailInput, setEmailInput] = useState("")
   const [emailError, setEmailError] = useState("")
   const [verifying, setVerifying] = useState(false)
 
-  // Check sessionStorage for already-verified orders
-  useEffect(() => {
-    try {
-      const verified = sessionStorage.getItem(EMAIL_VERIFIED_KEY(id))
-      if (verified === "1") setEmailVerified(true)
-    } catch {}
-  }, [id])
-
   async function fetchOrder() {
     try {
-      const res = await fetch(`/api/orders/${id}`)
+      const res = await fetch(goAPI(`/api/orders/${id}`), { credentials: "include" })
       const data = await res.json()
       if (data.success) {
         setOrder(data.data)
-        if (TERMINAL_STATUSES.includes(data.data.status)) setPolling(false)
       }
     } finally {
       setLoading(false)
@@ -63,20 +69,22 @@ export default function OrderStatusPage() {
 
   async function fetchClaims() {
     try {
-      const res = await fetch(`/api/warranty?orderId=${id}`)
+      const res = await fetch(goAPI(`/api/warranty?orderId=${id}`), { credentials: "include" })
       const data = await res.json()
       if (data.claims) setClaims(data.claims)
     } catch {}
   }
 
   useEffect(() => {
-    fetchOrder()
+    queueMicrotask(() => {
+      fetchOrder()
+      fetchClaims()
+    })
     if (!polling) return
     const interval = setInterval(fetchOrder, 8000)
     return () => clearInterval(interval)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, polling])
-
-  useEffect(() => { fetchClaims() }, [id])
 
   function handleVerifyEmail(e: React.FormEvent) {
     e.preventDefault()
@@ -96,13 +104,13 @@ export default function OrderStatusPage() {
   async function handleResend() {
     setResending(true)
     try {
-      const res = await fetch(`/api/orders/${id}/resend-email`, { method: "POST" })
+      const res = await fetch(goAPI(`/api/orders/${id}/resend-email`), { method: "POST", credentials: "include" })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       toast.success("Email berhasil dikirim ulang!")
       fetchOrder()
-    } catch (e: any) {
-      toast.error(e.message)
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Gagal mengirim ulang email")
     } finally {
       setResending(false)
     }
@@ -112,9 +120,10 @@ export default function OrderStatusPage() {
     e.preventDefault()
     setSubmittingClaim(true)
     try {
-      const res = await fetch("/api/warranty", {
+      const res = await fetch(goAPI("/api/warranty"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ orderId: id, ...claimForm }),
       })
       const data = await res.json()
@@ -122,8 +131,8 @@ export default function OrderStatusPage() {
       toast.success("Klaim garansi berhasil diajukan!")
       setClaimForm({ orderItemId: "", description: "" })
       fetchClaims()
-    } catch (e: any) {
-      toast.error(e.message)
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Gagal mengajukan klaim")
     } finally {
       setSubmittingClaim(false)
     }
@@ -236,8 +245,10 @@ export default function OrderStatusPage() {
   }
 
   const warrantyItems = order.items.map((item) => ({
+    id: item.id,
     variantId: item.variantId,
     variantName: item.variant.name,
+    variant: item.variant,
     productName: item.variant.product.name,
     price: item.price,
     warrantyOptionId: item.warrantyOptionId,
@@ -298,7 +309,7 @@ export default function OrderStatusPage() {
             )}
           </div>
           <div className="border-t pt-3 space-y-1.5">
-            {order.items.map((item: any) => (
+            {order.items.map((item: /* OrderItem */ { id: string; variant: { product: { name: string }; name: string }; quantity: number; price: number }) => (
               <div key={item.id} className="flex justify-between gap-2 text-sm">
                 <span className="text-muted-foreground min-w-0 break-words">{item.variant.product.name} ({item.variant.name}) ×{item.quantity}</span>
                 <span className="font-medium shrink-0">{formatPrice(item.price * item.quantity)}</span>
@@ -313,7 +324,7 @@ export default function OrderStatusPage() {
       </Card>
 
       {/* Credentials — hanya tampil setelah email verified */}
-      {order.status === "DELIVERED" && emailVerified && order.stocks?.length > 0 && (
+      {order.status === "DELIVERED" && emailVerified && order.stocks && order.stocks.length > 0 && (
         <CredentialsCard stocks={order.stocks} />
       )}
 
@@ -330,7 +341,7 @@ export default function OrderStatusPage() {
             {claims.length > 0 && (
               <div className="mb-4 space-y-2">
                 <p className="text-sm font-medium">Riwayat Klaim:</p>
-                {claims.map((c: any) => (
+                {claims.map((c: Claim) => (
                   <div key={c.id} className="text-sm p-3 rounded-lg bg-muted/30">
                     <div className="flex items-center gap-2 mb-1">
                       <Badge variant={c.status === "APPROVED" ? "default" : c.status === "REJECTED" ? "destructive" : "secondary"} className="text-xs">
@@ -344,7 +355,7 @@ export default function OrderStatusPage() {
                 ))}
               </div>
             )}
-            {claims.some((c: any) => c.status === "PENDING") ? (
+            {claims.some((c: Claim) => c.status === "PENDING") ? (
               <p className="text-sm text-muted-foreground">Klaimmu sedang diproses.</p>
             ) : (
               <form onSubmit={handleClaimSubmit} className="space-y-3">
@@ -357,7 +368,7 @@ export default function OrderStatusPage() {
                     required
                   >
                     <option value="">Pilih item bermasalah</option>
-                    {warrantyItems.map((i: any) => (
+                    {warrantyItems.map((i) => (
                       <option key={i.id} value={i.id}>
                         {i.variant.product.name} ({i.variant.name})
                       </option>

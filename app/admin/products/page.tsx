@@ -1,20 +1,22 @@
-import { db } from "@/lib/db"
+import { fetchFromGo, parseJson } from "@/lib/api-client"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { formatPrice } from "@/lib/utils"
-import { cn } from "@/lib/utils"
+import { formatPrice, cn } from "@/lib/utils"
 import { Package, Plus } from "lucide-react"
+import type { Product, Variant } from "@/types"
 
 export const dynamic = "force-dynamic"
 
-export default async function AdminProductsPage() {
-  const products = await db.product.findMany({
-    include: { variants: { include: { stocks: { where: { status: "AVAILABLE" } } } } },
-    orderBy: { createdAt: "desc" },
-  })
+interface ProductWithVariants extends Product {
+  variants: (Variant & { stockCount: number })[]
+}
 
-  function totalStock(variants: { stocks: unknown[] }[]) {
-    return variants.reduce((acc, v) => acc + v.stocks.length, 0)
+export default async function AdminProductsPage() {
+  const res = await fetchFromGo("/admin/products")
+  const products = await parseJson<ProductWithVariants[]>(res)
+
+  function totalStock(variants: { stockCount: number }[]) {
+    return variants.reduce((acc, v) => acc + v.stockCount, 0)
   }
 
   return (
@@ -59,7 +61,6 @@ export default async function AdminProductsPage() {
                 </div>
               </div>
               <div className="flex items-center gap-3 shrink-0">
-                {/* Stock badge */}
                 <span
                   className={cn(
                     "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",

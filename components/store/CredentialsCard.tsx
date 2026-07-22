@@ -3,11 +3,10 @@
 import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Eye, EyeOff, Copy, Check, ShieldAlert, CheckCircle2 } from "lucide-react"
+import { Eye, EyeOff, Copy, Check, ShieldAlert } from "lucide-react"
 
 interface Props {
-  stocks: Array<{ id: string; credentials: string; variantId: string }>
+  stocks: Array<{ id: string; credentials: string; variantId?: string; status?: string }>
 }
 
 export default function CredentialsCard({ stocks }: Props) {
@@ -60,15 +59,15 @@ export default function CredentialsCard({ stocks }: Props) {
   const allRevealed = stocks.every((s) => revealed[s.id])
 
   return (
-    <Card className="mt-8 border-primary/20">
+    <Card className="mt-8 border border-hairline rounded-md">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
+        <CardTitle className="flex items-center gap-2 text-title-md">
           <span>📦</span> Akun Kamu
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Warning */}
-        <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+        <div className="flex items-start gap-2 p-3 rounded-sm bg-destructive/10 text-destructive text-body-sm">
           <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />
           <p>Jangan bagikan credentials ini ke siapapun. Simpan di tempat aman.</p>
         </div>
@@ -76,50 +75,35 @@ export default function CredentialsCard({ stocks }: Props) {
         {/* Bulk actions */}
         {stocks.length > 1 && (
           <div className="flex gap-2">
-            <Button variant="ghost" size="sm" className="text-xs gap-1.5" onClick={toggleRevealAll}>
+            <Button variant="ghost" size="sm" className="text-caption gap-1.5" onClick={toggleRevealAll}>
               {allRevealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
               {allRevealed ? "Sembunyikan Semua" : "Tampilkan Semua"}
             </Button>
-            <Button variant="ghost" size="sm" className="text-xs gap-1.5" onClick={copyAll}>
-              {allCopied ? <CheckCircle2 className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+            <Button variant="ghost" size="sm" className="text-caption gap-1.5" onClick={copyAll}>
+              {allCopied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
               {allCopied ? "Semua Disalin ✓" : "Salin Semua"}
             </Button>
           </div>
         )}
 
         {stocks.map((stock, i) => (
-          <div key={stock.id} className="rounded-xl border bg-muted/30 overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/50">
-              <Badge variant="outline" className="text-xs">Akun #{i + 1}</Badge>
+          <div key={stock.id} className="rounded-md border border-hairline bg-surface-soft overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-hairline bg-surface-soft/50">
+              <span className="text-badge inline-flex items-center rounded-full bg-canvas border border-hairline px-2.5 py-0.5">Akun #{i + 1}</span>
               <div className="flex gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => toggleReveal(stock.id)}
-                  title={revealed[stock.id] ? "Sembunyikan" : "Tampilkan"}
-                >
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toggleReveal(stock.id)} title={revealed[stock.id] ? "Sembunyikan" : "Tampilkan"}>
                   {revealed[stock.id] ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => copyToClipboard(stock.credentials, stock.id)}
-                  title="Salin"
-                >
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(stock.credentials, stock.id)} title="Salin">
                   {copied === stock.id
                     ? <Check className="h-3.5 w-3.5 text-green-500" />
                     : <Copy className="h-3.5 w-3.5" />}
                 </Button>
               </div>
             </div>
-            {/* Blur → clear transition on reveal */}
             <div
-              className={`font-mono text-sm p-4 transition-all duration-300 select-all ${
-                revealed[stock.id]
-                  ? "blur-none"
-                  : "blur-sm select-none cursor-pointer"
+              className={`font-mono text-body-sm p-4 transition-all duration-300 select-all ${
+                revealed[stock.id] ? "blur-none" : "blur-sm select-none cursor-pointer"
               }`}
               onClick={() => !revealed[stock.id] && toggleReveal(stock.id)}
               title={revealed[stock.id] ? undefined : "Klik untuk menampilkan"}
@@ -128,8 +112,6 @@ export default function CredentialsCard({ stocks }: Props) {
             </div>
           </div>
         ))}
-
-        {/* Per-item copy feedback is handled inline via copied state */}
       </CardContent>
     </Card>
   )

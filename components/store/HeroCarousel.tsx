@@ -79,7 +79,7 @@ export default function HeroCarousel() {
             {slide.badge}
           </div>
 
-          {/* Title with line breaks */}
+          {/* Title */}
           <h1 className="text-4xl md:text-6xl font-bold mb-4 text-white leading-tight whitespace-pre-line">
             {slide.title}
           </h1>
@@ -95,10 +95,7 @@ export default function HeroCarousel() {
           )}
 
           <a href={slide.href}>
-            <Button
-              size="lg"
-              className="bg-[#F4ABC4] text-[#333456] hover:bg-[#F4ABC4]/90 font-semibold px-8"
-            >
+            <Button size="lg" className="bg-[#F4ABC4] text-[#333456] hover:bg-[#F4ABC4]/90 font-semibold px-8 rounded-sm">
               {slide.cta}
             </Button>
           </a>
@@ -121,7 +118,7 @@ export default function HeroCarousel() {
         <ChevronRight className="h-5 w-5 text-white" />
       </button>
 
-      {/* Dots */}
+      {/* Pill dots */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
         {slides.map((_, i) => (
           <button

@@ -1,6 +1,5 @@
 "use client"
 
-import { useEffect, useRef } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Star } from "lucide-react"
 
@@ -21,20 +20,20 @@ export default function TestimonialCarousel({ reviews }: Props) {
   return (
     <section className="py-12 bg-gradient-to-r from-[#F4ABC4]/10 to-[#595B83]/10 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 mb-8">
-        <h2 className="text-2xl font-bold text-center">Kata Mereka</h2>
-        <p className="text-muted-foreground text-center mt-1">Ulasan dari pembeli yang sudah puas</p>
+        <h2 className="text-display-lg text-center">Kata Mereka</h2>
+        <p className="text-body-sm text-muted text-center mt-1">Ulasan dari pembeli yang sudah puas</p>
       </div>
       <div className="flex gap-4 animate-scroll hover:[animation-play-state:paused]" style={{ width: "max-content" }}>
         {[...reviews, ...reviews].map((r, i) => (
-          <Card key={`${r.id}-${i}`} className="w-72 shrink-0">
+          <Card key={`${r.id}-${i}`} className="w-72 shrink-0 border border-hairline">
             <CardContent className="p-4">
               <div className="flex mb-2">
                 {[1,2,3,4,5].map((n) => (
-                  <Star key={n} className={`h-4 w-4 ${n <= r.rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}`} />
+                  <Star key={n} className={`h-4 w-4 ${n <= r.rating ? "fill-star-rating text-star-rating" : "text-muted/30"}`} />
                 ))}
               </div>
-              <p className="text-sm line-clamp-3">{r.comment}</p>
-              <p className="text-xs text-muted-foreground mt-2">{new Date(r.createdAt).toLocaleDateString("id-ID")}</p>
+              <p className="text-body-sm line-clamp-3">{r.comment}</p>
+              <p className="text-caption-sm text-muted mt-2">{new Date(r.createdAt).toLocaleDateString("id-ID")}</p>
             </CardContent>
           </Card>
         ))}

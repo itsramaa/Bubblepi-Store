@@ -4,10 +4,11 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { toast } from "sonner"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import { goAPI } from "@/lib/api-client"
 
 export default function NewVoucherPage() {
   const router = useRouter()
@@ -18,7 +19,7 @@ export default function NewVoucherPage() {
     e.preventDefault()
     setSubmitting(true)
     try {
-      const res = await fetch("/api/admin/vouchers", {
+      const res = await fetch(goAPI("/api/admin/vouchers"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -28,13 +29,14 @@ export default function NewVoucherPage() {
           maxUses: form.maxUses ? parseInt(form.maxUses) : null,
           expiresAt: form.expiresAt ? new Date(form.expiresAt).toISOString() : null,
         }),
+        credentials: "include",
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       toast.success("Voucher berhasil dibuat!")
       router.push("/admin/vouchers")
-    } catch (e: any) {
-      toast.error(e.message)
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Terjadi kesalahan")
     } finally {
       setSubmitting(false)
     }

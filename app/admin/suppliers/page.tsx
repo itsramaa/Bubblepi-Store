@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { toast } from "sonner"
+import { goAPI } from "@/lib/api-client"
 
 interface Supplier {
   id: string
@@ -27,47 +29,76 @@ export default function SuppliersPage() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ name: "", type: "TELEGRAM", config: "", priority: "1" })
 
-  useEffect(() => {
-    fetchSuppliers()
-  }, [])
-
   const fetchSuppliers = () => {
-    fetch("/api/admin/suppliers")
+    fetch(goAPI("/api/admin/suppliers"), { credentials: "include" })
       .then((res) => res.json())
       .then(setSuppliers)
       .catch(console.error)
       .finally(() => setLoading(false))
   }
 
+  useEffect(() => {
+    fetchSuppliers()
+  }, [])
+
   const toggleActive = async (id: string, current: boolean) => {
-    await fetch(`/api/admin/suppliers/${id}`, {
+    await fetch(goAPI(`/api/admin/suppliers/${id}`), {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ isActive: !current }),
+      credentials: "include",
     })
+    toast.success("Status supplier diperbarui")
     fetchSuppliers()
   }
 
   const createSupplier = async () => {
+    if (!form.name.trim()) {
+      toast.error("Nama supplier harus diisi")
+      return
+    }
+
+    let config: Record<string, string> = {}
+    if (form.config.trim()) {
+      try {
+        config = JSON.parse(form.config)
+      } catch {
+        toast.error("Format JSON config tidak valid")
+        return
+      }
+    }
+
     try {
-      const config = JSON.parse(form.config || "{}")
-      await fetch("/api/admin/suppliers", {
+      const res = await fetch(goAPI("/api/admin/suppliers"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...form, priority: parseInt(form.priority), config }),
+        credentials: "include",
       })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? "Gagal membuat supplier")
+
+      toast.success("Supplier berhasil ditambahkan")
       setShowForm(false)
       setForm({ name: "", type: "TELEGRAM", config: "", priority: "1" })
       fetchSuppliers()
-    } catch (e) {
-      alert("Invalid JSON in config")
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Gagal membuat supplier")
     }
   }
 
   const testConnection = async (id: string) => {
-    const res = await fetch(`/api/admin/suppliers/${id}/test`, { method: "POST" })
-    const data = await res.json()
-    alert(data.success ? "Connection OK!" : `Failed: ${data.error}`)
+    try {
+      const res = await fetch(goAPI(`/api/admin/suppliers/${id}/test`), { method: "POST", credentials: "include" })
+      const data = await res.json()
+      if (data.success) {
+        toast.success("Koneksi berhasil!")
+      } else {
+        toast.error(`Koneksi gagal: ${data.error}`)
+      }
+    } catch {
+      toast.error("Gagal menguji koneksi")
+    }
   }
 
   if (loading) return <div className="container p-6">Loading...</div>

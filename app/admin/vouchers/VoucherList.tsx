@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Plus, Power, PowerOff, Tags } from "lucide-react"
 import { toast } from "sonner"
 import Link from "next/link"
+import { goAPI } from "@/lib/api-client"
 
 interface Voucher {
   id: string
@@ -24,10 +25,11 @@ export default function VoucherList({ vouchers: initial }: { vouchers: Voucher[]
   const [vouchers, setVouchers] = useState(initial)
 
   async function toggleActive(id: string, current: boolean) {
-    const res = await fetch("/api/admin/vouchers", {
+    const res = await fetch(goAPI(`/api/admin/vouchers/${id}`), {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, isActive: !current }),
+      body: JSON.stringify({ isActive: !current }),
+      credentials: "include",
     })
     if (res.ok) {
       setVouchers((prev) => prev.map((v) => (v.id === id ? { ...v, isActive: !current } : v)))

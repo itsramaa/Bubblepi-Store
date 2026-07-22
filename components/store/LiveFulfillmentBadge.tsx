@@ -1,22 +1,40 @@
-import { db } from "@/lib/db"
+"use client"
 
-export async function LiveFulfillmentBadge() {
-  const lastOrder = await db.order.findFirst({
-    where: { status: "DELIVERED" },
-    orderBy: { paidAt: "desc" },
-    include: { items: { include: { variant: { include: { product: { select: { name: true } } } } } } },
-  }).catch(() => null)
+import { useState, useEffect } from "react"
+import { fetchFromGo, parseJson } from "@/lib/api-client"
 
-  if (!lastOrder?.paidAt) return null
+interface LiveOrder {
+  orderNumber: string
+  paidAt: string | null
+  productNames: string[]
+}
 
-  const minutesAgo = Math.floor((Date.now() - lastOrder.paidAt.getTime()) / 60000)
-  const timeText = minutesAgo < 60 ? `${minutesAgo} menit lalu` : `${Math.floor(minutesAgo / 60)} jam lalu`
-  const names = [...new Set(lastOrder.items.map((i) => i.variant.product.name))].join(", ")
+export function LiveFulfillmentBadge() {
+  const [text, setText] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetchFromGo("/live-activity")
+      .then((res) => parseJson<{ orders: LiveOrder[] }>(res))
+      .then((data) => {
+        const lastOrder = data.orders?.[0] ?? null
+        if (!lastOrder?.paidAt) {
+          setText(null)
+          return
+        }
+        const minutesAgo = Math.floor((Date.now() - new Date(lastOrder.paidAt).getTime()) / 60000)
+        const timeText = minutesAgo < 60 ? `${minutesAgo} menit lalu` : `${Math.floor(minutesAgo / 60)} jam lalu`
+        const names = lastOrder.productNames?.join(", ") ?? "Produk"
+        setText(`Terakhir fulfill: ${names} — ${timeText}`)
+      })
+      .catch(() => setText(null))
+  }, [])
+
+  if (!text) return null
 
   return (
-    <div className="flex items-center justify-center gap-2 rounded-full bg-[#F4ABC4]/20 px-4 py-2 text-sm text-[#333456]">
+    <div className="flex items-center justify-center gap-2 rounded-full bg-primary/20 px-4 py-2 text-body-sm text-[#333456]">
       <span className="animate-pulse">⚡</span>
-      <span>Terakhir fulfill: <strong>{names}</strong> — {timeText}</span>
+      <span>{text}</span>
     </div>
   )
 }

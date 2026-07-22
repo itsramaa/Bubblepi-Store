@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 import { Plus, RefreshCw, Wallet, Trash2, Link2, Link2Off } from "lucide-react"
+import { goAPI } from "@/lib/api-client"
 
 type Variant = {
   id: string
@@ -59,7 +60,7 @@ export default function SupplierList({ suppliers: initial, variants }: Props) {
   async function fetchBalance(id: string) {
     setLoadingBalance((p) => ({ ...p, [id]: true }))
     try {
-      const res = await fetch(`/api/admin/suppliers/${id}/balance`)
+      const res = await fetch(goAPI(`/api/bots/${id}/balance`), { credentials: "include" })
       const data = await res.json()
       setBalances((p) => ({ ...p, [id]: typeof data.saldo === "number" ? data.saldo : null }))
     } catch {
@@ -74,10 +75,11 @@ export default function SupplierList({ suppliers: initial, variants }: Props) {
       toast.error("Semua field wajib diisi")
       return
     }
-    const res = await fetch("/api/admin/suppliers", {
+    const res = await fetch(goAPI("/api/admin/suppliers"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
+      credentials: "include",
     })
     if (!res.ok) { toast.error((await res.json()).error); return }
     const created = await res.json()
@@ -89,16 +91,17 @@ export default function SupplierList({ suppliers: initial, variants }: Props) {
 
   async function handleDelete(id: string) {
     if (!confirm("Hapus supplier bot ini?")) return
-    await fetch(`/api/admin/suppliers/${id}`, { method: "DELETE" })
+    await fetch(goAPI(`/api/admin/suppliers/${id}`), { method: "DELETE", credentials: "include" })
     setSuppliers((p) => p.filter((s) => s.id !== id))
     toast.success("Dihapus")
   }
 
   async function handleToggle(id: string, isActive: boolean) {
-    const res = await fetch(`/api/admin/suppliers/${id}`, {
+    const res = await fetch(goAPI(`/api/admin/suppliers/${id}`), {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ isActive: !isActive }),
+      credentials: "include",
     })
     const updated = await res.json()
     setSuppliers((p) => p.map((s) => (s.id === id ? { ...s, isActive: updated.isActive } : s)))
@@ -107,10 +110,11 @@ export default function SupplierList({ suppliers: initial, variants }: Props) {
   async function handleTopup(id: string) {
     setTopupLoading(true)
     try {
-      const res = await fetch(`/api/admin/suppliers/${id}/topup`, {
+      const res = await fetch(goAPI(`/api/bots/${id}/topup`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ amount: parseInt(topupAmount) }),
+        credentials: "include",
       })
       const data = await res.json()
       if (!res.ok) { toast.error(data.error); return }
@@ -138,10 +142,11 @@ export default function SupplierList({ suppliers: initial, variants }: Props) {
       toast.error("Semua field mapping wajib diisi")
       return
     }
-    const res = await fetch(`/api/admin/suppliers/${supplierId}/mappings`, {
+    const res = await fetch(goAPI(`/api/admin/suppliers/${supplierId}/mappings`), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ variantId, productNo: parseInt(productNo), productBotId, variantBotId, label }),
+      credentials: "include",
     })
     if (!res.ok) { toast.error((await res.json()).error); return }
     const mapping = await res.json()
@@ -151,7 +156,7 @@ export default function SupplierList({ suppliers: initial, variants }: Props) {
   }
 
   async function handleDeleteMapping(supplierId: string, mappingId: string) {
-    await fetch(`/api/admin/suppliers/${supplierId}/mappings?mappingId=${mappingId}`, { method: "DELETE" })
+    await fetch(goAPI(`/api/admin/suppliers/${supplierId}/mappings/${mappingId}`), { method: "DELETE", credentials: "include" })
     setSuppliers((p) => p.map((s) => s.id === supplierId ? { ...s, products: s.products.filter((m) => m.id !== mappingId) } : s))
     toast.success("Mapping dihapus")
   }

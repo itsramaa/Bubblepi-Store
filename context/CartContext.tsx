@@ -17,16 +17,15 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined)
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([])
-
-  useEffect(() => {
+  const [items, setItems] = useState<CartItem[]>(() => {
+    if (typeof window === "undefined") return []
     try {
       const saved = localStorage.getItem("cart")
-      if (saved) setItems(JSON.parse(saved))
+      return saved ? JSON.parse(saved) : []
     } catch {
-      localStorage.removeItem("cart")
+      return []
     }
-  }, [])
+  })
 
   useEffect(() => {
     try {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Users, ShoppingBag, Zap } from "lucide-react"
+import { goAPI } from "@/lib/api-client"
 
 function AnimatedNumber({ target, suffix = "" }: { target: number; suffix?: string }) {
   const [current, setCurrent] = useState(0)
@@ -28,7 +29,7 @@ export default function SocialProofBanner() {
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
-    fetch("/api/stats/social-proof")
+    fetch(goAPI("/api/stats/social-proof"), { credentials: "include" })
       .then((r) => r.json())
       .then((d) => { setStats(d); setLoaded(true) })
       .catch(() => {
@@ -59,13 +60,13 @@ export default function SocialProofBanner() {
       label: "Rata-rata Fulfill",
       value: loaded ? stats.lastFulfillMins : 0,
       suffix: " menit",
-      color: "text-emerald-500",
-      bg: "bg-emerald-500/10",
+      color: "text-success",
+      bg: "bg-success/10",
     },
   ]
 
   return (
-    <section className="border-y bg-muted/20">
+    <section className="border-y border-hairline bg-surface-soft">
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {items.map(({ icon: Icon, label, value, suffix, color, bg }) => (
@@ -74,10 +75,10 @@ export default function SocialProofBanner() {
                 <Icon className={`h-6 w-6 ${color}`} />
               </div>
               <div>
-                <p className={`text-2xl font-bold ${color}`}>
+                <p className={`text-rating-display text-2xl font-bold ${color}`}>
                   <AnimatedNumber target={value} suffix={suffix} />
                 </p>
-                <p className="text-sm text-muted-foreground">{label}</p>
+                <p className="text-body-sm text-muted">{label}</p>
               </div>
             </div>
           ))}

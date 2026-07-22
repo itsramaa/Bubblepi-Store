@@ -5,7 +5,10 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { ExternalLink, Clock, QrCode, CheckCircle2, RefreshCw, MessageCircle, Copy, Check } from "lucide-react"
-import { QRCodeSVG } from "qrcode.react"
+import dynamic from "next/dynamic"
+
+const QRCodeSVG = dynamic(() => import("qrcode.react").then(m => m.QRCodeSVG), { ssr: false })
+import { goAPI } from "@/lib/api-client"
 
 interface Props {
   orderId: string
@@ -45,7 +48,6 @@ export default function CheckoutStep3({ orderId, paymentUrl, createdAt }: Props)
   const [polling, setPolling] = useState(true)
   const [copiedUrl, setCopiedUrl] = useState(false)
 
-  // Detect payment method from paymentUrl (rough heuristic)
   const isVA = paymentUrl?.toLowerCase().includes("virtual") || paymentUrl?.toLowerCase().includes("bank")
   const instructionKey = isVA ? "VA" : "QRIS"
   const instruction = PAYMENT_INSTRUCTIONS[instructionKey]
@@ -71,10 +73,9 @@ export default function CheckoutStep3({ orderId, paymentUrl, createdAt }: Props)
     return () => clearInterval(t)
   }, [createdAt])
 
-  // Auto-poll payment status every 5s
   const checkStatus = useCallback(async () => {
     try {
-      const res = await fetch(`/api/orders/${orderId}`)
+      const res = await fetch(goAPI(`/api/orders/${orderId}`), { credentials: "include" })
       const data = await res.json()
       if (data.success && PAID_STATUSES.includes(data.data?.status)) {
         setPaid(true)
@@ -86,7 +87,6 @@ export default function CheckoutStep3({ orderId, paymentUrl, createdAt }: Props)
 
   useEffect(() => {
     if (!polling) return
-    checkStatus()
     const interval = setInterval(checkStatus, 5000)
     return () => clearInterval(interval)
   }, [polling, checkStatus])
@@ -103,14 +103,14 @@ export default function CheckoutStep3({ orderId, paymentUrl, createdAt }: Props)
   if (paid) {
     return (
       <div className="space-y-6 text-center py-4">
-        <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto">
+        <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto">
           <CheckCircle2 className="h-10 w-10 text-green-600" />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-green-700 dark:text-green-400">Pembayaran Diterima!</h2>
-          <p className="text-sm text-muted-foreground mt-1">Akun kamu sedang diproses, cek email sebentar lagi.</p>
+          <h2 className="text-display-sm text-green-700">Pembayaran Diterima!</h2>
+          <p className="text-body-sm text-muted mt-1">Akun kamu sedang diproses, cek email sebentar lagi.</p>
         </div>
-        <p className="text-xs text-muted-foreground animate-pulse">Mengalihkan ke halaman pesanan...</p>
+        <p className="text-caption-sm text-muted animate-pulse">Mengalihkan ke halaman pesanan...</p>
       </div>
     )
   }
@@ -119,31 +119,31 @@ export default function CheckoutStep3({ orderId, paymentUrl, createdAt }: Props)
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center space-y-2">
-        <div className="w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto">
+        <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto">
           <Clock className="h-8 w-8 text-amber-600" />
         </div>
-        <h2 className="text-xl font-bold">Selesaikan Pembayaran</h2>
-        <p className="text-sm text-muted-foreground">
+        <h2 className="text-display-sm">Selesaikan Pembayaran</h2>
+        <p className="text-body-sm text-muted">
           Setelah bayar, akun dikirim otomatis ke email kamu.
         </p>
       </div>
 
-      {/* Countdown */}
-      <Card className={expired ? "border-destructive" : "border-amber-200 dark:border-amber-800"}>
+      {/* Countdown — reservation-card style */}
+      <Card className={expired ? "border-destructive" : "border-amber-200"}>
         <CardContent className="p-4 text-center">
-          <p className="text-xs text-muted-foreground mb-1">Sisa waktu pembayaran</p>
-          <p className={`text-4xl font-mono font-bold tracking-wider ${expired ? "text-destructive" : "text-amber-600"}`}>
+          <p className="text-caption-sm text-muted mb-1">Sisa waktu pembayaran</p>
+          <p className={`text-rating-display text-3xl font-mono font-bold tracking-wider ${expired ? "text-destructive" : "text-amber-600"}`}>
             {timeLeft || "24:00:00"}
           </p>
           {expired && (
-            <p className="text-xs text-destructive mt-1">Invoice kedaluwarsa. Buat pesanan baru.</p>
+            <p className="text-caption-sm text-destructive mt-1">Invoice kedaluwarsa. Buat pesanan baru.</p>
           )}
         </CardContent>
       </Card>
 
       {/* Polling indicator */}
       {polling && !expired && (
-        <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+        <div className="flex items-center justify-center gap-2 text-caption-sm text-muted">
           <RefreshCw className="h-3 w-3 animate-spin" />
           <span>Menunggu konfirmasi pembayaran...</span>
         </div>
@@ -153,7 +153,7 @@ export default function CheckoutStep3({ orderId, paymentUrl, createdAt }: Props)
       {paymentUrl && !expired && (
         <div className="space-y-3">
           <a href={paymentUrl} target="_blank" rel="noopener noreferrer" className="block">
-            <Button className="w-full gap-2 bg-[#595B83] hover:bg-[#595B83]/90" size="lg">
+            <Button className="w-full gap-2 btn-primary" size="lg">
               Bayar Sekarang
               <ExternalLink className="h-4 w-4" />
             </Button>
@@ -179,9 +179,9 @@ export default function CheckoutStep3({ orderId, paymentUrl, createdAt }: Props)
           </div>
 
           {showQr && (
-            <div className="flex flex-col items-center gap-3 p-4 md:p-6 border rounded-xl bg-white">
+            <div className="flex flex-col items-center gap-3 p-4 md:p-6 border border-hairline rounded-md bg-white">
               <QRCodeSVG value={paymentUrl} size={200} />
-              <p className="text-xs text-muted-foreground text-center">
+              <p className="text-caption-sm text-muted text-center">
                 Scan QR ini dari aplikasi e-wallet atau mobile banking kamu
               </p>
             </div>
@@ -191,12 +191,12 @@ export default function CheckoutStep3({ orderId, paymentUrl, createdAt }: Props)
 
       {/* Payment instructions */}
       {!expired && (
-        <div className="rounded-xl border bg-muted/20 p-4 space-y-3">
-          <p className="text-sm font-semibold">{instruction.title}</p>
+        <div className="rounded-md border border-hairline bg-surface-soft p-4 space-y-3">
+          <p className="text-body-sm font-semibold">{instruction.title}</p>
           <ol className="space-y-2">
             {instruction.steps.map((step, i) => (
-              <li key={i} className="flex items-start gap-2.5 text-sm text-muted-foreground">
-                <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+              <li key={i} className="flex items-start gap-2.5 text-body-sm text-muted">
+                <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-caption font-bold flex items-center justify-center shrink-0 mt-0.5">
                   {i + 1}
                 </span>
                 {step}
@@ -210,7 +210,7 @@ export default function CheckoutStep3({ orderId, paymentUrl, createdAt }: Props)
       <div className="flex flex-col gap-2 pt-2">
         <Button
           variant="ghost"
-          className="w-full text-sm text-muted-foreground"
+          className="w-full text-body-sm text-muted"
           onClick={() => router.push(`/orders/${orderId}`)}
         >
           Cek Status Pesanan →
@@ -228,7 +228,7 @@ export default function CheckoutStep3({ orderId, paymentUrl, createdAt }: Props)
           href="https://wa.me/6281234567890?text=Halo%2C+saya+butuh+bantuan+dengan+pesanan+saya"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          className="inline-flex items-center gap-1.5 text-caption-sm text-muted hover:text-ink transition-colors"
         >
           <MessageCircle className="h-3.5 w-3.5" />
           Butuh bantuan? Chat WhatsApp

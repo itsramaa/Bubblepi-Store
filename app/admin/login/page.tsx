@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Lock, Loader2 } from "lucide-react"
 import Image from "next/image"
+import { goAPI } from "@/lib/api-client"
 
 export default function LoginPage() {
   const [password, setPassword] = useState("")
@@ -20,10 +21,11 @@ export default function LoginPage() {
     setLoading(true)
     setError("")
 
-    const res = await fetch("/api/admin/auth", {
+    const res = await fetch(goAPI("/api/admin/auth"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ password }),
+      credentials: "include",
     })
 
     if (res.ok) {

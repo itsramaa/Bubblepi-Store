@@ -1,14 +1,13 @@
-import { db } from "@/lib/db"
+import { fetchFromGo, parseJson } from "@/lib/api-client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Users, TrendingUp } from "lucide-react"
+import type { Referral } from "@/types"
 
 export const dynamic = "force-dynamic"
 
 export default async function ReferralsPage() {
-  const referrals = await db.referral.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 100,
-  })
+  const res = await fetchFromGo("/admin/referrals")
+  const referrals = await parseJson<Referral[]>(res)
 
   const summary = referrals.reduce((acc, r) => {
     if (!acc[r.referrerEmail]) acc[r.referrerEmail] = { count: 0, total: 0 }
@@ -24,7 +23,6 @@ export default async function ReferralsPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Referral</h1>
 
-      {/* Top stats */}
       <div className="grid grid-cols-2 gap-4">
         <Card>
           <CardContent className="pt-5 flex items-center gap-3">
@@ -85,7 +83,7 @@ export default async function ReferralsPage() {
                 <div className="min-w-0">
                   <p className="text-muted-foreground truncate">{r.referrerEmail}</p>
                   <p className="text-xs text-muted-foreground/60">
-                    {new Date(r.createdAt).toLocaleDateString("id-ID")}
+                    {r.createdAt ? new Date(r.createdAt).toLocaleDateString("id-ID") : "-"}
                   </p>
                 </div>
                 {r.status === "CONFIRMED" ? (

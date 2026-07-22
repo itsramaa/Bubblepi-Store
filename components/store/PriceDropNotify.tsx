@@ -1,10 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { Bell, Check } from "lucide-react"
+import { goAPI } from "@/lib/api-client"
 
 interface PriceDropNotifyProps {
   variantId: string
@@ -31,17 +32,11 @@ function markNotified(variantId: string) {
 export default function PriceDropNotify({ variantId, currentPrice }: PriceDropNotifyProps) {
   const [email, setEmail] = useState("")
   const [loading, setLoading] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
-
-  useEffect(() => {
-    if (getNotifiedSet().has(variantId)) {
-      setSubmitted(true)
-    }
-  }, [variantId])
+  const [submitted, setSubmitted] = useState(() => getNotifiedSet().has(variantId))
 
   if (submitted) {
     return (
-      <div className="flex items-center gap-2 p-4 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 text-sm">
+      <div className="flex items-center gap-2 p-4 rounded-md bg-green-50 border border-green-200 text-green-700 text-body-sm">
         <Check className="h-4 w-4 shrink-0" />
         Kami akan memberitahu kamu saat harga turun!
       </div>
@@ -54,10 +49,11 @@ export default function PriceDropNotify({ variantId, currentPrice }: PriceDropNo
 
     setLoading(true)
     try {
-      const res = await fetch("/api/notify-me", {
+      const res = await fetch(goAPI("/api/notify-me"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim(), variantId, targetPrice: currentPrice }),
+        credentials: "include",
       })
       const data = await res.json()
       if (!res.ok) {
@@ -74,8 +70,8 @@ export default function PriceDropNotify({ variantId, currentPrice }: PriceDropNo
   }
 
   return (
-    <div className="p-4 rounded-xl border bg-muted/30 space-y-3">
-      <p className="text-sm font-medium flex items-center gap-1.5">
+    <div className="p-4 rounded-md border border-hairline bg-surface-soft space-y-3">
+      <p className="text-body-sm font-medium flex items-center gap-1.5">
         <Bell className="h-4 w-4 text-primary" />
         Ingin tahu kalau harga turun?
       </p>
@@ -86,7 +82,7 @@ export default function PriceDropNotify({ variantId, currentPrice }: PriceDropNo
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="flex-1 text-sm"
+          className="flex-1 text-body-sm"
         />
         <Button type="submit" size="sm" disabled={loading}>
           {loading ? "..." : "Ingatkan"}

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -38,7 +38,7 @@ export default function HeroSection({ totalBuyers, totalSold }: HeroSectionProps
   const [deleting, setDeleting] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  useEffect(() => {
+  const runAnimation = useCallback(() => {
     const target = PLACEHOLDERS[phIndex]
     if (!deleting && charIndex < target.length) {
       timerRef.current = setTimeout(() => {
@@ -53,11 +53,17 @@ export default function HeroSection({ totalBuyers, totalSold }: HeroSectionProps
         setCharIndex((c) => c - 1)
       }, 35)
     } else if (deleting && charIndex === 0) {
-      setDeleting(false)
-      setPhIndex((i) => (i + 1) % PLACEHOLDERS.length)
+      queueMicrotask(() => {
+        setDeleting(false)
+        setPhIndex((i) => (i + 1) % PLACEHOLDERS.length)
+      })
     }
-    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
   }, [charIndex, deleting, phIndex])
+
+  useEffect(() => {
+    runAnimation()
+    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
+  }, [runAnimation])
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()
@@ -86,7 +92,6 @@ export default function HeroSection({ totalBuyers, totalSold }: HeroSectionProps
         style={{
           background:
             "radial-gradient(ellipse 80% 60% at 60% 40%, #F4ABC4 0%, transparent 60%)",
-          animation: "pulse 8s ease-in-out infinite",
         }}
       />
 
@@ -132,7 +137,7 @@ export default function HeroSection({ totalBuyers, totalSold }: HeroSectionProps
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
                 backgroundClip: "text",
-                animation: "gradientShift 4s linear infinite",
+                color: "#F4ABC4", /* fallback for browsers that don't support background-clip: text */
               }}
             >
               Premium

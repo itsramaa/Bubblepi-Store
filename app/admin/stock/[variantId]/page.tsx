@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import CsvUploadButton from "@/components/admin/CsvUploadButton"
+import { goAPI } from "@/lib/api-client"
 
 interface StockItem {
   id: string
@@ -28,12 +29,21 @@ export default function AdminStockDetailPage() {
   const [saving, setSaving] = useState(false)
 
   async function loadStocks() {
-    const res = await fetch(`/api/admin/stock?variantId=${variantId}`)
+    const res = await fetch(goAPI(`/api/admin/stock?variantId=${variantId}`), { credentials: "include" })
     const data = await res.json()
     if (data.success) setStocks(data.data.filter((s: StockItem & { variantId: string }) => s.variantId === variantId))
   }
 
-  useEffect(() => { loadStocks() }, [variantId])
+  useEffect(() => {
+    let cancelled = false
+    fetch(goAPI(`/api/admin/stock?variantId=${variantId}`), { credentials: "include" })
+      .then(r => r.json())
+      .then(data => {
+        if (!cancelled && data.success)
+          setStocks(data.data.filter((s: StockItem & { variantId: string }) => s.variantId === variantId))
+      })
+    return () => { cancelled = true }
+  }, [variantId])
 
   async function handleBulkAdd() {
     const lines = bulk.split("\n").map((l) => l.trim()).filter(Boolean)
@@ -41,7 +51,7 @@ export default function AdminStockDetailPage() {
     setSaving(true)
     let ok = 0
     for (const credentials of lines) {
-      const res = await fetch("/api/admin/stock", {
+      const res = await fetch(goAPI("/api/admin/stock"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -49,6 +59,7 @@ export default function AdminStockDetailPage() {
           credentials,
           ...(expiresAt ? { expiresAt: new Date(expiresAt).toISOString() } : {}),
         }),
+        credentials: "include",
       })
       if ((await res.json()).success) ok++
     }
@@ -60,7 +71,7 @@ export default function AdminStockDetailPage() {
   }
 
   async function handleDelete(id: string) {
-    await fetch(`/api/admin/stock/${id}`, { method: "DELETE" })
+    await fetch(goAPI(`/api/admin/stock/${id}`), { method: "DELETE", credentials: "include" })
     setStocks((prev) => prev.filter((s) => s.id !== id))
     toast.success("Stok dihapus")
   }

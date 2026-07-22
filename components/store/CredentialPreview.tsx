@@ -5,7 +5,7 @@ import { Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface Props {
-  type: string // product type: "streaming" | "ai" | etc
+  type: string
 }
 
 const PREVIEWS: Record<string, { label: string; value: string }[]> = {
@@ -35,13 +35,13 @@ export default function CredentialPreview({ type }: Props) {
   const fields = PREVIEWS[type] ?? PREVIEWS.default
 
   return (
-    <div className="rounded-2xl border bg-muted/30 p-4 space-y-3">
+    <div className="rounded-md border border-hairline bg-surface-soft p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold">Contoh Isi Akun</p>
+        <p className="text-body-sm font-semibold">Contoh Isi Akun</p>
         <Button
           size="sm"
           variant="ghost"
-          className="h-7 gap-1.5 text-xs"
+          className="h-7 gap-1.5 text-caption"
           onClick={() => setRevealed((v) => !v)}
         >
           {revealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
@@ -52,14 +52,14 @@ export default function CredentialPreview({ type }: Props) {
       {revealed && (
         <div className="space-y-2">
           {fields.map((f) => (
-            <div key={f.label} className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">{f.label}</span>
-              <span className="font-mono text-xs bg-background border rounded px-2 py-0.5">
+            <div key={f.label} className="flex items-center justify-between text-body-sm">
+              <span className="text-muted">{f.label}</span>
+              <span className="font-mono text-caption-sm bg-canvas border border-hairline rounded px-2 py-0.5">
                 {f.value}
               </span>
             </div>
           ))}
-          <p className="text-[11px] text-muted-foreground pt-1">
+          <p className="text-[11px] text-muted pt-1">
             * Ini contoh format. Akun asli dikirim ke email setelah pembayaran berhasil.
           </p>
         </div>

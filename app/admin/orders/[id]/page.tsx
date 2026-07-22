@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -13,6 +13,7 @@ import { ArrowLeft, CheckCircle2, ExternalLink, Loader2, RefreshCw, XCircle } fr
 import Link from "next/link"
 import { useEffect } from "react"
 import { toast } from "sonner"
+import { goAPI } from "@/lib/api-client"
 
 const STATUS_LABEL: Record<string, string> = {
   PENDING: "Pending", AWAITING_PAYMENT: "Menunggu Bayar", PAID: "Dibayar",
@@ -23,36 +24,57 @@ const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "
   AWAITING_PAYMENT: "outline", FAILED: "destructive", PENDING_STOCK: "destructive",
 }
 
+interface AdminOrder {
+  id: string
+  orderNumber: string
+  status: string
+  guestName: string | null
+  guestEmail: string | null
+  paymentMethod: string | null
+  total: number
+  createdAt: string
+  paidAt: string | null
+  cancelReason: string | null
+  xenditPaymentUrl: string | null
+  items: Array<{ id: string; variant: { name: string }; quantity: number; price: number }>
+  stocks?: Array<{ id: string; credentials: string; status: string }>
+}
+
 export default function AdminOrderDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const router = useRouter()
-  const [order, setOrder] = useState<Record<string, any> | null>(null)
+  const [order, setOrder] = useState<AdminOrder | null>(null)
   const [loading, setLoading] = useState(true)
   const [fulfilling, setFulfilling] = useState(false)
   const [cancelling, setCancelling] = useState(false)
   const [showCancel, setShowCancel] = useState(false)
   const [cancelReason, setCancelReason] = useState("")
 
-  async function loadOrder() {
-    const res = await fetch(`/api/admin/orders/${id}`)
-    const data = await res.json()
-    if (data.success) setOrder(data.data)
+  function refreshOrder() {
+    fetch(goAPI(`/api/admin/orders/${id}`), { credentials: "include" })
+      .then(r => r.json())
+      .then(d => { if (d.success) setOrder(d.data) })
   }
 
-  useEffect(() => { loadOrder().finally(() => setLoading(false)) }, [id])
+  useEffect(() => {
+    fetch(goAPI(`/api/admin/orders/${id}`), { credentials: "include" })
+      .then(r => r.json())
+      .then(d => { if (d.success) setOrder(d.data) })
+      .finally(() => setLoading(false))
+  }, [id])
 
   async function handleFulfill() {
     if (!confirm("Manual fulfill order ini?")) return
     setFulfilling(true)
-    const res = await fetch(`/api/admin/orders/${id}`, {
+    const res = await fetch(goAPI(`/api/admin/orders/${id}`), {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({ action: "fulfill" }),
     })
     const data = await res.json()
     if (data.success) {
       toast.success("Order berhasil di-fulfill")
-      await loadOrder()
+      await refreshOrder()
     } else {
       toast.error("Gagal fulfill order")
     }
@@ -62,16 +84,17 @@ export default function AdminOrderDetailPage() {
   async function handleCancel() {
     if (!cancelReason.trim()) { toast.error("Isi alasan pembatalan"); return }
     setCancelling(true)
-    const res = await fetch(`/api/admin/orders/${id}`, {
+    const res = await fetch(goAPI(`/api/admin/orders/${id}`), {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({ action: "cancel", reason: cancelReason }),
     })
     const data = await res.json()
     if (data.success) {
       toast.success("Order dibatalkan")
       setShowCancel(false)
-      await loadOrder()
+      await refreshOrder()
     } else {
       toast.error(data.error ?? "Gagal membatalkan order")
     }
@@ -93,9 +116,7 @@ export default function AdminOrderDetailPage() {
     </div>
   )
 
-  const items = order.items as Array<{ id: string; variant: { name: string }; quantity: number; price: number }>
-  const stocks = order.stocks as Array<{ id: string; credentials: string; status: string }>
-  const isTerminal = ["DELIVERED", "FAILED"].includes(order.status as string)
+  const isTerminal = ["DELIVERED", "FAILED"].includes(order.status)
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -107,8 +128,8 @@ export default function AdminOrderDetailPage() {
           <h1 className="text-xl font-bold font-mono">{order.orderNumber as string}</h1>
           <p className="text-sm text-muted-foreground">{order.guestName as string} • {order.guestEmail as string}</p>
         </div>
-        <Badge variant={STATUS_VARIANT[order.status as string] ?? "outline"}>
-          {STATUS_LABEL[order.status as string] ?? order.status as string}
+        <Badge variant={STATUS_VARIANT[order.status] ?? "outline"}>
+          {STATUS_LABEL[order.status] ?? order.status}
         </Badge>
       </div>
 
@@ -125,14 +146,14 @@ export default function AdminOrderDetailPage() {
             <XCircle className="h-4 w-4" /> Batalkan Order
           </Button>
         )}
-        {(order.xenditPaymentUrl as string | undefined) && (
-          <a href={order.xenditPaymentUrl as string} target="_blank" rel="noopener noreferrer">
+        {typeof order.xenditPaymentUrl === "string" && order.xenditPaymentUrl && (
+          <a href={order.xenditPaymentUrl} target="_blank" rel="noopener noreferrer">
             <Button variant="outline" className="gap-2">
               <ExternalLink className="h-4 w-4" /> Lihat Invoice Xendit
             </Button>
           </a>
         )}
-        <Button variant="ghost" size="icon" onClick={loadOrder} title="Refresh">
+        <Button variant="ghost" size="icon" onClick={refreshOrder} title="Refresh">
           <RefreshCw className="h-4 w-4" />
         </Button>
       </div>
@@ -181,7 +202,7 @@ export default function AdminOrderDetailPage() {
             </>}
           </div>
           <div className="space-y-1.5">
-            {items?.map((item) => (
+            {order.items.map((item) => (
               <div key={item.id} className="flex justify-between text-sm">
                 <span className="text-muted-foreground">{item.variant.name} ×{item.quantity}</span>
                 <span className="font-medium">{formatPrice(item.price * item.quantity)}</span>
@@ -196,11 +217,11 @@ export default function AdminOrderDetailPage() {
       </Card>
 
       {/* Stocks */}
-      {stocks?.length > 0 && (
+      {order.stocks && order.stocks.length > 0 && (
         <Card>
           <CardHeader><CardTitle className="text-base">Credentials Terkirim</CardTitle></CardHeader>
           <CardContent className="space-y-2">
-            {stocks.map((s) => (
+            {order.stocks.map((s) => (
               <div key={s.id} className="flex items-center gap-3 p-3 border rounded-lg">
                 <code className="flex-1 text-xs bg-muted p-2 rounded font-mono break-all">{s.credentials}</code>
                 <Badge variant={s.status === "DELIVERED" ? "default" : "secondary"} className="shrink-0 text-xs">{s.status}</Badge>

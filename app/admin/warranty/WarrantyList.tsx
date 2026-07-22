@@ -6,18 +6,18 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { ChevronDown, ChevronUp, ShieldCheck } from "lucide-react"
 import { toast } from "sonner"
+import { goAPI } from "@/lib/api-client"
 
 interface Claim {
   id: string
-  orderId: string
-  orderItemId: string
-  description: string
+  warrantyId: string
+  claimReason: string | null
+  rejectionReason: string | null
   status: string
-  resolveNote: string | null
-  createdAt: string
-  resolvedAt: string | null
-  order: { orderNumber: string; guestEmail: string | null; guestName: string | null }
-  orderItem: { variant: { product: { name: string } } }
+  submittedAt: string | null
+  reviewedAt: string | null
+  order?: { orderNumber: string; guestEmail: string | null; guestName: string | null }
+  orderItem?: { variant: { product: { name: string } } }
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -48,19 +48,20 @@ export default function WarrantyList({ claims: initial }: { claims: Claim[] }) {
   const [rejectNote, setRejectNote] = useState("")
 
   async function handleAction(id: string, action: "approve" | "reject") {
-    const body: Record<string, unknown> = { id, action }
+    const body: Record<string, unknown> = { action }
     if (action === "reject" && !rejectNote) return toast.error("Alasan penolakan diperlukan")
     if (action === "reject") body.note = rejectNote
-    const res = await fetch("/api/admin/warranty", {
+    const res = await fetch(goAPI(`/api/admin/warranty/${id}`), {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
+      credentials: "include",
     })
     if (!res.ok) return toast.error("Gagal memproses klaim")
     setClaims((prev) =>
       prev.map((c) =>
         c.id === id
-          ? { ...c, status: action === "approve" ? "APPROVED" : "REJECTED", resolveNote: (body.note as string) || null }
+          ? { ...c, status: action === "approve" ? "APPROVED" : "REJECTED", rejectionReason: (body.note as string) || null }
           : c
       )
     )
@@ -86,7 +87,7 @@ export default function WarrantyList({ claims: initial }: { claims: Claim[] }) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <StatusBadge status={c.status} />
-                  <span className="text-sm font-medium">#{c.order.orderNumber}</span>
+                  <span className="text-sm font-medium">#{c.order?.orderNumber}</span>
                 </div>
                 <Button
                   variant="ghost"
@@ -100,11 +101,11 @@ export default function WarrantyList({ claims: initial }: { claims: Claim[] }) {
 
               {/* Prominent product name + customer email */}
               <div className="space-y-0.5">
-                <p className="text-sm font-semibold">{c.orderItem.variant.product.name}</p>
-                <p className="text-xs text-muted-foreground">{c.order.guestEmail ?? "N/A"}</p>
+                <p className="text-sm font-semibold">{c.orderItem?.variant.product.name}</p>
+                <p className="text-xs text-muted-foreground">{c.order?.guestEmail ?? "N/A"}</p>
               </div>
 
-              <p className="text-sm text-muted-foreground">{c.description}</p>
+              <p className="text-sm text-muted-foreground">{c.claimReason}</p>
 
               {expanded === c.id && c.status === "PENDING" && (
                 <div className="pt-2 space-y-2 border-t">

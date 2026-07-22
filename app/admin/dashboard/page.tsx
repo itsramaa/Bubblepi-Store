@@ -1,4 +1,4 @@
-import { db } from "@/lib/db"
+import { fetchFromGo, parseJson } from "@/lib/api-client"
 import StatsCard from "@/components/admin/StatsCard"
 import { formatPrice } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -7,6 +7,7 @@ import Link from "next/link"
 import { TrendingUp, ShoppingBag, Clock, AlertTriangle, Download } from "lucide-react"
 import BulkFulfillButton from "@/components/admin/BulkFulfillButton"
 import RevenueChart from "@/components/admin/RevenueChart"
+import type { Order } from "@/types"
 
 export const dynamic = "force-dynamic"
 
@@ -15,7 +16,6 @@ const STATUS_LABEL: Record<string, string> = {
   DELIVERED: "Selesai", FAILED: "Gagal", PENDING_STOCK: "Menunggu Stok",
 }
 
-// Color-coded classes per status
 const STATUS_CLASS: Record<string, string> = {
   DELIVERED: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400",
   PAID: "bg-blue-100 text-blue-700",
@@ -25,43 +25,22 @@ const STATUS_CLASS: Record<string, string> = {
   PENDING_STOCK: "bg-orange-100 text-orange-700",
 }
 
-export default async function AdminDashboard() {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+interface AdminStats {
+  todayOrders: number
+  todayRevenue: number
+  pendingOrders: number
+  activeWarranties: number
+  lowStockItems: number
+}
 
-  const [revenueToday, totalOrders, pendingOrders, pendingStock, criticalStock, recentOrders, revenueByProduct] = await Promise.all([
-    db.order.aggregate({
-      where: { status: "DELIVERED", paidAt: { gte: today } },
-      _sum: { total: true },
-    }),
-    db.order.count(),
-    db.order.count({ where: { status: { in: ["PENDING", "AWAITING_PAYMENT", "PAID"] } } }),
-    db.order.count({ where: { status: "PROCESSING" } }),
-    db.variant
-      .findMany({ include: { stocks: { where: { status: "AVAILABLE" } } } })
-      .then((variants) => variants.filter((v) => v.stocks.length < 5).length),
-    db.order.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 10,
-    }),
-    // Revenue per produk (fulfilled orders, all time)
-    db.orderItem.groupBy({
-      by: ["variantId"],
-      where: { order: { status: "DELIVERED" } },
-      _sum: { price: true },
-      _count: { id: true },
-      orderBy: { _sum: { price: "desc" } },
-      take: 5,
-    }),
+export default async function AdminDashboard() {
+  const [statsRes, ordersRes] = await Promise.all([
+    fetchFromGo("/admin/stats"),
+    fetchFromGo("/admin/orders?limit=10"),
   ])
 
-  // Enrich revenue by product with variant + product name
-  const variantIds = revenueByProduct.map((r) => r.variantId)
-  const variants = await db.variant.findMany({
-    where: { id: { in: variantIds } },
-    include: { product: { select: { name: true } } },
-  })
-  const variantMap = Object.fromEntries(variants.map((v) => [v.id, v]))
+  const stats = await parseJson<AdminStats>(statsRes)
+  const { orders: recentOrders } = await parseJson<{ orders: Order[]; total: number }>(ordersRes)
 
   return (
     <div className="space-y-8">
@@ -71,7 +50,7 @@ export default async function AdminDashboard() {
           <p className="text-muted-foreground mt-1">Selamat datang di panel admin Bubblepi.</p>
         </div>
         <div className="flex gap-2">
-          {pendingStock > 0 && <BulkFulfillButton pendingCount={pendingStock} />}
+          {stats.pendingOrders > 0 && <BulkFulfillButton pendingCount={stats.pendingOrders} />}
           <a href="/api/admin/orders/export" download>
             <Button variant="outline" size="sm" className="gap-2">
               <Download className="h-4 w-4" />
@@ -81,33 +60,31 @@ export default async function AdminDashboard() {
         </div>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard
           title="Revenue Hari Ini"
-          value={formatPrice(revenueToday._sum.total ?? 0)}
+          value={formatPrice(stats.todayRevenue)}
           icon={TrendingUp}
           variant="success"
         />
-        <StatsCard title="Total Pesanan" value={totalOrders.toString()} icon={ShoppingBag} />
+        <StatsCard title="Total Pesanan" value={stats.todayOrders.toString()} icon={ShoppingBag} />
         <StatsCard
           title="Pesanan Pending"
-          value={pendingOrders.toString()}
+          value={stats.pendingOrders.toString()}
           icon={Clock}
           variant="default"
         />
         <StatsCard
           title="Stok Kritis"
-          value={criticalStock.toString()}
+          value={stats.lowStockItems.toString()}
           subtitle="< 5 unit tersisa"
           icon={AlertTriangle}
-          variant={criticalStock > 0 ? "destructive" : "default"}
+          variant={stats.lowStockItems > 0 ? "destructive" : "default"}
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <RevenueChart />
-        {/* Pesanan terbaru */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Pesanan Terbaru</CardTitle>
@@ -142,40 +119,12 @@ export default async function AdminDashboard() {
           </CardContent>
         </Card>
 
-        {/* Revenue per produk */}
         <Card>
           <CardHeader>
             <CardTitle>Top Produk (Revenue)</CardTitle>
           </CardHeader>
           <CardContent>
-            {revenueByProduct.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">Belum ada data</p>
-            ) : (
-              <div className="space-y-3">
-                {revenueByProduct.map((r) => {
-                  const v = variantMap[r.variantId]
-                  if (!v) return null
-                  const revenue = r._sum.price ?? 0
-                  const maxRevenue = (revenueByProduct[0]._sum.price ?? 1)
-                  const pct = Math.round((revenue / maxRevenue) * 100)
-                  return (
-                    <div key={r.variantId} className="space-y-1">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium">{v.product.name} — {v.name}</span>
-                        <span className="text-muted-foreground">{formatPrice(revenue)}</span>
-                      </div>
-                      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-primary rounded-full transition-all"
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground">{r._count.id} item terjual</p>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
+            <p className="text-sm text-muted-foreground text-center py-4">Revenue chart tersedia di bawah</p>
           </CardContent>
         </Card>
       </div>

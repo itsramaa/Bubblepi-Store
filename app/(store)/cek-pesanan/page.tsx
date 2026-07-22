@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { formatPrice } from "@/lib/utils"
 import { Search, Package, ArrowRight, Clock, CreditCard, CheckCircle2, XCircle, Hourglass, AlertTriangle } from "lucide-react"
 import Link from "next/link"
+import { goAPI } from "@/lib/api-client"
 
 interface Order {
   id: string
@@ -76,12 +77,12 @@ export default function OrderLookupPage() {
     setError("")
     setOrders(null)
     try {
-      const res = await fetch(`/api/orders/lookup-by-email?email=${encodeURIComponent(email.trim())}`)
+      const res = await fetch(goAPI(`/api/orders?email=${encodeURIComponent(email.trim())}`), { credentials: "include" })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? "Gagal mencari pesanan")
-      setOrders(data.orders)
-    } catch (err: any) {
-      setError(err.message)
+      setOrders(Array.isArray(data) ? data : data.orders ?? [])
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Terjadi kesalahan")
     } finally {
       setLoading(false)
     }

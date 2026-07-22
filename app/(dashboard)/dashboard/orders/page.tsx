@@ -2,8 +2,8 @@
  * User Dashboard - Order History
  */
 
-import { db } from "@/lib/db"
 import { getUserFromSession } from "@/lib/auth"
+import { fetchFromGo, parseJson } from "@/lib/api-client"
 import { redirect } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,22 +11,7 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { format } from "date-fns"
 import { id } from "date-fns/locale"
-
-async function getUserOrders(userId: string | undefined) {
-  if (!userId) return []
-  return db.order.findMany({
-    where: { userId },
-    include: {
-      items: {
-        include: {
-          variant: { include: { product: true } },
-        },
-      },
-      warranty: true,
-    },
-    orderBy: { createdAt: "desc" },
-  })
-}
+import type { OrderWithItems } from "@/types"
 
 function getStatusBadge(status: string) {
   const styles: Record<string, string> = {
@@ -50,7 +35,8 @@ export default async function UserOrdersPage() {
   const user = await getUserFromSession()
   if (!user || !user.userId) redirect("/login")
 
-  const orders = await getUserOrders(user.userId)
+  const res = await fetchFromGo(`/orders?email=${encodeURIComponent(user.email)}`)
+  const orders = await parseJson<OrderWithItems[]>(res)
 
   return (
     <div className="container mx-auto p-6">
@@ -78,7 +64,7 @@ export default async function UserOrdersPage() {
                 <div>
                   <CardTitle className="text-lg">{order.orderNumber}</CardTitle>
                   <p className="text-sm text-muted-foreground">
-                    {format(new Date(order.createdAt), "dd MMMM yyyy, HH:mm", { locale: id })}
+                    {order.createdAt ? format(new Date(order.createdAt), "dd MMMM yyyy, HH:mm", { locale: id }) : "-"}
                   </p>
                 </div>
                 {getStatusBadge(order.status)}

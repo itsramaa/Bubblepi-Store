@@ -1,4 +1,4 @@
-import { db } from "@/lib/db"
+import { fetchFromGo, parseJson } from "@/lib/api-client"
 
 const EVENTS = ["VIEW_PRODUCT", "ADD_TO_CART", "CHECKOUT_START", "PAYMENT_INITIATED", "PAYMENT_SUCCESS"] as const
 const LABELS: Record<string, string> = {
@@ -9,24 +9,30 @@ const LABELS: Record<string, string> = {
   PAYMENT_SUCCESS: "Pembayaran Sukses",
 }
 
+interface FunnelData {
+  counts: number[]
+}
+
 export async function AnalyticsFunnel() {
-  // eslint-disable-next-line react-hooks/purity
-  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-  const counts = await Promise.all(
-    EVENTS.map((event) =>
-      db.funnelEvent.count({ where: { event, createdAt: { gte: since } } })
-    )
-  )
+  let counts: number[] = []
+  try {
+    const res = await fetchFromGo("/admin/stats")
+    const stats = await parseJson<FunnelData>(res)
+    counts = stats.counts ?? EVENTS.map(() => 0)
+  } catch {
+    counts = EVENTS.map(() => 0)
+  }
+
   const top = counts[0] || 1
   return (
     <div className="space-y-2">
-      <h3 className="text-sm font-semibold text-muted-foreground">Funnel Konversi (30 hari)</h3>
+      <p className="text-body-sm font-semibold text-muted">Funnel Konversi (30 hari)</p>
       {EVENTS.map((event, i) => (
-        <div key={event} className="flex items-center gap-3 text-sm">
-          <span className="w-44 text-muted-foreground">{LABELS[event]}</span>
-          <div className="flex-1 bg-muted rounded-full h-2">
+        <div key={event} className="flex items-center gap-3 text-body-sm">
+          <span className="w-44 text-muted">{LABELS[event]}</span>
+          <div className="flex-1 bg-surface-strong rounded-full h-2">
             <div
-              className="bg-pink-400 h-2 rounded-full"
+              className="bg-primary h-2 rounded-full"
               style={{ width: `${(counts[i] / top) * 100}%` }}
             />
           </div>

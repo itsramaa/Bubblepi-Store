@@ -1,4 +1,4 @@
-import { db } from "@/lib/db"
+import { fetchFromGo, parseJson } from "@/lib/api-client"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -6,24 +6,25 @@ import { Archive, AlertTriangle } from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
+interface StockVariant {
+  id: string
+  name: string
+  productName: string
+  available: number
+  assigned: number
+  total: number
+}
+
 interface Props { searchParams: Promise<{ search?: string }> }
 
 export default async function AdminStockPage({ searchParams }: Props) {
   const { search } = await searchParams
 
-  const variants = await db.variant.findMany({
-    where: search ? {
-      OR: [
-        { product: { name: { contains: search, mode: "insensitive" } } },
-        { name: { contains: search, mode: "insensitive" } },
-      ],
-    } : undefined,
-    include: {
-      product: { select: { name: true } },
-      stocks: true,
-    },
-    orderBy: { product: { name: "asc" } },
-  })
+  const params = new URLSearchParams()
+  if (search) params.set("search", search)
+
+  const res = await fetchFromGo(`/admin/stock?${params.toString()}`)
+  const variants = await parseJson<StockVariant[]>(res)
 
   return (
     <div className="space-y-6">
@@ -32,7 +33,6 @@ export default async function AdminStockPage({ searchParams }: Props) {
         <p className="text-muted-foreground mt-1">Kelola credentials per varian produk</p>
       </div>
 
-      {/* Search */}
       <form className="flex gap-2">
         <Input
           name="search"
@@ -50,16 +50,13 @@ export default async function AdminStockPage({ searchParams }: Props) {
             <p>Tidak ada varian ditemukan</p>
           </div>
         ) : variants.map((variant) => {
-          const available = variant.stocks.filter((s) => s.status === "AVAILABLE").length
-          const assigned = variant.stocks.filter((s) => s.status === "HOLD").length
-          const isCritical = available < 5
-
+          const isCritical = variant.available < 5
           const stockColor =
-            available === 0
+            variant.available === 0
               ? "bg-red-100 text-red-700"
-              : available < 5
+              : variant.available < 5
               ? "bg-red-100 text-red-700"
-              : available < 10
+              : variant.available < 10
               ? "bg-amber-100 text-amber-700"
               : "bg-emerald-100 text-emerald-700"
 
@@ -75,17 +72,17 @@ export default async function AdminStockPage({ searchParams }: Props) {
                     : <Archive className="h-5 w-5 text-primary" />}
                 </div>
                 <div className="min-w-0">
-                  <p className="font-semibold truncate">{variant.product.name} — {variant.name}</p>
+                  <p className="font-semibold truncate">{variant.productName} — {variant.name}</p>
                   <p className="text-sm text-muted-foreground">{variant.name}</p>
                 </div>
               </div>
               <div className="flex flex-wrap gap-2 items-center shrink-0 ml-3">
                 <div className="text-right text-sm hidden sm:block">
-                  <p className="text-muted-foreground">{assigned} assigned</p>
-                  <p className="text-muted-foreground">{variant.stocks.length} total</p>
+                  <p className="text-muted-foreground">{variant.assigned} assigned</p>
+                  <p className="text-muted-foreground">{variant.total} total</p>
                 </div>
                 <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${stockColor}`}>
-                  {available} tersedia
+                  {variant.available} tersedia
                 </span>
                 <Link href={`/admin/stock/${variant.id}`}>
                   <Button variant="outline" size="sm">Kelola</Button>

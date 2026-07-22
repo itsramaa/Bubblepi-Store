@@ -36,7 +36,6 @@ export default function OrderFilters() {
       } else {
         params.set(key, value)
       }
-      // Reset to page 1 on filter change
       params.delete("page")
       startTransition(() => {
         router.push(`${pathname}?${params.toString()}`)
@@ -52,11 +51,8 @@ export default function OrderFilters() {
 
   return (
     <div className="flex flex-wrap gap-4 items-end">
-      {/* Status Filter */}
       <div className="flex flex-col gap-1.5 min-w-[180px]">
-        <Label htmlFor="status-filter" className="text-xs text-muted-foreground">
-          Status
-        </Label>
+        <Label htmlFor="status-filter" className="text-caption-sm text-muted">Status</Label>
         <Select
           value={status || null}
           onValueChange={(val) => updateParam("status", val ?? "ALL")}
@@ -74,9 +70,8 @@ export default function OrderFilters() {
         </Select>
       </div>
 
-      {/* Search */}
       <div className="flex flex-col gap-1.5 min-w-[220px]">
-        <Label htmlFor="order-search" className="text-xs text-muted-foreground">
+        <Label htmlFor="order-search" className="text-caption-sm text-muted">
           Cari (email / nomor pesanan)
         </Label>
         <Input
@@ -86,7 +81,6 @@ export default function OrderFilters() {
           defaultValue={search}
           onChange={(e) => {
             const val = e.target.value
-            // Debounce-like: only update on clear or Enter
             if (val === "") updateParam("search", "")
           }}
           onKeyDown={(e) => {
@@ -98,11 +92,8 @@ export default function OrderFilters() {
         />
       </div>
 
-      {/* Date Range */}
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="date-from" className="text-xs text-muted-foreground">
-          Dari tanggal
-        </Label>
+        <Label htmlFor="date-from" className="text-caption-sm text-muted">Dari tanggal</Label>
         <Input
           id="date-from"
           type="date"
@@ -116,9 +107,7 @@ export default function OrderFilters() {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="date-to" className="text-xs text-muted-foreground">
-          Sampai tanggal
-        </Label>
+        <Label htmlFor="date-to" className="text-caption-sm text-muted">Sampai tanggal</Label>
         <Input
           id="date-to"
           type="date"

@@ -7,6 +7,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { goAPI } from "@/lib/api-client"
 
 interface PricelistItem {
   product: string
@@ -21,7 +22,7 @@ export default function PricelistPage() {
   const [copyStatus, setCopyStatus] = useState("")
 
   useEffect(() => {
-    fetch("/api/admin/pricelist?format=json")
+    fetch(goAPI("/api/admin/pricelist?format=json"), { credentials: "include" })
       .then((res) => res.json())
       .then(setPricelist)
       .catch(console.error)

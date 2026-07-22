@@ -1,23 +1,24 @@
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
-import { db } from "@/lib/db"
+import { fetchFromGo, parseJson } from "@/lib/api-client"
 import { Badge } from "@/components/ui/badge"
 import { formatPrice } from "@/lib/utils"
 import { parseDurationDays } from "@/lib/duration"
 import VariantCompareTable from "@/components/store/VariantCompareTable"
 import ReviewSection from "@/components/store/ReviewSection"
+import type { ReviewSectionProps } from "@/components/store/ReviewSection"
 import CredentialPreview from "@/components/store/CredentialPreview"
 import RelatedProducts from "@/components/store/RelatedProducts"
 import PriceDropNotify from "@/components/store/PriceDropNotify"
-import { StockBadge } from "@/components/product/stock-badge"
 import { ProductViewTracker } from "@/components/store/ProductViewTracker"
 import Link from "next/link"
 import Image from "next/image"
 import { Suspense } from "react"
 import {
   Shield, Zap, MessageCircle, ChevronRight, Star, Users,
-  Tv, Bot, Palette, BookOpen, Gamepad2, Globe, Lock, CheckCircle2,
+  Tv, Bot, Palette, BookOpen, Gamepad2, Globe, CheckCircle2,
 } from "lucide-react"
+import type { ProductDetail, ReviewListResponse, Review } from "@/types"
 
 export const dynamic = "force-dynamic"
 
@@ -25,16 +26,20 @@ interface Props { params: Promise<{ slug: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const product = await db.product.findUnique({ where: { slug }, select: { name: true, description: true, image: true } })
-  if (!product) return {}
-  const title = `Beli ${product.name} Murah - Bubblepi Store`
-  const desc = (product.description ?? "").slice(0, 160)
-  const imageUrl = product.image?.startsWith("http") ? product.image : `https://bubblepi-store.vercel.app${product.image}`
-  return {
-    title,
-    description: desc,
-    openGraph: { title, description: desc, url: `https://bubblepi-store.vercel.app/products/${slug}`, siteName: "Bubblepi Store", images: [{ url: imageUrl }], type: "website" },
-    twitter: { card: "summary_large_image", title, description: desc, images: [imageUrl] },
+  try {
+    const res = await fetchFromGo(`/products/${encodeURIComponent(slug)}`)
+    const product = await parseJson<ProductDetail>(res)
+    const title = `Beli ${product.name} Murah - Bubblepi Store`
+    const desc = (product.description ?? "").slice(0, 160)
+    const imageUrl = product.image?.startsWith("http") ? product.image : `https://bubblepi-store.vercel.app${product.image}`
+    return {
+      title,
+      description: desc,
+      openGraph: { title, description: desc, url: `https://bubblepi-store.vercel.app/products/${slug}`, siteName: "Bubblepi Store", images: [{ url: imageUrl }], type: "website" },
+      twitter: { card: "summary_large_image", title, description: desc, images: [imageUrl] },
+    }
+  } catch {
+    return {}
   }
 }
 
@@ -58,33 +63,31 @@ function getCategoryGradient(category: string) {
 
 export default async function ProductDetailPage({ params }: Props) {
   const { slug } = await params
-  const product = await db.product.findUnique({ where: { slug }, include: { variants: true } })
-  if (!product) notFound()
 
-  const variantIds = product.variants.map((v) => v.id)
+  // Fetch product detail (includes variants + warrantyOptions)
+  const productRes = await fetchFromGo(`/products/${encodeURIComponent(slug)}`)
+  const product = await parseJson<ProductDetail>(productRes).catch(() => null)
+  if (!product) { notFound(); return }
 
-  // Single query — ganti N+1 per-variant count
-  const stockCounts = await db.accountStock.groupBy({
-    by: ["variantId"],
-    where: { variantId: { in: variantIds }, status: "AVAILABLE" },
-    _count: { id: true },
-  })
-  const stockMap = new Map(stockCounts.map((s) => [s.variantId, s._count.id]))
-
-  const variantsWithStock = product.variants.map((v) => ({
+  const variantsWithWarranty = product.variants.map((v) => ({
     ...v,
-    stockCount: stockMap.get(v.id) ?? 0,
+    stockCount: 0, // Stock counts not available from Go API
+    warrantyOptions: v.warrantyOptions ?? [],
   }))
 
-  const soldData = await db.orderItem.groupBy({
-    by: ["variantId"],
-    where: { variantId: { in: product.variants.map((v) => v.id) }, order: { status: "DELIVERED" } },
-    _sum: { quantity: true },
-  })
-  const soldMap = new Map(soldData.map((s) => [s.variantId, s._sum.quantity ?? 0]))
-  const totalSold = soldData.reduce((a, s) => a + (s._sum.quantity ?? 0), 0)
+  // Reviews
+  let reviews: Review[] = []
+  let avgRating = 0
+  try {
+    const reviewsRes = await fetchFromGo(`/reviews?productId=${product.id}`)
+    const reviewsData = await parseJson<ReviewListResponse>(reviewsRes)
+    reviews = reviewsData.reviews ?? []
+    avgRating = reviewsData.stats?.avgRating ?? 0
+  } catch {
+    // No reviews, that's fine
+  }
 
-  const withPpd = variantsWithStock.map((v) => ({
+  const withPpd = variantsWithWarranty.map((v) => ({
     ...v,
     pricePerDay: Math.round(v.price / parseDurationDays(v.name)),
   }))
@@ -93,20 +96,12 @@ export default async function ProductDetailPage({ params }: Props) {
 
   const minPrice = Math.min(...product.variants.map((v) => v.price))
   const maxPrice = Math.max(...product.variants.map((v) => v.price))
-  const totalStock = variantsWithStock.reduce((a, v) => a + v.stockCount, 0)
 
-  const reviews = await db.review.findMany({
-    where: { productId: product.id, isVisible: true },
-    orderBy: { createdAt: "desc" },
-    take: 20,
-    include: { 
-      user: { select: { name: true } }
-    },
-  })
-  const avgRating = reviews.length > 0 ? reviews.reduce((a, r) => a + r.rating, 0) / reviews.length : 0
-
-  const CategoryIcon = getCategoryIcon((product.category ?? "other") as string)
-  const gradient = getCategoryGradient((product.category ?? "other") as string)
+  // Helper to render category icon without creating a component
+  function renderCategoryIcon(iconCategory: string, className?: string) {
+    const Icon = getCategoryIcon(iconCategory)
+    return <Icon className={className} />
+  }
 
   const productUrl = `https://bubblepi-store.vercel.app/products/${product.slug}`
   const imageUrl = product.image?.startsWith("http")
@@ -148,9 +143,7 @@ export default async function ProductDetailPage({ params }: Props) {
       lowPrice: minPrice,
       highPrice: maxPrice,
       priceCurrency: "IDR",
-      availability: totalStock > 0
-        ? "https://schema.org/InStock"
-        : "https://schema.org/OutOfStock",
+      availability: "https://schema.org/InStock",
       url: productUrl,
     },
   }
@@ -181,8 +174,7 @@ export default async function ProductDetailPage({ params }: Props) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16">
         {/* Left — Image */}
         <div className="space-y-4">
-          {/* Image with zoom on hover */}
-          <div className={`group relative aspect-square rounded-3xl overflow-hidden bg-gradient-to-br ${gradient}`}>
+          <div className={`group relative aspect-square rounded-3xl overflow-hidden bg-gradient-to-br ${getCategoryGradient(product.category ?? "other")}`}>
             {product.image ? (
               <Image
                 src={product.image}
@@ -194,30 +186,22 @@ export default async function ProductDetailPage({ params }: Props) {
               />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center">
-                <CategoryIcon className="h-32 w-32 text-white/30" />
+                {renderCategoryIcon(product.category ?? "other", "h-32 w-32 text-white/30")}
               </div>
             )}
             <div className="absolute top-4 left-4">
               <Badge className="bg-white/20 backdrop-blur-sm text-white border-white/30 gap-1.5">
-                <CategoryIcon className="h-3 w-3" />
+                {renderCategoryIcon(product.category ?? "other", "h-3 w-3")}
                 {(product.category ?? "Other").charAt(0).toUpperCase() + (product.category ?? "Other").slice(1)}
               </Badge>
             </div>
-            {totalSold > 0 && (
-              <div className="absolute top-4 right-4">
-                <Badge className="bg-white/20 backdrop-blur-sm text-white border-white/30 gap-1.5">
-                  <Users className="h-3 w-3" />
-                  {totalSold}+ terjual
-                </Badge>
-              </div>
-            )}
           </div>
 
           {/* Trust badges — 4 items */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
               { icon: Zap, label: "Instan", sub: "< 5 menit", color: "text-amber-500" },
-              { icon: Shield, label: "Garansi", sub: product.variants.some(v => (v as any).warrantyOptions?.length > 0) ? "Garansi resmi" : "Terpercaya", color: "text-green-500" },
+              { icon: Shield, label: "Garansi", sub: product.variants.some(v => v.warrantyOptions?.length > 0) ? "Garansi resmi" : "Terpercaya", color: "text-green-500" },
               { icon: CheckCircle2, label: "Aman", sub: "100% legit", color: "text-blue-500" },
               { icon: MessageCircle, label: "Support 24/7", sub: "Via WhatsApp", color: "text-[#595B83]" },
             ].map(({ icon: Icon, label, sub, color }) => (
@@ -229,7 +213,6 @@ export default async function ProductDetailPage({ params }: Props) {
             ))}
           </div>
 
-          {/* Credential preview */}
           <CredentialPreview type={product.category ?? "other"} />
         </div>
 
@@ -262,46 +245,25 @@ export default async function ProductDetailPage({ params }: Props) {
             )}
           </div>
 
-          {/* Per-variant stock badges */}
-          {variantsWithStock.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {variantsWithStock.map((v) => {
-                const badge = <StockBadge key={v.id} availableStock={v.stockCount} />
-                if (!badge) return null
-                return (
-                  <div key={v.id} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <span className="font-medium">{v.name}:</span>
-                    <StockBadge availableStock={v.stockCount} />
-                  </div>
-                )
-              })}
-            </div>
-          )}
-
-          {/* Stock warning */}
-          {totalStock === 0 && (
+          {/* Stock warning — simplified since stock data not available from Go API */}
+          {false && (
             <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm font-medium">
               Stok habis — coba lagi nanti atau hubungi admin.
             </div>
           )}
-          {totalStock > 0 && totalStock <= 5 && (
-            <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-sm font-medium">
-              ⚠️ Stok terbatas! Sisa {totalStock} unit tersedia.
-            </div>
-          )}
 
-          {/* Variant selector — anchor for sticky CTA observer */}
+          {/* Variant selector */}
           <div id="variant-selector-anchor">
             <VariantCompareTable
-              variants={withPpd as any}
+              variants={withPpd}
               product={{ id: product.id, name: product.name }}
               bestValueId={bestValueId}
-              soldMap={Object.fromEntries(soldMap)}
+              soldMap={{}}
             />
           </div>
 
-          {/* Price drop notification — only show when product is in stock */}
-          {totalStock > 0 && (() => {
+          {/* Price drop notification */}
+          {(() => {
             const cheapestVariant = withPpd.reduce((a, b) => a.price <= b.price ? a : b)
             return (
               <PriceDropNotify
@@ -311,7 +273,7 @@ export default async function ProductDetailPage({ params }: Props) {
             )
           })()}
 
-          {/* Why buy here — 4 trust points */}
+          {/* Why buy here */}
           <div className="p-5 rounded-2xl bg-muted/30 border space-y-2.5">
             <p className="font-semibold text-sm">Mengapa beli di sini?</p>
             <ul className="space-y-2 text-sm text-muted-foreground">
@@ -319,7 +281,7 @@ export default async function ProductDetailPage({ params }: Props) {
                 { icon: Zap, color: "text-amber-500", text: "Akun dikirim otomatis ke email dalam hitungan menit" },
                 { icon: Shield, color: "text-green-500", text: "Garansi penggantian jika ada masalah" },
                 { icon: CheckCircle2, color: "text-blue-500", text: "Transaksi aman & terenkripsi — 100% terpercaya" },
-                { icon: MessageCircle, color: "text-[#595B83]", text: `Support 24/7 via WhatsApp — ${totalSold > 0 ? `${totalSold}+` : "ratusan"} pembeli sudah puas` },
+                { icon: MessageCircle, color: "text-[#595B83]", text: "Support 24/7 via WhatsApp — ratusan pembeli sudah puas" },
               ].map(({ icon: Icon, color, text }) => (
                 <li key={text} className="flex items-center gap-2.5">
                   <Icon className={`h-4 w-4 ${color} shrink-0`} />
@@ -344,10 +306,10 @@ export default async function ProductDetailPage({ params }: Props) {
 
       {/* Reviews */}
       <div className="mt-16">
-        <ReviewSection productId={product.id} reviews={reviews as any} avgRating={avgRating} />
+        <ReviewSection productId={product.id} reviews={reviews as unknown as ReviewSectionProps["reviews"]} avgRating={avgRating} />
       </div>
 
-      {/* Related products — wrapped in Suspense for streaming */}
+      {/* Related products */}
       <Suspense fallback={
         <div className="mt-16">
           <div className="h-7 w-40 bg-muted animate-pulse rounded-md mb-6" />

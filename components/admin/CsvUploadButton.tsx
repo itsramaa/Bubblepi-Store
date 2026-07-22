@@ -4,6 +4,7 @@ import { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Loader2, Upload, FileText, CheckCircle2 } from "lucide-react"
 import { toast } from "sonner"
+import { goAPI } from "@/lib/api-client"
 
 interface Props {
   variantId: string
@@ -23,17 +24,14 @@ export default function CsvUploadButton({ variantId, onSuccess }: Props) {
 
     try {
       const text = await file.text()
-      // Support both CSV (comma/semicolon) and plain text (one per line)
       const lines = text
         .split(/[\r\n]+/)
         .map((l) => l.trim())
         .filter(Boolean)
 
-      // If CSV, try to find a "credentials" column, else treat each line as credential
       let credentials: string[]
       const firstLine = lines[0]?.toLowerCase() ?? ""
       if (firstLine.includes("credential") || firstLine.includes("akun") || firstLine.includes("account")) {
-        // Has header — skip first line
         credentials = lines.slice(1)
       } else {
         credentials = lines
@@ -44,10 +42,11 @@ export default function CsvUploadButton({ variantId, onSuccess }: Props) {
         return
       }
 
-      const res = await fetch("/api/admin/stock/bulk-upload", {
+      const res = await fetch(goAPI("/api/admin/stock/bulk-upload"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ variantId, credentials }),
+        credentials: "include",
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
@@ -87,7 +86,7 @@ export default function CsvUploadButton({ variantId, onSuccess }: Props) {
         {loading ? "Mengupload..." : "Upload CSV / TXT"}
       </Button>
       {fileName && !loading && (
-        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+        <p className="text-caption-sm text-muted mt-1 flex items-center gap-1">
           <FileText className="h-3 w-3" /> {fileName}
         </p>
       )}

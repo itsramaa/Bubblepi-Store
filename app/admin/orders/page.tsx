@@ -1,10 +1,11 @@
-import { db } from "@/lib/db"
+import { fetchFromGo, parseJson } from "@/lib/api-client"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { formatPrice } from "@/lib/utils"
 import { ShoppingBag } from "lucide-react"
+import type { Order } from "@/types"
 
 export const dynamic = "force-dynamic"
 
@@ -28,32 +29,23 @@ const STATUSES = ["PENDING", "AWAITING_PAYMENT", "PAID", "DELIVERED", "FAILED", 
 
 interface Props { searchParams: Promise<{ status?: string; page?: string; search?: string }> }
 
+interface OrdersResponse {
+  orders: Order[]
+  total: number
+}
+
 export default async function AdminOrdersPage({ searchParams }: Props) {
   const { status, page: pageStr, search } = await searchParams
   const page = Math.max(1, parseInt(pageStr ?? "1"))
-  const skip = (page - 1) * PAGE_SIZE
 
-  const where: Record<string, unknown> = {}
-  if (status) where.status = status
-  if (search) {
-    where.OR = [
-      { orderNumber: { contains: search, mode: "insensitive" } },
-      { customerEmail: { contains: search, mode: "insensitive" } },
-      { customerName: { contains: search, mode: "insensitive" } },
-    ]
-  }
+  const params = new URLSearchParams()
+  if (status) params.set("status", status)
+  if (search) params.set("search", search)
+  params.set("page", String(page))
+  params.set("limit", String(PAGE_SIZE))
 
-  const [orders, total] = await Promise.all([
-    db.order.findMany({
-      where,
-      include: { items: { include: { variant: { include: { product: true } } } } },
-      orderBy: { createdAt: "desc" },
-      take: PAGE_SIZE,
-      skip,
-    }),
-    db.order.count({ where }),
-  ])
-
+  const res = await fetchFromGo(`/admin/orders?${params.toString()}`)
+  const { orders, total } = await parseJson<OrdersResponse>(res)
   const totalPages = Math.ceil(total / PAGE_SIZE)
 
   function buildUrl(params: Record<string, string | undefined>) {
@@ -72,7 +64,6 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
         <p className="text-muted-foreground mt-1">{total} pesanan ditemukan</p>
       </div>
 
-      {/* Search */}
       <form className="flex gap-2">
         <Input
           name="search"
@@ -84,7 +75,6 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
         <Button type="submit" size="sm">Cari</Button>
       </form>
 
-      {/* Filter tabs — Badge chips with color per status */}
       <div className="flex gap-2 flex-wrap">
         <Link href={buildUrl({ search })}>
           <Badge variant={!status ? "default" : "outline"} className="cursor-pointer px-3 py-1 text-sm">
@@ -106,7 +96,6 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
         ))}
       </div>
 
-      {/* Orders list */}
       <div className="space-y-2">
         {orders.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
@@ -139,7 +128,6 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
         ))}
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-3 pt-4">
           <Link href={buildUrl({ status, search, page: String(page - 1) })}>

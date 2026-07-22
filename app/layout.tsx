@@ -1,16 +1,19 @@
 import type { Metadata } from "next"
-import { Poppins } from "next/font/google"
+import { Inter } from "next/font/google"
 import { ThemeProvider } from "@/context/ThemeContext"
 import { CartProvider } from "@/context/CartContext"
 import { Toaster } from "@/components/ui/sonner"
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration"
 import "./globals.css"
 
-const poppins = Poppins({
+// Inter — closest open-source substitute for Airbnb Cereal VF (per DESIGN.md)
+const cereal = Inter({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
-  variable: "--font-poppins",
+  variable: "--font-cereal",
+  display: "swap",
 })
+
 export const metadata: Metadata = {
   title: "Bubblepi Store — Digital Account Shop",
   description: "Toko akun digital sharing: Netflix, Spotify, Canva, ChatGPT, dan lainnya.",
@@ -19,7 +22,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="id" suppressHydrationWarning>
-      <body className={`${poppins.variable} font-sans antialiased min-h-screen`}>
+      <body className={`${cereal.variable} font-sans antialiased min-h-screen`}>
         <ThemeProvider>
           <CartProvider>
             <ServiceWorkerRegistration />

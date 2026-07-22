@@ -14,26 +14,26 @@ export default function StatsCard({ title, value, subtitle, icon: Icon, variant 
   const colors = {
     default: "text-primary bg-primary/10",
     destructive: "text-destructive bg-destructive/10",
-    success: "text-green-600 bg-green-100 dark:bg-green-900/30",
+    success: "text-green-600 bg-green-100",
   }
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className="border border-hairline hover:shadow-card-hover transition-shadow rounded-sm">
       <CardContent className="p-6">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-sm text-muted-foreground">{title}</p>
+            <p className="text-body-sm text-muted">{title}</p>
             <p className={cn(
-              "text-2xl font-bold mt-1",
+              "text-display-sm font-bold mt-1",
               variant === "destructive" && "text-destructive",
               variant === "success" && "text-green-600"
             )}>
               {value}
             </p>
-            {subtitle && <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>}
+            {subtitle && <p className="text-caption-sm text-muted mt-1">{subtitle}</p>}
           </div>
           {Icon && (
-            <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", colors[variant])}>
+            <div className={cn("w-10 h-10 rounded-full flex items-center justify-center", colors[variant])}>
               <Icon className="h-5 w-5" />
             </div>
           )}

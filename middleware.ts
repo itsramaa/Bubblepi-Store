@@ -1,28 +1,27 @@
 import { NextRequest, NextResponse } from "next/server"
-import { verifyAdminToken, getAdminTokenFromHeaders } from "@/lib/auth"
+import { jwtVerify } from "jose"
+
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "")
 
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next()
   const { searchParams, pathname } = request.nextUrl
 
-  // Fix 4: Protect /api/admin/* routes via middleware
-  if (pathname.startsWith("/api/admin/")) {
-    const tokenValue =
-      request.cookies.get("admin-token")?.value ??
-      getAdminTokenFromHeaders(request.headers)
-    if (!tokenValue) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    const valid = await verifyAdminToken(tokenValue)
-    if (!valid) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
-
-  // Admin route protection — redirect to login if no valid token
+  // Admin route protection — verify JWT from cookie, redirect to login if invalid
   if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
     const cookie = request.cookies.get("admin-token")
     if (!cookie) {
-      return NextResponse.redirect(new URL("/admin/login", request.url))
+      const url = new URL("/admin/login", request.url)
+      url.searchParams.set("next", pathname)
+      return NextResponse.redirect(url)
     }
-    const valid = await verifyAdminToken(cookie.value)
-    if (!valid) {
+    try {
+      const { payload } = await jwtVerify(cookie.value, JWT_SECRET)
+      // Only ADMIN role can access admin routes
+      if (payload.role !== "ADMIN") {
+        return NextResponse.redirect(new URL("/admin/login", request.url))
+      }
+    } catch {
       return NextResponse.redirect(new URL("/admin/login", request.url))
     }
   }
@@ -46,7 +45,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Fix 4: Include /api/admin/* in matcher (removed blanket api exclusion)
   matcher: ["/((?!_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest).*)"],
 }
-

@@ -6,7 +6,7 @@ import { ArrowRight } from "lucide-react"
 import type { ProductWithVariants } from "@/types"
 
 interface Props {
-  products: (ProductWithVariants & { totalSold: number })[]
+  products: (ProductWithVariants & { totalSold?: number })[]
   totalStoreSold?: number
 }
 
@@ -22,7 +22,7 @@ function FeaturedProductsSkeleton() {
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="rounded-2xl border bg-card overflow-hidden">
+          <div key={i} className="card-property border border-hairline overflow-hidden">
             <div className="aspect-[4/3] bg-muted animate-pulse" />
             <div className="p-4 space-y-3">
               <div className="h-3 w-16 bg-muted rounded animate-pulse" />
@@ -44,14 +44,14 @@ function FeaturedProductsContent({ products, totalStoreSold }: Props) {
     <section className="max-w-7xl mx-auto px-4 py-20">
       <div className="flex items-end justify-between mb-10">
         <div>
-          <p className="text-sm font-medium text-primary mb-1 uppercase tracking-wider">🔥 Produk Terlaris</p>
-          <h2 className="text-3xl md:text-4xl font-bold">Paling Laris</h2>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-body-sm font-medium text-primary mb-1 uppercase tracking-wider">🔥 Produk Terlaris</p>
+          <h2 className="text-display-xl">Paling Laris</h2>
+          <p className="text-body-md text-muted mt-2">
             {totalStoreSavedDisplay(totalStoreSold)} produk paling laris bulan ini
           </p>
         </div>
         <Link href="/products">
-          <Button variant="ghost" className="gap-2 hidden sm:flex">
+          <Button variant="ghost" className="gap-2 hidden sm:flex text-link hover:text-ink">
             Lihat Semua <ArrowRight className="h-4 w-4" />
           </Button>
         </Link>

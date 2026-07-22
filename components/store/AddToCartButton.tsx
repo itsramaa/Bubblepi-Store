@@ -1,13 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { useCart } from "@/context/CartContext"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { ShoppingCart, Zap, Check } from "lucide-react"
+import { ShoppingCart, Check } from "lucide-react"
 import { cn, formatPrice } from "@/lib/utils"
-import { parseDurationDays } from "@/lib/duration"
 import { toast } from "sonner"
 
 interface Variant {
@@ -29,13 +26,10 @@ interface Props {
 
 export default function AddToCartButton({ variant, product, stockCount, isBestValue }: Props) {
   const { addItem } = useCart()
-  const router = useRouter()
   const [added, setAdded] = useState(false)
 
   const stock = stockCount ?? 0
   const isOutOfStock = stock === 0
-  const days = parseDurationDays(variant.name)
-  const pricePerDay = days > 0 ? Math.round(variant.price / days) : variant.price
 
   function handleAdd() {
     if (isOutOfStock) return
@@ -51,39 +45,27 @@ export default function AddToCartButton({ variant, product, stockCount, isBestVa
     setTimeout(() => setAdded(false), 1500)
   }
 
-  function handleBuyNow() {
-    if (isOutOfStock) return
-    addItem({
-      variantId: variant.id,
-      productId: product.id,
-      productName: product.name,
-      variantName: variant.name,
-      price: variant.price,
-    })
-    router.push("/checkout")
-  }
-
   return (
     <div className="space-y-1 relative">
       {isBestValue && (
         <div className="absolute -top-2 -right-2 z-10">
-          <Badge className="text-xs bg-amber-500 hover:bg-amber-500 text-white border-0 px-1.5 py-0.5">
+          <span className="inline-flex items-center rounded-full bg-amber-100 text-amber-800 text-[11px] font-semibold px-2.5 py-0.5 border border-amber-200">
             ✨ Paling Worth
-          </Badge>
+          </span>
         </div>
       )}
       <Button
         variant="outline"
         className={cn(
-          "w-full justify-between",
+          "w-full justify-between rounded-sm border-hairline text-body-sm font-medium h-auto py-3",
           added && "border-green-500 text-green-600",
           isOutOfStock && "opacity-50 cursor-not-allowed",
-          isBestValue && "border-amber-300 dark:border-amber-700"
+          isBestValue && "border-amber-300"
         )}
         onClick={handleAdd}
         disabled={isOutOfStock}
       >
-        <span>{variant.name} • {variant.name}</span>
+        <span>{variant.name}</span>
         <span className="flex items-center gap-2">
           {isOutOfStock ? (
             <span className="text-xs text-destructive font-medium">Habis</span>
@@ -96,9 +78,11 @@ export default function AddToCartButton({ variant, product, stockCount, isBestVa
         </span>
       </Button>
       <div className="flex items-center justify-between px-1">
-        <span className="text-xs text-muted-foreground">= {formatPrice(pricePerDay)}/hari</span>
+        {variant.duration && (
+          <span className="text-caption-sm text-muted">/{variant.duration}</span>
+        )}
         {!isOutOfStock && stock <= 5 && (
-          <span className="text-xs text-destructive">Sisa {stock}</span>
+          <span className="text-caption-sm text-destructive">Sisa {stock}</span>
         )}
       </div>
     </div>

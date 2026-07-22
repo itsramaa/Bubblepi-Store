@@ -68,13 +68,13 @@ export default function StickyAddToCart({ product, selectedVariant, quantity }: 
       "fixed bottom-0 left-0 right-0 z-50 md:hidden transition-transform duration-300 ease-in-out",
       visible ? "translate-y-0" : "translate-y-full"
     )}>
-      <div className="bg-background/95 backdrop-blur-md border-t px-4 py-3 safe-area-pb">
+      <div className="bg-canvas/95 backdrop-blur-md border-t border-hairline px-4 py-3 safe-area-pb">
         <div className="flex items-center gap-2 mb-2">
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-muted-foreground truncate">{product.name}</p>
-            <p className="text-sm font-semibold truncate">{selectedVariant.name} • {selectedVariant.name}</p>
+            <p className="text-caption-sm text-muted truncate">{product.name}</p>
+            <p className="text-body-sm font-semibold truncate">{selectedVariant.name}</p>
           </div>
-          <p className="font-bold text-[#333456] shrink-0">{formatPrice(selectedVariant.price * quantity)}</p>
+          <p className="font-bold text-ink shrink-0">{formatPrice(selectedVariant.price * quantity)}</p>
         </div>
         <div className="flex gap-2">
           <Button
@@ -87,7 +87,7 @@ export default function StickyAddToCart({ product, selectedVariant, quantity }: 
           </Button>
           <Button
             variant="outline"
-            className="h-11 gap-2 px-4 font-semibold border-[#595B83] text-[#595B83] hover:bg-[#595B83] hover:text-white"
+            className="h-11 gap-2 px-4 font-semibold border-ink/30 text-ink hover:bg-ink hover:text-on-dark"
             onClick={handleBuyNow}
             disabled={isOos}
           >

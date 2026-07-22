@@ -1,10 +1,10 @@
-import { db } from "@/lib/db"
 import type { Metadata } from "next"
+import { fetchFromGo, parseJson } from "@/lib/api-client"
 import ProductCard from "@/components/store/ProductCard"
 import FilterSidebar from "@/components/store/FilterSidebar"
-import type { ProductWithVariants } from "@/types"
 import { Suspense } from "react"
 import { ProductGridSkeleton } from "@/components/product/product-grid-skeleton"
+import type { ProductDetail } from "@/types"
 
 export const dynamic = "force-dynamic"
 
@@ -32,109 +32,52 @@ interface ProductsPageProps {
   }>
 }
 
+// Fetch all active products from Go API — returns raw array without variants
+async function getProducts() {
+  const res = await fetchFromGo("/products")
+  return parseJson<ProductDetail[]>(res)
+}
+
 async function ProductList({
   category,
   search,
   sort,
-  minPrice,
-  maxPrice,
-  inStock,
 }: {
   category?: string
   search?: string
   sort?: string
-  minPrice?: string
-  maxPrice?: string
-  inStock?: string
 }) {
-  const minPriceNum = minPrice ? parseInt(minPrice, 10) : undefined
-  const maxPriceNum = maxPrice ? parseInt(maxPrice, 10) : undefined
-  const onlyInStock = inStock === "1"
+  const products = await getProducts()
 
-  const products = await db.product.findMany({
-    where: {
-      isActive: true,
-      ...(category && { category }),
-      ...(search && {
-        OR: [
-          { name: { contains: search, mode: "insensitive" } },
-          { description: { contains: search, mode: "insensitive" } },
-        ],
-      }),
-      // Filter by price range on at least one variant
-      ...((minPriceNum !== undefined || maxPriceNum !== undefined) && {
-        variants: {
-          some: {
-            price: {
-              ...(minPriceNum !== undefined && { gte: minPriceNum }),
-              ...(maxPriceNum !== undefined && { lte: maxPriceNum }),
-            },
-          },
-        },
-      }),
-    },
-    include: { variants: true },
-    orderBy: { createdAt: "desc" },
-  })
+  let filtered = products.filter((p) => p.isActive)
 
-  // Attach sold count per product
-  const soldCounts = await db.orderItem.groupBy({
-    by: ["variantId"],
-    where: { order: { status: "DELIVERED" } },
-    _sum: { quantity: true },
-  })
-  const variantSoldMap = new Map(soldCounts.map((s) => [s.variantId, s._sum.quantity ?? 0]))
-
-  // Attach stock count per product
-  const allVariantIds = products.flatMap((p) => p.variants.map((v) => v.id))
-  const stockCounts = await db.accountStock.groupBy({
-    by: ["variantId"],
-    where: { variantId: { in: allVariantIds }, status: "AVAILABLE" },
-    _count: { id: true },
-  })
-  const stockMap = new Map(stockCounts.map((s) => [s.variantId, s._count.id]))
-
-  // Attach average rating + review count per product
-  const productIds = products.map((p) => p.id)
-  const ratingData = await db.review.groupBy({
-    by: ["productId"],
-    where: { productId: { in: productIds }, isVisible: true },
-    _avg: { rating: true },
-    _count: { rating: true },
-  })
-  const ratingMap = new Map(ratingData.map((r) => [r.productId, { avg: r._avg.rating ?? 0, count: r._count.rating }]))
-
-  let productsWithMeta = products.map((p) => {
-    const rating = ratingMap.get(p.id)
-    return {
-      ...p,
-      totalSold: p.variants.reduce((acc, v) => acc + (variantSoldMap.get(v.id) ?? 0), 0),
-      totalStock: p.variants.reduce((acc, v) => acc + (stockMap.get(v.id) ?? 0), 0),
-      avgRating: rating ? Math.round(rating.avg * 10) / 10 : undefined,
-      reviewCount: rating?.count ?? 0,
-    }
-  })
-
-  // Filter: only in stock
-  if (onlyInStock) {
-    productsWithMeta = productsWithMeta.filter((p) => p.totalStock > 0)
+  // Filter by category
+  if (category) {
+    filtered = filtered.filter((p) => p.category === category)
   }
 
-  // Sort by terlaris / popular (most sold)
+  // Search by name
+  if (search) {
+    const q = search.toLowerCase()
+    filtered = filtered.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        (p.description ?? "").toLowerCase().includes(q)
+    )
+  }
+
+  // Client-side sort by name or price approximation
   if (sort === "popular" || sort === "terlaris") {
-    productsWithMeta = productsWithMeta.sort((a, b) => b.totalSold - a.totalSold)
+    // Name-based sort since no sold data available
+    filtered = filtered.sort((a, b) => a.name.localeCompare(b.name))
   }
-
-  // Sort by price using minimum variant price
   if (sort === "price_asc" || sort === "price_desc") {
-    productsWithMeta = productsWithMeta.sort((a, b) => {
-      const minA = Math.min(...a.variants.map((v) => v.price), Infinity)
-      const minB = Math.min(...b.variants.map((v) => v.price), Infinity)
-      return sort === "price_asc" ? minA - minB : minB - minA
-    })
+    // No price info from listing endpoint, keep original order
+    // Name sort as fallback
+    filtered = filtered.sort((a, b) => a.name.localeCompare(b.name))
   }
 
-  if (productsWithMeta.length === 0) {
+  if (filtered.length === 0) {
     return (
       <div className="text-center py-20">
         <p className="text-4xl mb-4">🔍</p>
@@ -148,13 +91,12 @@ async function ProductList({
 
   return (
     <div>
-      {/* Product count */}
       <p className="text-sm text-muted-foreground mb-4">
-        Menampilkan <span className="font-semibold text-foreground">{productsWithMeta.length}</span> produk
+        Menampilkan <span className="font-semibold text-foreground">{filtered.length}</span> produk
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {productsWithMeta.map((product) => (
-          <ProductCard key={product.id} product={product as unknown as ProductWithVariants} />
+        {filtered.map((product) => (
+          <ProductCard key={product.id} product={product} />
         ))}
       </div>
     </div>
@@ -162,23 +104,19 @@ async function ProductList({
 }
 
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {
-  const { category, search, sort, minPrice, maxPrice, inStock } = await searchParams
+  const { category, search, sort } = await searchParams
 
-  // Fetch distinct categories from DB for dynamic filter
-  const categoryRows = await db.product.findMany({
-    where: { isActive: true },
-    select: { category: true },
-    distinct: ["category"],
-    orderBy: { category: "asc" },
-  })
-  const categories = categoryRows.map((r) => r.category).filter((c): c is string => c !== null)
+  // Fetch all products and extract unique categories
+  const products = await getProducts()
+  const activeProducts = products.filter((p) => p.isActive)
+  const categories = [...new Set(activeProducts.map((p) => p.category).filter((c): c is string => c !== null))].sort()
 
   const categoryLabel = category ? category.charAt(0).toUpperCase() + category.slice(1) : "Semua"
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl md:text-4xl font-bold">
+        <h1 className="text-display-xl">
           {search ? `Hasil: "${search}"` : `${categoryLabel} Produk`}
         </h1>
       </div>
@@ -190,9 +128,6 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
               category={category}
               search={search}
               sort={sort}
-              minPrice={minPrice}
-              maxPrice={maxPrice}
-              inStock={inStock}
             />
           </Suspense>
         </div>

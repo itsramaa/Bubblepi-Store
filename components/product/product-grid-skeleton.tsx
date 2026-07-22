@@ -2,17 +2,15 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 function ProductCardSkeleton() {
   return (
-    <div className="rounded-2xl border bg-card overflow-hidden">
-      {/* Image placeholder */}
+    <div className="card-property border border-hairline overflow-hidden">
       <Skeleton className="aspect-[4/3] w-full rounded-none" />
-      {/* Content */}
       <div className="p-4 space-y-3">
         <Skeleton className="h-3 w-16" />
         <Skeleton className="h-4 w-3/4" />
         <Skeleton className="h-4 w-1/2" />
         <div className="flex items-center justify-between pt-1">
           <Skeleton className="h-3 w-16" />
-          <Skeleton className="h-7 w-14 rounded-md" />
+          <Skeleton className="h-7 w-14 rounded-sm" />
         </div>
       </div>
     </div>

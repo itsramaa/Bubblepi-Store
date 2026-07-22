@@ -1,9 +1,11 @@
-import { db } from "@/lib/db"
+import { fetchFromGo, parseJson } from "@/lib/api-client"
 import VoucherList from "./VoucherList"
+import type { Voucher } from "@/types"
 
 export const dynamic = "force-dynamic"
 
 export default async function VouchersPage() {
-  const vouchers = await db.voucher.findMany({ orderBy: { createdAt: "desc" } })
-  return <VoucherList vouchers={JSON.parse(JSON.stringify(vouchers))} />
+  const res = await fetchFromGo("/admin/vouchers")
+  const vouchers = await parseJson<Voucher[]>(res)
+  return <VoucherList vouchers={vouchers} />
 }

@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Loader2, CheckCircle2 } from "lucide-react"
 import { toast } from "sonner"
+import { goAPI } from "@/lib/api-client"
 
 interface Props {
   pendingCount: number
@@ -16,18 +17,18 @@ export default function BulkFulfillButton({ pendingCount }: Props) {
     if (!confirm(`Fulfill semua ${pendingCount} pesanan PAID sekaligus?`)) return
     setLoading(true)
     try {
-      // Ambil semua order PAID dulu
-      const res = await fetch("/api/admin/orders?status=PAID&pageSize=100")
+      const res = await fetch(goAPI("/api/admin/orders?status=PAID&pageSize=100"), { credentials: "include" })
       const data = await res.json()
       const orderIds = (data.orders ?? []).map((o: { id: string }) => o.id)
       if (orderIds.length === 0) {
         toast.info("Tidak ada pesanan PAID untuk di-fulfill")
         return
       }
-      const fulfillRes = await fetch("/api/admin/orders/bulk-fulfill", {
+      const fulfillRes = await fetch(goAPI("/api/admin/orders/bulk-fulfill"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ orderIds }),
+        credentials: "include",
       })
       const fulfillData = await fulfillRes.json()
       if (!fulfillData.success) throw new Error(fulfillData.error)
